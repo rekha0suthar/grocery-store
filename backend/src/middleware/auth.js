@@ -1,177 +1,80 @@
-import { appConfig } from '../config/appConfig.js';
+import jwt from 'jsonwebtoken';
+import { UserRepository } from '../repositories/UserRepository.js';
 
-/**
- * Flexible Authentication Middleware
- * Supports multiple authentication providers
- */
-export class AuthMiddleware {
-  constructor(authProvider) {
-    this.authProvider = authProvider;
-  }
+const userRepository = new UserRepository();
 
-  /**
-   * Authentication middleware
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   * @param {Function} next - Next middleware function
-   */
-  authenticate = async (req, res, next) => {
-    try {
-      const authProvider = appConfig.get('auth.provider', 'jwt');
-      
-      let token = null;
-      
-      // Extract token based on authentication provider
-      switch (authProvider) {
-        case 'jwt':
-          token = this.extractJWTToken(req);
-          break;
-        case 'session':
-          token = this.extractSessionToken(req);
-          break;
-        case 'oauth':
-          token = this.extractOAuthToken(req);
-          break;
-        default:
-          return res.status(401).json({
-            success: false,
-            error: 'Unsupported authentication provider'
-          });
-      }
+export const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-      if (!token) {
-        return res.status(401).json({
-          success: false,
-          error: 'No authentication token provided'
-        });
-      }
-
-      // Verify token using the configured provider
-      const user = await this.authProvider.getUserFromToken(token);
-      req.user = user;
-      req.token = token;
-      
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid or expired token'
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Access token required' 
       });
     }
-  };
 
-  /**
-   * Authorization middleware
-   * @param {...string} roles - Allowed roles
-   * @returns {Function} Middleware function
-   */
-  authorize = (...roles) => {
-    return (req, res, next) => {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Authentication required'
-        });
-      }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await userRepository.findById(decoded.userId);
 
-      if (roles.length > 0 && !roles.includes(req.user.role)) {
-        return res.status(403).json({
-          success: false,
-          error: 'Insufficient permissions'
-        });
-      }
-
-      next();
-    };
-  };
-
-  /**
-   * Optional authentication middleware
-   * Sets user if token is valid, but doesn't require it
-   */
-  optionalAuth = async (req, res, next) => {
-    try {
-      const authProvider = appConfig.get('auth.provider', 'jwt');
-      
-      let token = null;
-      
-      switch (authProvider) {
-        case 'jwt':
-          token = this.extractJWTToken(req);
-          break;
-        case 'session':
-          token = this.extractSessionToken(req);
-          break;
-        case 'oauth':
-          token = this.extractOAuthToken(req);
-          break;
-      }
-
-      if (token) {
-        const user = await this.authProvider.getUserFromToken(token);
-        req.user = user;
-        req.token = token;
-      }
-      
-      next();
-    } catch (error) {
-      // Continue without authentication
-      next();
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token - user not found' 
+      });
     }
-  };
 
-  /**
-   * Extract JWT token from request
-   * @param {Object} req - Express request object
-   * @returns {string|null} JWT token
-   */
-  extractJWTToken(req) {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      return authHeader.substring(7);
+    if (user.isAccountLocked()) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Account is locked' 
+      });
     }
-    return null;
+
+    req.user = user;
+    next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token' 
+      });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token expired' 
+      });
+    }
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Authentication error' 
+    });
   }
-
-  /**
-   * Extract session token from request
-   * @param {Object} req - Express request object
-   * @returns {string|null} Session token
-   */
-  extractSessionToken(req) {
-    // Check for session ID in cookies
-    if (req.cookies && req.cookies.sessionId) {
-      return req.cookies.sessionId;
-    }
-    
-    // Check for session ID in headers
-    const sessionHeader = req.headers['x-session-id'];
-    if (sessionHeader) {
-      return sessionHeader;
-    }
-    
-    return null;
-  }
-
-  /**
-   * Extract OAuth token from request
-   * @param {Object} req - Express request object
-   * @returns {string|null} OAuth token
-   */
-  extractOAuthToken(req) {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      return authHeader.substring(7);
-    }
-    return null;
-  }
-}
-
-/**
- * Create authentication middleware instance
- * @param {Object} authProvider - Authentication provider instance
- * @returns {AuthMiddleware} Authentication middleware instance
- */
-export const createAuthMiddleware = (authProvider) => {
-  return new AuthMiddleware(authProvider);
 };
+
+export const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required' 
+      });
+    }
+
+    const userRoles = Array.isArray(roles) ? roles : [roles];
+    if (!userRoles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Insufficient permissions' 
+      });
+    }
+
+    next();
+  };
+};
+
+export const requireAdmin = requireRole('admin');
+export const requireStoreManager = requireRole(['admin', 'store_manager']);
+export const requireCustomer = requireRole(['admin', 'store_manager', 'customer']);

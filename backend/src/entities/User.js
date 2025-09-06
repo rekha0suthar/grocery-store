@@ -9,15 +9,15 @@ export class User extends BaseEntity {
     super(data.id);
     this.email = data.email || '';
     this.name = data.name || '';
-    this.password = data.password || '';
+    this.password = data.password || data.password_hash || ''; // Handle both field names
     this.role = data.role || 'customer'; // admin, store_manager, customer
     this.phone = data.phone || '';
     this.address = data.address || '';
-    this.isEmailVerified = data.isEmailVerified || false;
-    this.isPhoneVerified = data.isPhoneVerified || false;
-    this.lastLoginAt = data.lastLoginAt || null;
-    this.loginAttempts = data.loginAttempts || 0;
-    this.lockedUntil = data.lockedUntil || null;
+    this.isEmailVerified = data.isEmailVerified || data.is_email_verified || false;
+    this.isPhoneVerified = data.isPhoneVerified || data.is_phone_verified || false;
+    this.lastLoginAt = data.lastLoginAt || data.last_login_at || null;
+    this.loginAttempts = data.loginAttempts || data.login_attempts || 0;
+    this.lockedUntil = data.lockedUntil || data.locked_until || null;
   }
 
   // Domain validation
