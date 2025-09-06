@@ -1,136 +1,155 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { BaseController } from './BaseController.js';
 import { UserRepository } from '../repositories/UserRepository.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
+import appConfig from '../config/appConfig.js';
+import { validationResult } from 'express-validator';
 
-export class AuthController extends BaseController {
+export class AuthController {
   constructor() {
-    super();
-    this.userRepository = new UserRepository();
+    this.userRepository = new UserRepository(appConfig.getDatabaseType());
   }
 
-  register = asyncHandler(async (req, res) => {
-    const { email, name, password, role = 'customer', phone, address } = req.body;
+  async register(req, res) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
 
-    // Check if user already exists
-    const existingUser = await this.userRepository.findByEmail(email);
-    if (existingUser) {
-      return this.sendError(res, 'User already exists with this email', 409);
+      const { email, name, password, role = 'customer', phone, address } = req.body;
+
+      const existingUser = await this.userRepository.findByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'User with this email already exists'
+        });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 12);
+      const userData = {
+        email,
+        name,
+        password: passwordHash,
+        role,
+        phone,
+        address,
+        isEmailVerified: false,
+        isPhoneVerified: false
+      };
+
+      const user = await this.userRepository.create(userData);
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        appConfig.get('jwt.secret'),
+        { expiresIn: appConfig.get('jwt.expiresIn') }
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        data: { user: this.sanitizeUser(user), token }
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error during registration'
+      });
     }
+  }
 
-    // Hash password
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
+  async login(req, res) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
 
-    // Create user
-    const userData = {
-      email,
-      name,
-      password: passwordHash,
-      role,
-      phone,
-      address
-    };
+      const { email, password } = req.body;
+      const user = await this.userRepository.findByEmail(email);
+      
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid email or password'
+        });
+      }
 
-    const user = await this.userRepository.create(userData);
+      if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+        return res.status(423).json({
+          success: false,
+          message: 'Account is temporarily locked'
+        });
+      }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        await this.userRepository.incrementLoginAttempts(user.id);
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid email or password'
+        });
+      }
 
-    return this.sendSuccess(res, {
-      user: user.toJSON(),
-      token
-    }, 'User registered successfully', 201);
-  });
+      await this.userRepository.resetLoginAttempts(user.id);
+      await this.userRepository.updateLastLogin(user.id);
 
-  login = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        appConfig.get('jwt.secret'),
+        { expiresIn: appConfig.get('jwt.expiresIn') }
+      );
 
-    // Find user by email
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) {
-      return this.sendError(res, 'Invalid email or password', 401);
+      res.json({
+        success: true,
+        message: 'Login successful',
+        data: { user: this.sanitizeUser(user), token }
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error during login'
+      });
     }
+  }
 
-    // Check if account is locked
-    if (user.isAccountLocked()) {
-      return this.sendError(res, 'Account is temporarily locked. Please try again later.', 401);
+  async getProfile(req, res) {
+    try {
+      const userId = req.user.userId;
+      const user = await this.userRepository.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: { user: this.sanitizeUser(user) }
+      });
+    } catch (error) {
+      console.error('Get profile error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
     }
+  }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      // Increment login attempts
-      await this.userRepository.updateLoginAttempts(user.id, user.loginAttempts + 1);
-      return this.sendError(res, 'Invalid email or password', 401);
-    }
-
-    // Reset login attempts and update last login
-    await this.userRepository.resetLoginAttempts(user.id);
-    await this.userRepository.updateLastLogin(user.id);
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
-
-    return this.sendSuccess(res, {
-      user: user.toJSON(),
-      token
-    }, 'Login successful');
-  });
-
-  getProfile = asyncHandler(async (req, res) => {
-    return this.sendSuccess(res, req.user.toJSON(), 'Profile retrieved successfully');
-  });
-
-  updateProfile = asyncHandler(async (req, res) => {
-    const { name, phone, address } = req.body;
-    const userId = req.user.id;
-
-    const updateData = {};
-    if (name !== undefined) updateData.name = name;
-    if (phone !== undefined) updateData.phone = phone;
-    if (address !== undefined) updateData.address = address;
-
-    const updatedUser = await this.userRepository.update(userId, updateData);
-    if (!updatedUser) {
-      return this.sendNotFound(res, 'User not found');
-    }
-
-    return this.sendSuccess(res, updatedUser.toJSON(), 'Profile updated successfully');
-  });
-
-  changePassword = asyncHandler(async (req, res) => {
-    const { currentPassword, newPassword } = req.body;
-    const userId = req.user.id;
-
-    // Get current user with password
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      return this.sendNotFound(res, 'User not found');
-    }
-
-    // Verify current password
-    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
-    if (!isValidPassword) {
-      return this.sendError(res, 'Current password is incorrect', 400);
-    }
-
-    // Hash new password
-    const saltRounds = 10;
-    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
-
-    // Update password
-    await this.userRepository.update(userId, { password: newPasswordHash });
-
-    return this.sendSuccess(res, null, 'Password changed successfully');
-  });
+  sanitizeUser(user) {
+    const { password, ...sanitized } = user;
+    return sanitized;
+  }
 }

@@ -1,18 +1,22 @@
 export default {
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
+  transform: {
+    '^.+\\.js$': ['babel-jest', {
+      presets: [['@babel/preset-env', { targets: { node: 'current' } }]]
+    }]
+  },
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
   testMatch: [
-    '**/__tests__/**/*.js',
-    '**/?(*.)+(spec|test).js'
+    '**/tests/**/*.test.js'
   ],
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/server.js',
-    '!src/config/**',
-    '!**/node_modules/**'
+    '!src/config/firebase.js'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  testTimeout: 10000,
   verbose: true
-}
+};
