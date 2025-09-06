@@ -14,9 +14,6 @@ morgan.token('responseTime', (req, res) => {
   return `${ms}ms`;
 });
 
-// Custom format
-const customFormat = ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" - :responseTime - :requestId';
-
 // Development format (more detailed)
 const devFormat = ':method :url :status :response-time ms - :res[content-length] - :requestId';
 
@@ -26,11 +23,11 @@ const prodFormat = ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/
 export const requestLogger = (req, res, next) => {
   // Add request ID for tracking
   req.id = Math.random().toString(36).substr(2, 9);
-  
+
   // Add start time for response time calculation
   req._startTime = Date.now();
   res._startTime = Date.now();
-  
+
   next();
 };
 

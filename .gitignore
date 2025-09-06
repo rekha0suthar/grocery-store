@@ -184,3 +184,50 @@ Thumbs.db
 *.bak
 *.backup
 *.old
+
+# Database and sensitive data
+# PostgreSQL data directories
+postgres_data/
+pgdata/
+/var/lib/postgresql/
+
+# Database dumps and backups
+*.dump
+*.backup
+database_backups/
+
+# Environment files (already covered but being explicit)
+.env.development
+.env.production
+.env.staging
+.env.test
+
+# Docker volumes
+docker-volumes/
+postgres_data/
+
+# Local development data
+local_data/
+dev_data/
+
+# Sensitive configuration
+config/local.js
+config/production.js
+config/staging.js
+
+# Logs and temporary files
+logs/
+*.log
+tmp/
+temp/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
