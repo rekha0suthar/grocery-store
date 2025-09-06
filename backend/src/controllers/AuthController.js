@@ -1,12 +1,20 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { UserRepository } from '../repositories/UserRepository.js';
-import appConfig from '../config/appConfig.js';
+import { AuthenticationComposition } from '../composition/AuthenticationComposition.js';
 import { validationResult } from 'express-validator';
+import appConfig from '../config/appConfig.js';
 
+/**
+ * Auth Controller - Interface Adapter
+ * 
+ * This controller adapts HTTP requests/responses to use cases.
+ * It contains NO business logic - only data transformation and HTTP concerns.
+ */
 export class AuthController {
   constructor() {
-    this.userRepository = new UserRepository(appConfig.getDatabaseType());
+    // Use composition root to get use cases with all dependencies wired
+    this.authComposition = new AuthenticationComposition();
+    this.authenticateUserUseCase = this.authComposition.getAuthenticateUserUseCase();
+    this.createUserUseCase = this.authComposition.getCreateUserUseCase();
   }
 
   async register(req, res) {
@@ -22,43 +30,38 @@ export class AuthController {
 
       const { email, name, password, role = 'customer', phone, address } = req.body;
 
-      const existingUser = await this.userRepository.findByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({
+      // Execute use case
+      const result = await this.createUserUseCase.execute({
+        email,
+        name,
+        password,
+        role,
+        phone,
+        address
+      });
+
+      if (!result.success) {
+        return res.status(400).json({
           success: false,
-          message: 'User with this email already exists'
+          message: result.message
         });
       }
 
-      const passwordHash = await bcrypt.hash(password, 12);
-      const userData = {
-        email,
-        name,
-        password: passwordHash,
-        role,
-        phone,
-        address,
-        isEmailVerified: false,
-        isPhoneVerified: false
-      };
+      // Generate JWT token (HTTP concern)
+      const token = this.generateToken(result.user);
 
-      const user = await this.userRepository.create(userData);
-      const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
-        appConfig.get('jwt.secret'),
-        { expiresIn: appConfig.get('jwt.expiresIn') }
-      );
-
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
-        message: 'User registered successfully',
-        data: { user: this.sanitizeUser(user), token }
+        message: 'User created successfully',
+        user: result.user,
+        token
       });
+
     } catch (error) {
       console.error('Registration error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: 'Internal server error during registration'
+        message: 'Internal server error'
       });
     }
   }
@@ -75,81 +78,72 @@ export class AuthController {
       }
 
       const { email, password } = req.body;
-      const user = await this.userRepository.findByEmail(email);
-      
-      if (!user) {
+
+      // Execute use case
+      const result = await this.authenticateUserUseCase.execute({
+        email,
+        password
+      });
+
+      if (!result.success) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid email or password'
+          message: result.message
         });
       }
 
-      if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-        return res.status(423).json({
-          success: false,
-          message: 'Account is temporarily locked'
-        });
-      }
+      // Generate JWT token (HTTP concern)
+      const token = this.generateToken(result.user);
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-        await this.userRepository.incrementLoginAttempts(user.id);
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid email or password'
-        });
-      }
-
-      await this.userRepository.resetLoginAttempts(user.id);
-      await this.userRepository.updateLastLogin(user.id);
-
-      const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
-        appConfig.get('jwt.secret'),
-        { expiresIn: appConfig.get('jwt.expiresIn') }
-      );
-
-      res.json({
+      return res.status(200).json({
         success: true,
         message: 'Login successful',
-        data: { user: this.sanitizeUser(user), token }
+        user: result.user,
+        token
       });
+
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error during login'
-      });
-    }
-  }
-
-  async getProfile(req, res) {
-    try {
-      const userId = req.user.userId;
-      const user = await this.userRepository.findById(userId);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: { user: this.sanitizeUser(user) }
-      });
-    } catch (error) {
-      console.error('Get profile error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Internal server error'
       });
     }
   }
 
-  sanitizeUser(user) {
-    const { password, ...sanitized } = user;
-    return sanitized;
+  // ===== HTTP-SPECIFIC CONCERNS =====
+  
+  generateToken(user) {
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    };
+
+    return jwt.sign(payload, appConfig.getJWTSecret(), {
+      expiresIn: appConfig.getJWTExpiration()
+    });
+  }
+
+  async verifyToken(req, res, next) {
+    try {
+      const token = req.header('Authorization')?.replace('Bearer ', '');
+      
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          message: 'No token provided'
+        });
+      }
+
+      const decoded = jwt.verify(token, appConfig.getJWTSecret());
+      req.user = decoded;
+      next();
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
+      });
+    }
   }
 }

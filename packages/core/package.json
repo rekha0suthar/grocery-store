@@ -1,0 +1,33 @@
+{
+  "name": "@grocery-store/core",
+  "version": "1.0.0",
+  "description": "Shared business logic, entities, and use cases for the grocery store application",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./entities": "./entities/index.js",
+    "./use-cases": "./use-cases/index.js",
+    "./interfaces": "./interfaces/index.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint .",
+    "build": "echo 'Core package - no build step needed'"
+  },
+  "keywords": [
+    "grocery-store",
+    "clean-architecture",
+    "domain",
+    "entities",
+    "use-cases"
+  ],
+  "author": "Grocery Store Team",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "peerDependencies": {},
+  "dependencies": {}
+}

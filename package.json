@@ -1,0 +1,40 @@
+{
+  "name": "grocery-store",
+  "version": "1.0.0",
+  "description": "Online Grocery Shopping Application with Clean Architecture",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces",
+    "test:core": "npm run test --workspace=@grocery-store/core",
+    "test:backend": "npm run test --workspace=backend",
+    "test:frontend": "npm run test --workspace=frontend",
+    "lint": "npm run lint --workspaces",
+    "build": "npm run build --workspaces",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "install:all": "npm install",
+    "clean": "rm -rf node_modules packages/*/node_modules backend/node_modules frontend/node_modules"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "grocery-store",
+    "clean-architecture",
+    "monorepo",
+    "nodejs",
+    "react"
+  ],
+  "author": "Grocery Store Team",
+  "license": "MIT"
+}

@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository.js';
-import { User } from '../entities/User.js';
+import { User } from '@grocery-store/core/entities/User.js';
 import { DatabaseFactory } from '../factories/DatabaseFactory.js';
 
 /**

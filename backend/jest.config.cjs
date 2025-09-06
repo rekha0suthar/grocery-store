@@ -1,9 +1,7 @@
-export default {
+module.exports = {
   testEnvironment: 'node',
   transform: {
-    '^.+\\.js$': ['babel-jest', {
-      presets: [['@babel/preset-env', { targets: { node: 'current' } }]]
-    }]
+    '^.+\\.js$': 'babel-jest'
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
@@ -18,5 +16,6 @@ export default {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  verbose: true
+  verbose: true,
+  testTimeout: 10000
 };

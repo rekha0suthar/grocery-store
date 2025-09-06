@@ -1,5 +1,5 @@
 import { db } from '../config/firebase.js';
-import { IDatabaseAdapter } from '../interfaces/IDatabaseAdapter.js';
+import { IDatabaseAdapter } from '@grocery-store/core/interfaces/IDatabaseAdapter.js';
 
 /**
  * Firebase Database Adapter

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { IAuthProvider } from '../../interfaces/IAuthProvider.js';
+import { IAuthProvider } from '@grocery-store/core/interfaces/IAuthProvider.js';
 
 /**
  * JWT Authentication Provider

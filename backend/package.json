@@ -12,6 +12,7 @@
     "init:firebase": "node scripts/init-firestore.js"
   },
   "dependencies": {
+    "@grocery-store/core": "workspace:*",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
     "@babel/preset-env": "^7.28.3",
     "babel-jest": "^30.1.2",
     "eslint": "^8.57.1",

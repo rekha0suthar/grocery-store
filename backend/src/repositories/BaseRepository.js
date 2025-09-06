@@ -1,4 +1,4 @@
-import { IDatabaseAdapter } from '../interfaces/IDatabaseAdapter.js';
+import { IDatabaseAdapter } from '@grocery-store/core/interfaces/IDatabaseAdapter.js';
 
 /**
  * Base Repository - Refactored to use Database Adapter Pattern
