@@ -1,215 +1,308 @@
-/**
- * Application Configuration
- * Centralized configuration management
- * Supports multiple environments and customizations
- */
-export class AppConfig {
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+class AppConfig {
   constructor() {
-    this.config = {
-      // Server Configuration
-      server: {
-        port: process.env.PORT || 3001,
-        host: process.env.HOST || 'localhost',
-        environment: process.env.NODE_ENV || 'development',
-        cors: {
-          origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-          credentials: true
-        }
-      },
+    this.environment = process.env.NODE_ENV || 'development';
+    this.port = process.env.PORT || 3000;
+    this.host = process.env.HOST || 'localhost';
+    
+    // Database configuration
+    this.database = {
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      name: process.env.DB_NAME || 'grocery_store',
+      user: process.env.DB_USER || 'grocery_user',
+      password: process.env.DB_PASSWORD || 'grocery_password',
+      ssl: process.env.DB_SSL === 'true',
+      max: parseInt(process.env.DB_MAX_CONNECTIONS) || 20,
+      idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT) || 30000,
+      connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT) || 2000
+    };
 
-      // Database Configuration
-      database: {
-        type: process.env.DB_TYPE || 'mongodb',
-        host: process.env.DB_HOST || 'localhost',
-        port: process.env.DB_PORT || 27017,
-        name: process.env.DB_NAME || 'app_database',
-        user: process.env.DB_USER || '',
-        password: process.env.DB_PASSWORD || '',
-        url: process.env.DB_URL || null,
-        options: {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-          maxPoolSize: 10,
-          serverSelectionTimeoutMS: 5000,
-          socketTimeoutMS: 45000,
-        }
-      },
+    // JWT configuration
+    this.jwt = {
+      secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+    };
 
-      // Authentication Configuration
-      auth: {
-        provider: process.env.AUTH_PROVIDER || 'jwt', // jwt, session, oauth
-        jwt: {
-          secret: process.env.JWT_SECRET || 'your-secret-key',
-          expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-          refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-          algorithm: process.env.JWT_ALGORITHM || 'HS256'
-        },
-        session: {
-          secret: process.env.SESSION_SECRET || 'your-session-secret',
-          maxAge: parseInt(process.env.SESSION_MAX_AGE) || 24 * 60 * 60 * 1000, // 24 hours
-          secure: process.env.SESSION_SECURE === 'true',
-          httpOnly: process.env.SESSION_HTTP_ONLY !== 'false'
-        },
-        oauth: {
-          provider: process.env.OAUTH_PROVIDER || 'google',
-          clientId: process.env.OAUTH_CLIENT_ID || '',
-          clientSecret: process.env.OAUTH_CLIENT_SECRET || '',
-          redirectUri: process.env.OAUTH_REDIRECT_URI || '',
-          scope: process.env.OAUTH_SCOPE || 'openid email profile'
-        }
-      },
+    // CORS configuration
+    this.cors = {
+      origin: this.getCorsOrigins(),
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With',
+        'X-API-Key',
+        'X-Client-Version'
+      ]
+    };
 
-      // Rate Limiting
-      rateLimit: {
-        windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-        maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-        skipSuccessfulRequests: process.env.RATE_LIMIT_SKIP_SUCCESS === 'true'
-      },
+    // Rate limiting configuration
+    this.rateLimit = {
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+      max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+      skipSuccessfulRequests: process.env.RATE_LIMIT_SKIP_SUCCESS === 'true',
+      skipFailedRequests: process.env.RATE_LIMIT_SKIP_FAILED === 'true'
+    };
 
-      // Logging
-      logging: {
-        level: process.env.LOG_LEVEL || 'info',
-        format: process.env.LOG_FORMAT || 'combined',
-        enableConsole: process.env.LOG_ENABLE_CONSOLE !== 'false',
-        enableFile: process.env.LOG_ENABLE_FILE === 'true',
-        filePath: process.env.LOG_FILE_PATH || './logs/app.log'
-      },
+    // File upload configuration
+    this.upload = {
+      maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB
+      allowedMimeTypes: [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf'
+      ],
+      uploadPath: process.env.UPLOAD_PATH || './uploads'
+    };
 
-      // Security
-      security: {
-        enableHelmet: process.env.SECURITY_ENABLE_HELMET !== 'false',
-        enableCORS: process.env.SECURITY_ENABLE_CORS !== 'false',
-        enableRateLimit: process.env.SECURITY_ENABLE_RATE_LIMIT !== 'false',
-        trustProxy: process.env.SECURITY_TRUST_PROXY === 'true'
-      },
+    // Email configuration
+    this.email = {
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT) || 587,
+      secure: process.env.EMAIL_SECURE === 'true',
+      user: process.env.EMAIL_USER,
+      password: process.env.EMAIL_PASSWORD,
+      from: process.env.EMAIL_FROM || 'noreply@grocerystore.com'
+    };
 
-      // Features
+    // Redis configuration (for caching and sessions)
+    this.redis = {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT) || 6379,
+      password: process.env.REDIS_PASSWORD,
+      db: parseInt(process.env.REDIS_DB) || 0
+    };
+
+    // Logging configuration
+    this.logging = {
+      level: process.env.LOG_LEVEL || (this.environment === 'production' ? 'info' : 'debug'),
+      format: process.env.LOG_FORMAT || 'combined',
+      enableConsole: process.env.LOG_CONSOLE !== 'false',
+      enableFile: process.env.LOG_FILE === 'true',
+      logFile: process.env.LOG_FILE_PATH || './logs/app.log'
+    };
+
+    // Security configuration
+    this.security = {
+      bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 10,
+      sessionSecret: process.env.SESSION_SECRET || 'your-session-secret',
+      cookieSecure: process.env.COOKIE_SECURE === 'true',
+      cookieSameSite: process.env.COOKIE_SAME_SITE || 'lax',
+      trustProxy: process.env.TRUST_PROXY === 'true'
+    };
+
+    // API configuration
+    this.api = {
+      version: process.env.API_VERSION || 'v1',
+      prefix: process.env.API_PREFIX || '/api',
+      timeout: parseInt(process.env.API_TIMEOUT) || 30000,
+      enableSwagger: process.env.ENABLE_SWAGGER !== 'false'
+    };
+
+    // Frontend configuration
+    this.frontend = {
+      url: this.getFrontendUrl(),
+      enableCORS: process.env.FRONTEND_CORS !== 'false'
+    };
+  }
+
+  getCorsOrigins() {
+    const origins = process.env.CORS_ORIGINS;
+    
+    if (origins) {
+      return origins.split(',').map(origin => origin.trim());
+    }
+
+    // Default origins based on environment
+    switch (this.environment) {
+      case 'production':
+        return [
+          'https://grocerystore.com',
+          'https://www.grocerystore.com',
+          'https://app.grocerystore.com'
+        ];
+      case 'staging':
+        return [
+          'https://staging.grocerystore.com',
+          'https://staging-app.grocerystore.com'
+        ];
+      case 'development':
+      default:
+        return [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://localhost:5173', // Vite default
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:3001',
+          'http://127.0.0.1:5173'
+        ];
+    }
+  }
+
+  getFrontendUrl() {
+    // Priority order for frontend URL detection
+    if (process.env.FRONTEND_URL) {
+      return process.env.FRONTEND_URL;
+    }
+
+    // Derive from environment
+    switch (this.environment) {
+      case 'production':
+        return 'https://grocerystore.com';
+      case 'staging':
+        return 'https://staging.grocerystore.com';
+      case 'development':
+      default:
+        return 'http://localhost:3000';
+    }
+  }
+
+  getBaseUrl() {
+    const protocol = this.environment === 'production' ? 'https' : 'http';
+    const host = this.host === '0.0.0.0' ? 'localhost' : this.host;
+    return `${protocol}://${host}:${this.port}`;
+  }
+
+  getApiUrl() {
+    return `${this.getBaseUrl()}${this.api.prefix}`;
+  }
+
+  getDatabaseUrl() {
+    const { host, port, name, user, password, ssl } = this.database;
+    const sslParam = ssl ? '?sslmode=require' : '';
+    return `postgresql://${user}:${password}@${host}:${port}/${name}${sslParam}`;
+  }
+
+  getRedisUrl() {
+    const { host, port, password, db } = this.redis;
+    const auth = password ? `:${password}@` : '';
+    return `redis://${auth}${host}:${port}/${db}`;
+  }
+
+  isDevelopment() {
+    return this.environment === 'development';
+  }
+
+  isProduction() {
+    return this.environment === 'production';
+  }
+
+  isStaging() {
+    return this.environment === 'staging';
+  }
+
+  isTest() {
+    return this.environment === 'test';
+  }
+
+  // Validation method
+  validate() {
+    const errors = [];
+
+    // Required environment variables
+    if (this.isProduction()) {
+      if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your-super-secret-jwt-key-change-this-in-production') {
+        errors.push('JWT_SECRET must be set in production');
+      }
+      if (!process.env.DB_PASSWORD) {
+        errors.push('DB_PASSWORD must be set in production');
+      }
+    }
+
+    // Validate database configuration
+    if (!this.database.host || !this.database.name || !this.database.user) {
+      errors.push('Database configuration is incomplete');
+    }
+
+    // Validate JWT configuration
+    if (!this.jwt.secret) {
+      errors.push('JWT secret is required');
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`Configuration validation failed: ${errors.join(', ')}`);
+    }
+
+    return true;
+  }
+
+  // Get configuration for frontend
+  getFrontendConfig() {
+    return {
+      apiUrl: this.getApiUrl(),
+      environment: this.environment,
+      version: this.api.version,
       features: {
-        authentication: process.env.FEATURE_AUTH !== 'false',
-        fileUpload: process.env.FEATURE_FILE_UPLOAD === 'true',
-        realTime: process.env.FEATURE_REAL_TIME === 'true',
-        caching: process.env.FEATURE_CACHING === 'true',
-        monitoring: process.env.FEATURE_MONITORING === 'true'
+        enableRegistration: process.env.ENABLE_REGISTRATION !== 'false',
+        enablePasswordReset: process.env.ENABLE_PASSWORD_RESET !== 'false',
+        enableEmailVerification: process.env.ENABLE_EMAIL_VERIFICATION !== 'false',
+        enableSocialLogin: process.env.ENABLE_SOCIAL_LOGIN === 'true',
+        enableFileUpload: process.env.ENABLE_FILE_UPLOAD !== 'false',
+        enableRealTimeNotifications: process.env.ENABLE_REAL_TIME_NOTIFICATIONS === 'true'
+      },
+      limits: {
+        maxFileSize: this.upload.maxFileSize,
+        maxProductsPerPage: parseInt(process.env.MAX_PRODUCTS_PER_PAGE) || 50,
+        maxCategoriesPerPage: parseInt(process.env.MAX_CATEGORIES_PER_PAGE) || 20
+      },
+      integrations: {
+        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+        stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+        paypalClientId: process.env.PAYPAL_CLIENT_ID
       }
     };
   }
 
-  /**
-   * Get configuration value
-   * @param {string} path - Dot notation path (e.g., 'server.port')
-   * @param {*} defaultValue - Default value if not found
-   * @returns {*} Configuration value
-   */
-  get(path, defaultValue = null) {
-    return this.getNestedValue(this.config, path, defaultValue);
-  }
+  // Log configuration (excluding sensitive data)
+  log() {
+    const safeConfig = {
+      environment: this.environment,
+      port: this.port,
+      host: this.host,
+      database: {
+        host: this.database.host,
+        port: this.database.port,
+        name: this.database.name,
+        user: this.database.user,
+        ssl: this.database.ssl
+      },
+      cors: {
+        origins: this.cors.origin
+      },
+      rateLimit: this.rateLimit,
+      api: this.api,
+      frontend: {
+        url: this.frontend.url
+      },
+      logging: this.logging
+    };
 
-  /**
-   * Set configuration value
-   * @param {string} path - Dot notation path
-   * @param {*} value - Value to set
-   */
-  set(path, value) {
-    this.setNestedValue(this.config, path, value);
-  }
-
-  /**
-   * Get all configuration
-   * @returns {Object} Complete configuration object
-   */
-  getAll() {
-    return this.config;
-  }
-
-  /**
-   * Check if feature is enabled
-   * @param {string} feature - Feature name
-   * @returns {boolean} True if feature is enabled
-   */
-  isFeatureEnabled(feature) {
-    return this.get(`features.${feature}`, false);
-  }
-
-  /**
-   * Get database connection URL
-   * @returns {string} Database connection URL
-   */
-  getDatabaseUrl() {
-    const db = this.config.database;
-    
-    if (db.url) {
-      return db.url;
-    }
-
-    let connectionUrl = '';
-    
-    switch (db.type) {
-      case 'mongodb':
-        if (db.user && db.password) {
-          connectionUrl = `mongodb://${db.user}:${db.password}@${db.host}:${db.port}/${db.name}`;
-        } else {
-          connectionUrl = `mongodb://${db.host}:${db.port}/${db.name}`;
-        }
-        break;
-        
-      case 'postgresql':
-        connectionUrl = `postgresql://${db.user}:${db.password}@${db.host}:${db.port}/${db.name}`;
-        break;
-        
-      case 'mysql':
-        connectionUrl = `mysql://${db.user}:${db.password}@${db.host}:${db.port}/${db.name}`;
-        break;
-        
-      default:
-        throw new Error(`Unsupported database type: ${db.type}`);
-    }
-    
-    return connectionUrl;
-  }
-
-  /**
-   * Get nested value from object using dot notation
-   * @param {Object} obj - Object to search
-   * @param {string} path - Dot notation path
-   * @param {*} defaultValue - Default value
-   * @returns {*} Found value or default
-   */
-  getNestedValue(obj, path, defaultValue) {
-    const keys = path.split('.');
-    let current = obj;
-    
-    for (const key of keys) {
-      if (current && typeof current === 'object' && key in current) {
-        current = current[key];
-      } else {
-        return defaultValue;
-      }
-    }
-    
-    return current;
-  }
-
-  /**
-   * Set nested value in object using dot notation
-   * @param {Object} obj - Object to modify
-   * @param {string} path - Dot notation path
-   * @param {*} value - Value to set
-   */
-  setNestedValue(obj, path, value) {
-    const keys = path.split('.');
-    const lastKey = keys.pop();
-    let current = obj;
-    
-    for (const key of keys) {
-      if (!(key in current) || typeof current[key] !== 'object') {
-        current[key] = {};
-      }
-      current = current[key];
-    }
-    
-    current[lastKey] = value;
+    console.log('🔧 Application Configuration:');
+    console.log(JSON.stringify(safeConfig, null, 2));
   }
 }
 
 // Create singleton instance
-export const appConfig = new AppConfig();
+const config = new AppConfig();
+
+// Validate configuration on startup
+try {
+  config.validate();
+} catch (error) {
+  console.error('❌ Configuration Error:', error.message);
+  if (config.isProduction()) {
+    process.exit(1);
+  } else {
+    console.warn('⚠️  Continuing with invalid configuration in non-production environment');
+  }
+}
+
+export default config;

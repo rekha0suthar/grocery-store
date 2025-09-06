@@ -10,28 +10,28 @@ export class Product extends BaseEntity {
     this.name = data.name || '';
     this.description = data.description || '';
     this.price = data.price || 0;
-    this.categoryId = data.categoryId || null;
+    this.categoryId = data.categoryId || data.category_id || null;
     this.sku = data.sku || '';
     this.barcode = data.barcode || '';
     this.unit = data.unit || 'piece'; // piece, kg, liter, etc.
     this.weight = data.weight || 0;
     this.dimensions = data.dimensions || { length: 0, width: 0, height: 0 };
     this.stock = data.stock || 0;
-    this.minStock = data.minStock || 0;
-    this.maxStock = data.maxStock || 1000;
+    this.minStock = data.minStock || data.min_stock || 0;
+    this.maxStock = data.maxStock || data.max_stock || 1000;
     this.images = data.images || [];
     this.tags = data.tags || [];
-    this.isVisible = data.isVisible !== undefined ? data.isVisible : true;
-    this.isFeatured = data.isFeatured || false;
-    this.discountPrice = data.discountPrice || null;
-    this.discountStartDate = data.discountStartDate || null;
-    this.discountEndDate = data.discountEndDate || null;
-    this.nutritionInfo = data.nutritionInfo || {};
+    this.isVisible = data.isVisible !== undefined ? data.isVisible : (data.is_visible !== undefined ? data.is_visible : true);
+    this.isFeatured = data.isFeatured || data.is_featured || false;
+    this.discountPrice = data.discountPrice || data.discount_price || null;
+    this.discountStartDate = data.discountStartDate || data.discount_start_date || null;
+    this.discountEndDate = data.discountEndDate || data.discount_end_date || null;
+    this.nutritionInfo = data.nutritionInfo || data.nutrition_info || {};
     this.allergens = data.allergens || [];
-    this.expiryDate = data.expiryDate || null;
+    this.expiryDate = data.expiryDate || data.expiry_date || null;
     this.manufacturer = data.manufacturer || '';
-    this.countryOfOrigin = data.countryOfOrigin || '';
-    this.addedBy = data.addedBy || null; // User ID who added the product
+    this.countryOfOrigin = data.countryOfOrigin || data.country_of_origin || '';
+    this.addedBy = data.addedBy || data.added_by || null; // User ID who added the product
   }
 
   // Domain validation
@@ -153,10 +153,6 @@ export class Product extends BaseEntity {
 
   getPrice() {
     return this.price;
-  }
-
-  getCurrentPrice() {
-    return this.getCurrentPrice();
   }
 
   getCategoryId() {
