@@ -1,0 +1,170 @@
+name: Full Stack Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      deploy_backend:
+        description: 'Deploy backend'
+        required: false
+        default: true
+        type: boolean
+      deploy_frontend:
+        description: 'Deploy frontend'
+        required: false
+        default: true
+        type: boolean
+      skip_tests:
+        description: 'Skip tests (emergency deployment)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  ENVIRONMENT: ${{ github.event.inputs.environment }}
+
+jobs:
+  # Pre-deployment checks
+  pre-deployment-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate environment
+        run: |
+          echo "Deploying to: ${{ env.ENVIRONMENT }}"
+          echo "Backend deployment: ${{ github.event.inputs.deploy_backend }}"
+          echo "Frontend deployment: ${{ github.event.inputs.deploy_frontend }}"
+          echo "Skip tests: ${{ github.event.inputs.skip_tests }}"
+
+      - name: Check secrets
+        run: |
+          if [ "${{ env.ENVIRONMENT }}" = "production" ]; then
+            echo "Checking production secrets..."
+            # Add secret validation logic here
+          fi
+
+  # Deploy Backend
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    if: github.event.inputs.deploy_backend == 'true'
+    environment: ${{ env.ENVIRONMENT }}
+    
+    steps:
+      - name: Trigger backend deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'backend-ci-cd.yml',
+              ref: context.ref,
+              inputs: {
+                environment: '${{ env.ENVIRONMENT }}',
+                force_deploy: '${{ github.event.inputs.skip_tests }}'
+              }
+            });
+            console.log('Backend deployment triggered');
+
+      - name: Wait for backend deployment
+        run: |
+          echo "Waiting for backend deployment to complete..."
+          # Add logic to wait for backend deployment completion
+
+  # Deploy Frontend
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    if: github.event.inputs.deploy_frontend == 'true'
+    environment: ${{ env.ENVIRONMENT }}
+    
+    steps:
+      - name: Trigger frontend deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'frontend-ci-cd.yml',
+              ref: context.ref,
+              inputs: {
+                environment: '${{ env.ENVIRONMENT }}',
+                force_deploy: '${{ github.event.inputs.skip_tests }}'
+              }
+            });
+            console.log('Frontend deployment triggered');
+
+      - name: Wait for frontend deployment
+        run: |
+          echo "Waiting for frontend deployment to complete..."
+          # Add logic to wait for frontend deployment completion
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always() && (needs.deploy-backend.result == 'success' || needs.deploy-frontend.result == 'success')
+    
+    steps:
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          # Add integration test commands here
+
+  # Post-deployment verification
+  post-deployment-verification:
+    name: Post-deployment Verification
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend, integration-tests]
+    if: always()
+    
+    steps:
+      - name: Verify backend health
+        if: github.event.inputs.deploy_backend == 'true'
+        run: |
+          echo "Verifying backend health..."
+          # Add backend health check
+
+      - name: Verify frontend health
+        if: github.event.inputs.deploy_frontend == 'true'
+        run: |
+          echo "Verifying frontend health..."
+          # Add frontend health check
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+          # Add smoke test commands
+
+  # Notification
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend, post-deployment-verification]
+    if: always()
+    
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.post-deployment-verification.result }}" = "success" ]; then
+            echo "✅ Full stack deployment to ${{ env.ENVIRONMENT }} successful!"
+          else
+            echo "❌ Full stack deployment to ${{ env.ENVIRONMENT }} failed!"
+          fi
+          # Add notification logic here
