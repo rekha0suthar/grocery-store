@@ -2,10 +2,6 @@ import { ProductRepository } from '../repositories/ProductRepository.js';
 import { Product } from '../entities/Product.js';
 import appConfig from '../config/appConfig.js';
 
-/**
- * Manage Product Use Case - Clean Architecture
- * Business logic for product management
- */
 export class ManageProductUseCase {
   constructor() {
     this.productRepository = new ProductRepository(appConfig.getDatabaseType());
@@ -13,7 +9,6 @@ export class ManageProductUseCase {
 
   async createProduct(productData, userId) {
     try {
-      // Input validation
       const validation = this.validateProductData(productData);
       if (!validation.isValid) {
         return {
@@ -23,7 +18,6 @@ export class ManageProductUseCase {
         };
       }
 
-      // Check if SKU already exists
       const existingProduct = await this.productRepository.findBySku(productData.sku);
       if (existingProduct) {
         return {
@@ -33,14 +27,12 @@ export class ManageProductUseCase {
         };
       }
 
-      // Create product entity
       const productEntity = new Product({
         ...productData,
         addedBy: userId,
         isVisible: true
       });
 
-      // Save to repository
       const createdProduct = await this.productRepository.create(productEntity.toJSON());
 
       return {
@@ -62,7 +54,6 @@ export class ManageProductUseCase {
 
   async updateProduct(productId, updateData, userId) {
     try {
-      // Check if product exists
       const existingProduct = await this.productRepository.findById(productId);
       if (!existingProduct) {
         return {
@@ -72,7 +63,6 @@ export class ManageProductUseCase {
         };
       }
 
-      // Validate update data
       const validation = this.validateUpdateData(updateData);
       if (!validation.isValid) {
         return {
@@ -82,7 +72,6 @@ export class ManageProductUseCase {
         };
       }
 
-      // Update product
       const updatedProduct = await this.productRepository.update(productId, updateData);
 
       return {
@@ -104,7 +93,6 @@ export class ManageProductUseCase {
 
   async deleteProduct(productId, userId) {
     try {
-      // Check if product exists
       const existingProduct = await this.productRepository.findById(productId);
       if (!existingProduct) {
         return {
@@ -114,7 +102,6 @@ export class ManageProductUseCase {
         };
       }
 
-      // Soft delete (mark as not visible)
       await this.productRepository.update(productId, { isVisible: false });
 
       return {
@@ -137,7 +124,7 @@ export class ManageProductUseCase {
   async getProducts(filters = {}, limit = 50, offset = 0) {
     try {
       const products = await this.productRepository.findAll(filters, limit, offset);
-      
+
       return {
         success: true,
         message: 'Products retrieved successfully',

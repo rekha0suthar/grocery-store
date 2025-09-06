@@ -8,6 +8,12 @@
     ".": "./index.js",
     "./entities": "./entities/index.js",
     "./use-cases": "./use-cases/index.js",
+    "./use-cases/auth": "./use-cases/auth/index.js",
+    "./use-cases/product": "./use-cases/product/index.js",
+    "./use-cases/cart": "./use-cases/cart/index.js",
+    "./use-cases/order": "./use-cases/order/index.js",
+    "./use-cases/category": "./use-cases/category/index.js",
+    "./use-cases/request": "./use-cases/request/index.js",
     "./interfaces": "./interfaces/index.js"
   },
   "scripts": {

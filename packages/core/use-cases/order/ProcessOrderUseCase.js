@@ -4,10 +4,7 @@ import { ProductRepository } from '../repositories/ProductRepository.js';
 import { Order } from '../entities/Order.js';
 import appConfig from '../config/appConfig.js';
 
-/**
- * Process Order Use Case - Clean Architecture
- * Business logic for order processing
- */
+
 export class ProcessOrderUseCase {
   constructor() {
     this.orderRepository = new OrderRepository(appConfig.getDatabaseType());
@@ -17,7 +14,6 @@ export class ProcessOrderUseCase {
 
   async createOrder(userId, orderData) {
     try {
-      // Validate order data
       const validation = this.validateOrderData(orderData);
       if (!validation.isValid) {
         return {
@@ -27,7 +23,6 @@ export class ProcessOrderUseCase {
         };
       }
 
-      // Get user's cart
       const cart = await this.cartRepository.findByUserId(userId);
       if (!cart || cart.items.length === 0) {
         return {
@@ -37,7 +32,6 @@ export class ProcessOrderUseCase {
         };
       }
 
-      // Validate cart items and stock
       const stockValidation = await this.validateCartStock(cart.items);
       if (!stockValidation.isValid) {
         return {
@@ -47,7 +41,6 @@ export class ProcessOrderUseCase {
         };
       }
 
-      // Create order entity
       const orderEntity = new Order({
         userId,
         items: cart.items,
@@ -57,13 +50,10 @@ export class ProcessOrderUseCase {
         status: 'pending'
       });
 
-      // Save order
       const createdOrder = await this.orderRepository.create(orderEntity.toJSON());
 
-      // Clear cart after successful order creation
       await this.cartRepository.update(cart.id, { items: [], totalAmount: 0 });
 
-      // Update product stock
       await this.updateProductStock(cart.items);
 
       return {
@@ -85,7 +75,6 @@ export class ProcessOrderUseCase {
 
   async updateOrderStatus(orderId, status, userId) {
     try {
-      // Validate status
       const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
       if (!validStatuses.includes(status)) {
         return {
@@ -95,7 +84,6 @@ export class ProcessOrderUseCase {
         };
       }
 
-      // Get order
       const order = await this.orderRepository.findById(orderId);
       if (!order) {
         return {
@@ -105,7 +93,6 @@ export class ProcessOrderUseCase {
         };
       }
 
-      // Check if user has permission to update this order
       if (order.userId !== userId) {
         return {
           success: false,
@@ -114,7 +101,6 @@ export class ProcessOrderUseCase {
         };
       }
 
-      // Update order status
       const updatedOrder = await this.orderRepository.update(orderId, { status });
 
       return {
@@ -145,7 +131,6 @@ export class ProcessOrderUseCase {
         };
       }
 
-      // Check if user has permission to view this order
       if (order.userId !== userId) {
         return {
           success: false,
@@ -174,7 +159,7 @@ export class ProcessOrderUseCase {
   async getUserOrders(userId, limit = 20, offset = 0) {
     try {
       const orders = await this.orderRepository.findByUserId(userId, limit, offset);
-      
+
       return {
         success: true,
         message: 'Orders retrieved successfully',

@@ -3,10 +3,7 @@ import { ProductRepository } from '../repositories/ProductRepository.js';
 import { Cart } from '../entities/Cart.js';
 import appConfig from '../config/appConfig.js';
 
-/**
- * Manage Cart Use Case - Clean Architecture
- * Business logic for cart management
- */
+
 export class ManageCartUseCase {
   constructor() {
     this.cartRepository = new CartRepository(appConfig.getDatabaseType());
@@ -15,7 +12,6 @@ export class ManageCartUseCase {
 
   async addToCart(userId, productId, quantity = 1) {
     try {
-      // Validate quantity
       if (quantity <= 0) {
         return {
           success: false,
@@ -24,7 +20,6 @@ export class ManageCartUseCase {
         };
       }
 
-      // Check if product exists and is available
       const product = await this.productRepository.findById(productId);
       if (!product) {
         return {
@@ -50,7 +45,6 @@ export class ManageCartUseCase {
         };
       }
 
-      // Get or create user's cart
       let cart = await this.cartRepository.findByUserId(userId);
       if (!cart) {
         cart = new Cart({ userId, items: [], totalAmount: 0 });
@@ -59,7 +53,6 @@ export class ManageCartUseCase {
         cart = Cart.fromJSON(cart);
       }
 
-      // Add item to cart
       const result = cart.addItem(productId, quantity, product.price);
       if (!result.success) {
         return {
@@ -69,7 +62,6 @@ export class ManageCartUseCase {
         };
       }
 
-      // Update cart in repository
       const updatedCart = await this.cartRepository.update(cart.id, cart.toJSON());
 
       return {
@@ -91,7 +83,6 @@ export class ManageCartUseCase {
 
   async removeFromCart(userId, productId) {
     try {
-      // Get user's cart
       const cart = await this.cartRepository.findByUserId(userId);
       if (!cart) {
         return {
@@ -103,7 +94,7 @@ export class ManageCartUseCase {
 
       const cartEntity = Cart.fromJSON(cart);
       const result = cartEntity.removeItem(productId);
-      
+
       if (!result.success) {
         return {
           success: false,
@@ -112,7 +103,6 @@ export class ManageCartUseCase {
         };
       }
 
-      // Update cart in repository
       const updatedCart = await this.cartRepository.update(cartEntity.id, cartEntity.toJSON());
 
       return {
@@ -134,7 +124,6 @@ export class ManageCartUseCase {
 
   async updateCartItem(userId, productId, quantity) {
     try {
-      // Validate quantity
       if (quantity < 0) {
         return {
           success: false,
@@ -143,7 +132,6 @@ export class ManageCartUseCase {
         };
       }
 
-      // Get user's cart
       const cart = await this.cartRepository.findByUserId(userId);
       if (!cart) {
         return {
@@ -156,11 +144,9 @@ export class ManageCartUseCase {
       const cartEntity = Cart.fromJSON(cart);
 
       if (quantity === 0) {
-        // Remove item if quantity is 0
         return await this.removeFromCart(userId, productId);
       }
 
-      // Update item quantity
       const result = cartEntity.updateItemQuantity(productId, quantity);
       if (!result.success) {
         return {
@@ -170,7 +156,6 @@ export class ManageCartUseCase {
         };
       }
 
-      // Update cart in repository
       const updatedCart = await this.cartRepository.update(cartEntity.id, cartEntity.toJSON());
 
       return {
@@ -193,7 +178,7 @@ export class ManageCartUseCase {
   async getCart(userId) {
     try {
       const cart = await this.cartRepository.findByUserId(userId);
-      
+
       if (!cart) {
         return {
           success: true,

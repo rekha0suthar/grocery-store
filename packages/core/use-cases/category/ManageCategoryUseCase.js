@@ -2,10 +2,7 @@ import { CategoryRepository } from '../repositories/CategoryRepository.js';
 import { Category } from '../entities/Category.js';
 import appConfig from '../config/appConfig.js';
 
-/**
- * Manage Category Use Case - Clean Architecture
- * Business logic for category management
- */
+
 export class ManageCategoryUseCase {
   constructor() {
     this.categoryRepository = new CategoryRepository(appConfig.getDatabaseType());
@@ -13,7 +10,6 @@ export class ManageCategoryUseCase {
 
   async createCategory(categoryData, userId) {
     try {
-      // Input validation
       const validation = this.validateCategoryData(categoryData);
       if (!validation.isValid) {
         return {
@@ -23,7 +19,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Check if category name already exists
       const existingCategory = await this.categoryRepository.findByName(categoryData.name);
       if (existingCategory) {
         return {
@@ -33,13 +28,11 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Create category entity
       const categoryEntity = new Category({
         ...categoryData,
         isVisible: true
       });
 
-      // Save to repository
       const createdCategory = await this.categoryRepository.create(categoryEntity.toJSON());
 
       return {
@@ -61,7 +54,6 @@ export class ManageCategoryUseCase {
 
   async updateCategory(categoryId, updateData, userId) {
     try {
-      // Check if category exists
       const existingCategory = await this.categoryRepository.findById(categoryId);
       if (!existingCategory) {
         return {
@@ -71,7 +63,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Validate update data
       const validation = this.validateUpdateData(updateData);
       if (!validation.isValid) {
         return {
@@ -81,7 +72,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Update category
       const updatedCategory = await this.categoryRepository.update(categoryId, updateData);
 
       return {
@@ -103,7 +93,6 @@ export class ManageCategoryUseCase {
 
   async deleteCategory(categoryId, userId) {
     try {
-      // Check if category exists
       const existingCategory = await this.categoryRepository.findById(categoryId);
       if (!existingCategory) {
         return {
@@ -113,7 +102,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Check if category has products
       const productsInCategory = await this.categoryRepository.getProductsInCategory(categoryId);
       if (productsInCategory.length > 0) {
         return {
@@ -123,7 +111,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Soft delete (mark as not visible)
       await this.categoryRepository.update(categoryId, { isVisible: false });
 
       return {
@@ -146,7 +133,7 @@ export class ManageCategoryUseCase {
   async getCategories(filters = {}, limit = 50, offset = 0) {
     try {
       const categories = await this.categoryRepository.findAll(filters, limit, offset);
-      
+
       return {
         success: true,
         message: 'Categories retrieved successfully',
@@ -170,7 +157,7 @@ export class ManageCategoryUseCase {
     try {
       const categories = await this.categoryRepository.findAll({ isVisible: true });
       const categoryTree = this.buildCategoryTree(categories);
-      
+
       return {
         success: true,
         message: 'Category tree retrieved successfully',
@@ -221,12 +208,10 @@ export class ManageCategoryUseCase {
     const categoryMap = new Map();
     const rootCategories = [];
 
-    // Create category map
     categories.forEach(category => {
       categoryMap.set(category.id, { ...category, children: [] });
     });
 
-    // Build tree structure
     categories.forEach(category => {
       if (category.parentId) {
         const parent = categoryMap.get(category.parentId);
