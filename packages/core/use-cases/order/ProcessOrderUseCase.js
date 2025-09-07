@@ -1,89 +1,31 @@
-import { OrderRepository } from '../repositories/OrderRepository.js';
-import { CartRepository } from '../repositories/CartRepository.js';
-import { ProductRepository } from '../repositories/ProductRepository.js';
-import { Order } from '../entities/Order.js';
-import appConfig from '../config/appConfig.js';
+import { Order } from '../../entities/Order.js';
 
-
+/**
+ * Process Order Use Case - Business Logic
+ * Handles order processing and status updates
+ */
 export class ProcessOrderUseCase {
-  constructor() {
-    this.orderRepository = new OrderRepository(appConfig.getDatabaseType());
-    this.cartRepository = new CartRepository(appConfig.getDatabaseType());
-    this.productRepository = new ProductRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ orderRepo: { findById(id):Promise<Order>, update(id, data):Promise<Order> }, cartRepo: { findById(id):Promise<Cart> }, productRepo: { findById(id):Promise<Product>, update(id, data):Promise<Product> } }} deps
+   */
+  constructor({ orderRepo, cartRepo, productRepo }) {
+    this.orderRepository = orderRepo;
+    this.cartRepository = cartRepo;
+    this.productRepository = productRepo;
   }
 
-  async createOrder(userId, orderData) {
+  async execute(orderId, action, userRole, userId) {
     try {
-      const validation = this.validateOrderData(orderData);
-      if (!validation.isValid) {
+      // Authorization check
+      if (!this.canProcessOrder(userRole)) {
         return {
           success: false,
-          message: validation.message,
+          message: 'Insufficient permissions to process order',
           order: null
         };
       }
 
-      const cart = await this.cartRepository.findByUserId(userId);
-      if (!cart || cart.items.length === 0) {
-        return {
-          success: false,
-          message: 'Cart is empty',
-          order: null
-        };
-      }
-
-      const stockValidation = await this.validateCartStock(cart.items);
-      if (!stockValidation.isValid) {
-        return {
-          success: false,
-          message: stockValidation.message,
-          order: null
-        };
-      }
-
-      const orderEntity = new Order({
-        userId,
-        items: cart.items,
-        shippingAddress: orderData.shippingAddress,
-        billingAddress: orderData.billingAddress,
-        paymentMethod: orderData.paymentMethod,
-        status: 'pending'
-      });
-
-      const createdOrder = await this.orderRepository.create(orderEntity.toJSON());
-
-      await this.cartRepository.update(cart.id, { items: [], totalAmount: 0 });
-
-      await this.updateProductStock(cart.items);
-
-      return {
-        success: true,
-        message: 'Order created successfully',
-        order: Order.fromJSON(createdOrder)
-      };
-
-    } catch (error) {
-      console.error('Create order error:', error);
-      return {
-        success: false,
-        message: 'Order creation failed',
-        order: null,
-        error: error.message
-      };
-    }
-  }
-
-  async updateOrderStatus(orderId, status, userId) {
-    try {
-      const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
-      if (!validStatuses.includes(status)) {
-        return {
-          success: false,
-          message: 'Invalid order status',
-          order: null
-        };
-      }
-
+      // Get order
       const order = await this.orderRepository.findById(orderId);
       if (!order) {
         return {
@@ -93,138 +35,139 @@ export class ProcessOrderUseCase {
         };
       }
 
-      if (order.userId !== userId) {
+      // Validate order can be processed
+      if (!this.canProcessOrderStatus(order.status, action)) {
         return {
           success: false,
-          message: 'Unauthorized to update this order',
+          message: `Cannot ${action} order with status ${order.status}`,
           order: null
         };
       }
 
-      const updatedOrder = await this.orderRepository.update(orderId, { status });
-
-      return {
-        success: true,
-        message: 'Order status updated successfully',
-        order: Order.fromJSON(updatedOrder)
-      };
+      // Process based on action
+      switch (action) {
+        case 'confirm':
+          return await this.confirmOrder(order, userId);
+        case 'ship':
+          return await this.shipOrder(order, userId);
+        case 'deliver':
+          return await this.deliverOrder(order, userId);
+        case 'cancel':
+          return await this.cancelOrder(order, userId);
+        default:
+          return {
+            success: false,
+            message: 'Invalid action',
+            order: null
+          };
+      }
 
     } catch (error) {
-      console.error('Update order status error:', error);
+      console.error('ProcessOrderUseCase error:', error);
       return {
         success: false,
-        message: 'Failed to update order status',
+        message: 'Failed to process order',
         order: null,
         error: error.message
       };
     }
   }
 
-  async getOrder(orderId, userId) {
-    try {
-      const order = await this.orderRepository.findById(orderId);
-      if (!order) {
-        return {
-          success: false,
-          message: 'Order not found',
-          order: null
-        };
-      }
-
-      if (order.userId !== userId) {
-        return {
-          success: false,
-          message: 'Unauthorized to view this order',
-          order: null
-        };
-      }
-
-      return {
-        success: true,
-        message: 'Order retrieved successfully',
-        order: Order.fromJSON(order)
-      };
-
-    } catch (error) {
-      console.error('Get order error:', error);
-      return {
-        success: false,
-        message: 'Failed to retrieve order',
-        order: null,
-        error: error.message
-      };
-    }
+  canProcessOrder(userRole) {
+    return ['admin', 'store_manager'].includes(userRole);
   }
 
-  async getUserOrders(userId, limit = 20, offset = 0) {
-    try {
-      const orders = await this.orderRepository.findByUserId(userId, limit, offset);
+  canProcessOrderStatus(currentStatus, action) {
+    const validTransitions = {
+      'pending': ['confirm', 'cancel'],
+      'confirmed': ['ship', 'cancel'],
+      'shipped': ['deliver'],
+      'delivered': [],
+      'cancelled': []
+    };
 
-      return {
-        success: true,
-        message: 'Orders retrieved successfully',
-        orders: orders.map(order => Order.fromJSON(order)),
-        total: orders.length
-      };
-
-    } catch (error) {
-      console.error('Get user orders error:', error);
-      return {
-        success: false,
-        message: 'Failed to retrieve orders',
-        orders: [],
-        total: 0,
-        error: error.message
-      };
-    }
+    return validTransitions[currentStatus]?.includes(action) || false;
   }
 
-  async validateOrderData(orderData) {
-    if (!orderData || !orderData.shippingAddress || !orderData.paymentMethod) {
-      return {
-        isValid: false,
-        message: 'Shipping address and payment method are required'
-      };
-    }
+  async confirmOrder(order, userId) {
+    // Use entity business logic - start processing instead of just confirming
+    const orderEntity = order instanceof Order ? order : Order.fromJSON(order);
+    orderEntity.confirm();
+    orderEntity.startProcessing();
+    orderEntity.processedBy = userId;
+    orderEntity.processedAt = new Date();
+    
+    // Update order in repository
+    const updatedOrder = await this.orderRepository.update(order.id, orderEntity.toJSON());
 
-    if (!orderData.shippingAddress.street || !orderData.shippingAddress.city || !orderData.shippingAddress.zipCode) {
-      return {
-        isValid: false,
-        message: 'Complete shipping address is required'
-      };
-    }
-
-    return { isValid: true };
+    return {
+      success: true,
+      message: 'Order confirmed successfully',
+      order: Order.fromJSON(updatedOrder)
+    };
   }
 
-  async validateCartStock(cartItems) {
-    for (const item of cartItems) {
-      const product = await this.productRepository.findById(item.productId);
-      if (!product) {
-        return {
-          isValid: false,
-          message: `Product ${item.productId} not found`
-        };
-      }
+  async shipOrder(order, userId) {
+    // Update order status
+    const updatedOrder = await this.orderRepository.update(order.id, {
+      ...order,
+      status: 'shipped',
+      shippedAt: new Date().toISOString(),
+      shippedBy: userId
+    });
 
-      if (product.stock < item.quantity) {
-        return {
-          isValid: false,
-          message: `Insufficient stock for ${product.name}`
-        };
-      }
-    }
-
-    return { isValid: true };
+    return {
+      success: true,
+      message: 'Order shipped successfully',
+      order: Order.fromJSON(updatedOrder)
+    };
   }
 
-  async updateProductStock(cartItems) {
-    for (const item of cartItems) {
+  async deliverOrder(order, userId) {
+    // Update order status
+    const updatedOrder = await this.orderRepository.update(order.id, {
+      ...order,
+      status: 'delivered',
+      deliveredAt: new Date().toISOString(),
+      deliveredBy: userId
+    });
+
+    return {
+      success: true,
+      message: 'Order delivered successfully',
+      order: Order.fromJSON(updatedOrder)
+    };
+  }
+
+  async cancelOrder(order, userId) {
+    // Restore product stock
+    await this.restoreProductStock(order.items);
+
+    // Update order status
+    const updatedOrder = await this.orderRepository.update(order.id, {
+      ...order,
+      status: 'cancelled',
+      cancelledAt: new Date().toISOString(),
+      cancelledBy: userId
+    });
+
+    return {
+      success: true,
+      message: 'Order cancelled successfully',
+      order: Order.fromJSON(updatedOrder)
+    };
+  }
+
+  async restoreProductStock(orderItems) {
+    for (const item of orderItems) {
       const product = await this.productRepository.findById(item.productId);
       if (product) {
-        const newStock = product.stock - item.quantity;
-        await this.productRepository.update(item.productId, { stock: newStock });
+        await this.productRepository.update(item.productId, {
+          ...product,
+          stock: product.stock + item.quantity
+        });
       }
     }
   }
 }
+

@@ -1,16 +1,16 @@
-import { ProductRepository } from '../../repositories/ProductRepository.js';
-import { CategoryRepository } from '../../repositories/CategoryRepository.js';
 import { Product } from '../../entities/Product.js';
-import appConfig from '../../config/appConfig.js';
 
 /**
  * Create Product Use Case - Business Logic
  * Handles product creation with validation and business rules
  */
 export class CreateProductUseCase {
-  constructor() {
-    this.productRepository = new ProductRepository(appConfig.getDatabaseType());
-    this.categoryRepository = new CategoryRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ productRepo: { findBySku(sku):Promise<Product>, create(data):Promise<Product> }, categoryRepo: { findById(id):Promise<Category> } }} deps
+   */
+  constructor({ productRepo, categoryRepo }) {
+    this.productRepository = productRepo;
+    this.categoryRepository = categoryRepo;
   }
 
   async execute(productData, userRole, userId) {
@@ -19,13 +19,13 @@ export class CreateProductUseCase {
       if (!this.canCreateProduct(userRole)) {
         return {
           success: false,
-          message: 'Insufficient permissions to create products',
+          message: 'Insufficient permissions to create product',
           product: null
         };
       }
 
       // Input validation
-      const validation = this.validateInput(productData);
+      const validation = this.validateProductData(productData);
       if (!validation.isValid) {
         return {
           success: false,
@@ -34,7 +34,17 @@ export class CreateProductUseCase {
         };
       }
 
-      // Validate category exists
+      // Check if product with same SKU exists
+      const existingProduct = await this.productRepository.findBySku(productData.sku);
+      if (existingProduct) {
+        return {
+          success: false,
+          message: 'Product with this SKU already exists',
+          product: null
+        };
+      }
+
+      // Validate category if provided
       if (productData.categoryId) {
         const category = await this.categoryRepository.findById(productData.categoryId);
         if (!category) {
@@ -46,24 +56,23 @@ export class CreateProductUseCase {
         }
       }
 
-      // Check for duplicate SKU
-      const existingProduct = await this.productRepository.findBySku(productData.sku);
-      if (existingProduct) {
-        return {
-          success: false,
-          message: 'Product with this SKU already exists',
-          product: null
-        };
-      }
-
       // Create product entity
       const productEntity = new Product({
         ...productData,
         addedBy: userId,
-        isVisible: userRole === 'admin' ? productData.isVisible : false // Store managers need approval
+        isVisible: true
       });
 
-      // Save to repository
+      // Validate product entity
+      if (!productEntity.isValid()) {
+        return {
+          success: false,
+          message: 'Invalid product data',
+          product: null
+        };
+      }
+
+      // Save product
       const createdProduct = await this.productRepository.create(productEntity.toJSON());
 
       return {
@@ -87,33 +96,29 @@ export class CreateProductUseCase {
     return ['admin', 'store_manager'].includes(userRole);
   }
 
-  validateInput(productData) {
-    if (!productData || !productData.name || !productData.price || !productData.sku) {
-      return {
-        isValid: false,
-        message: 'Name, price, and SKU are required'
-      };
+  validateProductData(productData) {
+    if (!productData) {
+      return { isValid: false, message: 'Product data is required' };
     }
 
-    if (productData.name.trim().length < 2) {
-      return {
-        isValid: false,
-        message: 'Product name must be at least 2 characters long'
-      };
+    if (!productData.name || productData.name.trim().length === 0) {
+      return { isValid: false, message: 'Product name is required' };
     }
 
-    if (productData.price <= 0) {
-      return {
-        isValid: false,
-        message: 'Price must be greater than 0'
-      };
+    if (!productData.sku || productData.sku.trim().length === 0) {
+      return { isValid: false, message: 'Product SKU is required' };
+    }
+
+    if (!productData.price || productData.price <= 0) {
+      return { isValid: false, message: 'Product price must be greater than 0' };
+    }
+
+    if (productData.stock === undefined || productData.stock === null) {
+      return { isValid: false, message: 'Product stock is required' };
     }
 
     if (productData.stock < 0) {
-      return {
-        isValid: false,
-        message: 'Stock cannot be negative'
-      };
+      return { isValid: false, message: 'Product stock cannot be negative' };
     }
 
     return { isValid: true };

@@ -1,17 +1,18 @@
-import { ProductRepository } from '../../repositories/ProductRepository.js';
 import { Product } from '../../entities/Product.js';
-import appConfig from '../../config/appConfig.js';
 
 /**
  * Update Product Stock Use Case - Business Logic
  * Handles stock updates with business rules
  */
 export class UpdateProductStockUseCase {
-  constructor() {
-    this.productRepository = new ProductRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ productRepo: { findById(id):Promise<Product>, update(id, data):Promise<Product> } }} deps
+   */
+  constructor({ productRepo }) {
+    this.productRepository = productRepo;
   }
 
-  async execute(productId, stockChange, operation, userRole) {
+  async execute(productId, stockChange, userRole) {
     try {
       // Authorization check
       if (!this.canUpdateStock(userRole)) {
@@ -22,9 +23,26 @@ export class UpdateProductStockUseCase {
         };
       }
 
-      // Get current product
-      const currentProduct = await this.productRepository.findById(productId);
-      if (!currentProduct) {
+      // Input validation
+      if (!productId) {
+        return {
+          success: false,
+          message: 'Product ID is required',
+          product: null
+        };
+      }
+
+      if (typeof stockChange !== 'number') {
+        return {
+          success: false,
+          message: 'Stock change must be a number',
+          product: null
+        };
+      }
+
+      // Get product
+      const productData = await this.productRepository.findById(productId);
+      if (!productData) {
         return {
           success: false,
           message: 'Product not found',
@@ -32,48 +50,28 @@ export class UpdateProductStockUseCase {
         };
       }
 
-      const product = Product.fromJSON(currentProduct);
+      const product = Product.fromJSON(productData);
 
       // Calculate new stock
-      let newStock;
-      switch (operation) {
-        case 'add':
-          newStock = product.stock + stockChange;
-          break;
-        case 'subtract':
-          newStock = product.stock - stockChange;
-          break;
-        case 'set':
-          newStock = stockChange;
-          break;
-        default:
-          return {
-            success: false,
-            message: 'Invalid operation. Use add, subtract, or set',
-            product: null
-          };
-      }
-
-      // Validate new stock
+      const newStock = product.stock + stockChange;
       if (newStock < 0) {
         return {
           success: false,
-          message: 'Stock cannot be negative',
+          message: 'Insufficient stock for this operation',
           product: null
         };
       }
 
       // Update stock
-      const updatedProduct = await this.productRepository.update(productId, { stock: newStock });
+      product.setStock(newStock);
 
-      // Check for low stock alert
-      const alert = this.checkLowStockAlert(Product.fromJSON(updatedProduct));
+      // Save updated product
+      const updatedProduct = await this.productRepository.update(productId, product.toJSON());
 
       return {
         success: true,
         message: 'Stock updated successfully',
-        product: Product.fromJSON(updatedProduct),
-        alert
+        product: Product.fromJSON(updatedProduct)
       };
 
     } catch (error) {
@@ -89,16 +87,5 @@ export class UpdateProductStockUseCase {
 
   canUpdateStock(userRole) {
     return ['admin', 'store_manager'].includes(userRole);
-  }
-
-  checkLowStockAlert(product) {
-    if (product.stock <= product.minStock) {
-      return {
-        type: 'low_stock',
-        message: `Product "${product.name}" is running low on stock (${product.stock} remaining)`,
-        severity: product.stock === 0 ? 'critical' : 'warning'
-      };
-    }
-    return null;
   }
 }

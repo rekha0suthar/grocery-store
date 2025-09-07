@@ -1,4 +1,4 @@
-import { AuthorizationPolicy } from '../../../services/AuthorizationPolicy.js';
+import { AuthorizationPolicy } from '../../../services/AuthorizationPolicy';
 import { User } from '../../../entities/User.js';
 
 describe('AuthorizationPolicy - Application Policy', () => {

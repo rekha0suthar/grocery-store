@@ -1,5 +1,5 @@
-import { LoginPolicy } from '../../../services/LoginPolicy.js';
-import { FakeClock } from '../../utils/FakeClock.js';
+import { LoginPolicy } from '../../../services/LoginPolicy';
+import { FakeClock } from '../../utils/FakeClock';
 
 describe('LoginPolicy - Application Policy', () => {
   let clock;

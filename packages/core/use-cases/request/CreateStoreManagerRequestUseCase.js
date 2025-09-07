@@ -1,16 +1,17 @@
-import { RequestRepository } from '../../repositories/RequestRepository.js';
-import { UserRepository } from '../../repositories/UserRepository.js';
 import { Request } from '../../entities/Request.js';
-import appConfig from '../../config/appConfig.js';
+import { User } from '../../entities/User.js';
 
 /**
  * Create Store Manager Request Use Case - Business Logic
  * Handles store manager approval requests
  */
 export class CreateStoreManagerRequestUseCase {
-  constructor() {
-    this.requestRepository = new RequestRepository(appConfig.getDatabaseType());
-    this.userRepository = new UserRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ requestRepo: { findByUserAndType(userId, type, status):Promise<Request>, create(data):Promise<Request> }, userRepo: { findById(id):Promise<User> } }} deps
+   */
+  constructor({ requestRepo, userRepo }) {
+    this.requestRepository = requestRepo;
+    this.userRepository = userRepo;
   }
 
   async execute(userId, requestData) {
@@ -20,7 +21,32 @@ export class CreateStoreManagerRequestUseCase {
         return {
           success: false,
           message: 'User ID is required',
-          request: null
+          request: new Request({})
+        };
+      }
+
+      // Validate request data
+      if (!requestData || !requestData.storeName) {
+        return {
+          success: false,
+          message: 'Store name is required',
+          request: new Request({})
+        };
+      }
+
+      if (!requestData.storeAddress) {
+        return {
+          success: false,
+          message: 'Store address is required',
+          request: new Request({})
+        };
+      }
+
+      if (!requestData.businessLicense) {
+        return {
+          success: false,
+          message: 'Business license is required',
+          request: new Request({})
         };
       }
 
@@ -30,7 +56,7 @@ export class CreateStoreManagerRequestUseCase {
         return {
           success: false,
           message: 'User not found',
-          request: null
+          request: new Request({})
         };
       }
 
@@ -41,7 +67,7 @@ export class CreateStoreManagerRequestUseCase {
         return {
           success: false,
           message: 'User already has store manager privileges',
-          request: null
+          request: new Request({})
         };
       }
 
@@ -56,7 +82,7 @@ export class CreateStoreManagerRequestUseCase {
         return {
           success: false,
           message: 'You already have a pending store manager request',
-          request: null
+          request: new Request({})
         };
       }
 
@@ -66,9 +92,13 @@ export class CreateStoreManagerRequestUseCase {
         status: 'pending',
         requestedBy: userId,
         requestData: {
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
           reason: requestData.reason || '',
           experience: requestData.experience || '',
           storeName: requestData.storeName || '',
+          storeAddress: requestData.storeAddress || '',
           businessLicense: requestData.businessLicense || ''
         },
         priority: 'normal',
@@ -89,7 +119,7 @@ export class CreateStoreManagerRequestUseCase {
       return {
         success: false,
         message: 'Failed to submit store manager request',
-        request: null,
+        request: new Request({}),
         error: error.message
       };
     }

@@ -1,36 +1,32 @@
-import { RequestRepository } from '../../repositories/RequestRepository.js';
-import { UserRepository } from '../../repositories/UserRepository.js';
-import { CategoryRepository } from '../../repositories/CategoryRepository.js';
 import { Request } from '../../entities/Request.js';
 import { User } from '../../entities/User.js';
 import { Category } from '../../entities/Category.js';
-import appConfig from '../../config/appConfig.js';
 
-/**
- * Approve Request Use Case - Business Logic
- * Handles request approval by admin
- */
+
 export class ApproveRequestUseCase {
-  constructor() {
-    this.requestRepository = new RequestRepository(appConfig.getDatabaseType());
-    this.userRepository = new UserRepository(appConfig.getDatabaseType());
-    this.categoryRepository = new CategoryRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ requestRepo: { findById(id):Promise<Request>, update(id, data):Promise<Request> }, userRepo: { findById(id):Promise<User>, update(id, data):Promise<User> }, categoryRepo: { findById(id):Promise<Category>, create(data):Promise<Category> } }} deps
+   */
+  constructor({ requestRepo, userRepo, categoryRepo }) {
+    this.requestRepository = requestRepo;
+    this.userRepository = userRepo;
+    this.categoryRepository = categoryRepo;
   }
 
-  async execute(requestId, adminId, approvalData) {
+  async execute(requestId, approverId, userRole, action) {
     try {
-      // Input validation
-      if (!requestId || !adminId) {
+      // Authorization check
+      if (!this.canApproveRequest(userRole)) {
         return {
           success: false,
-          message: 'Request ID and admin ID are required',
+          message: 'Insufficient permissions to approve request',
           request: null
         };
       }
 
       // Get request
-      const requestData = await this.requestRepository.findById(requestId);
-      if (!requestData) {
+      const request = await this.requestRepository.findById(requestId);
+      if (!request) {
         return {
           success: false,
           message: 'Request not found',
@@ -38,145 +34,110 @@ export class ApproveRequestUseCase {
         };
       }
 
-      const request = Request.fromJSON(requestData);
-
-      // Check if request is pending
-      if (request.status !== 'pending') {
+      // Validate request can be processed
+      if (!request.canBeReviewed()) {
         return {
           success: false,
-          message: 'Request is not pending',
+          message: 'Request cannot be reviewed in current status',
           request: null
         };
       }
 
-      // Get admin user
-      const adminData = await this.userRepository.findById(adminId);
-      if (!adminData) {
+      // Process based on action
+      if (action === 'approve') {
+        return await this.approveRequest(request, approverId);
+      } else if (action === 'reject') {
+        return await this.rejectRequest(request, approverId);
+      } else {
         return {
           success: false,
-          message: 'Admin not found',
+          message: 'Invalid action',
           request: null
         };
       }
-
-      const admin = User.fromJSON(adminData);
-      if (!admin.isAdmin()) {
-        return {
-          success: false,
-          message: 'Only admins can approve requests',
-          request: null
-        };
-      }
-
-      // Process approval based on request type
-      let result;
-      switch (request.type) {
-        case 'store_manager_approval':
-          result = await this.approveStoreManagerRequest(request, adminId);
-          break;
-        case 'category_creation':
-          result = await this.approveCategoryCreation(request, adminId);
-          break;
-        case 'category_modification':
-          result = await this.approveCategoryModification(request, adminId);
-          break;
-        default:
-          return {
-            success: false,
-            message: 'Unknown request type',
-            request: null
-          };
-      }
-
-      return result;
 
     } catch (error) {
-      console.error('Request approval error:', error);
+      console.error('ApproveRequestUseCase error:', error);
       return {
         success: false,
-        message: 'Failed to approve request',
+        message: 'Failed to process request',
         request: null,
         error: error.message
       };
     }
   }
 
-  async approveStoreManagerRequest(request, adminId) {
-    // Update user role
-    await this.userRepository.update(request.requestedBy, { role: 'store_manager' });
+  canApproveRequest(userRole) {
+    return ['admin', 'store_manager'].includes(userRole);
+  }
 
-    // Update request status
-    const updatedRequest = await this.requestRepository.update(request.id, {
-      status: 'approved',
-      reviewedBy: adminId,
-      reviewedAt: new Date().toISOString()
-    });
+  async approveRequest(request, approverId) {
+    // Use entity business logic - handle both entity and JSON
+    const requestEntity = request instanceof Request ? request : Request.fromJSON(request);
+    requestEntity.approve(approverId);
+    
+    // Update request in repository
+    const updatedRequest = await this.requestRepository.update(request.id, requestEntity.toJSON());
+
+    // Execute the approved request
+    await this.executeApprovedRequest(request);
 
     return {
       success: true,
-      message: 'Store manager request approved successfully',
+      message: 'Request approved successfully',
       request: Request.fromJSON(updatedRequest)
     };
   }
 
-  async approveCategoryCreation(request, adminId) {
-    const categoryData = request.requestData;
-    
-    // Create category
-    const category = new Category({
-      name: categoryData.name,
-      description: categoryData.description,
-      slug: categoryData.slug,
-      imageUrl: categoryData.imageUrl,
-      parentId: categoryData.parentId,
-      sortOrder: categoryData.sortOrder,
-      isVisible: true
-    });
-
-    const createdCategory = await this.categoryRepository.create(category.toJSON());
-
+  async rejectRequest(request, approverId) {
     // Update request status
     const updatedRequest = await this.requestRepository.update(request.id, {
-      status: 'approved',
-      reviewedBy: adminId,
-      reviewedAt: new Date().toISOString()
+      ...request,
+      status: 'rejected',
+      rejectedAt: new Date().toISOString(),
+      rejectedBy: approverId
     });
 
     return {
       success: true,
-      message: 'Category creation request approved successfully',
-      request: Request.fromJSON(updatedRequest),
-      category: Category.fromJSON(createdCategory)
+      message: 'Request rejected successfully',
+      request: Request.fromJSON(updatedRequest)
     };
   }
 
-  async approveCategoryModification(request, adminId) {
+  async executeApprovedRequest(request) {
+    switch (request.type) {
+      case 'store_manager_approval':
+        await this.promoteToStoreManager(request);
+        break;
+      case 'category_creation':
+        await this.createCategory(request);
+        break;
+      case 'category_modification':
+        await this.modifyCategory(request);
+        break;
+      default:
+        console.warn(`Unknown request type: ${request.type}`);
+    }
+  }
+
+  async promoteToStoreManager(request) {
+    const user = await this.userRepository.findById(request.requesterId);
+    if (user) {
+      await this.userRepository.update(user.id, {
+        ...user,
+        role: 'store_manager'
+      });
+    }
+  }
+
+  async createCategory(request) {
     const categoryData = request.requestData;
-    
-    // Update category
-    const updatedCategory = await this.categoryRepository.update(
-      categoryData.categoryId,
-      {
-        name: categoryData.name,
-        description: categoryData.description,
-        imageUrl: categoryData.imageUrl,
-        sortOrder: categoryData.sortOrder,
-        isVisible: categoryData.isVisible
-      }
-    );
+    await this.categoryRepository.create(categoryData);
+  }
 
-    // Update request status
-    const updatedRequest = await this.requestRepository.update(request.id, {
-      status: 'approved',
-      reviewedBy: adminId,
-      reviewedAt: new Date().toISOString()
-    });
-
-    return {
-      success: true,
-      message: 'Category modification request approved successfully',
-      request: Request.fromJSON(updatedRequest),
-      category: Category.fromJSON(updatedCategory)
-    };
+  async modifyCategory(request) {
+    const categoryData = request.requestData;
+    await this.categoryRepository.update(categoryData.id, categoryData);
   }
 }
