@@ -137,6 +137,12 @@ export class Category extends BaseEntity {
     };
   }
 
+  canBeDeleted() {
+    // Business rule: Category can be deleted if it has no active products
+    // For now, allow deletion of all categories
+    return true;
+  }
+
   static fromJSON(data) {
     return new Category(data);
   }

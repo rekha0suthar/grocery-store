@@ -107,6 +107,10 @@ export class Cart extends BaseEntity {
     this.totalAmount = this.items.reduce((total, item) => total + item.lineTotal(), 0);
   }
 
+  calculateTotals() {
+    this.recomputeTotals();
+  }
+
   getSubtotal() {
     return this.items.reduce((total, item) => total + item.lineTotal(), 0);
   }
@@ -218,6 +222,13 @@ export class Cart extends BaseEntity {
       abandonedAt: this.abandonedAt,
       lastActivityAt: this.lastActivityAt
     };
+  }
+
+  calculateTotals() {
+    this.totalItems = this.items.reduce((total, item) => total + item.quantity, 0);
+    this.totalAmount = this.items.reduce((total, item) => total + (item.productPrice * item.quantity), 0);
+    this.updateTimestamp();
+    return this;
   }
 
   static fromJSON(data) {

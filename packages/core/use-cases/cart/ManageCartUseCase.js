@@ -1,196 +1,42 @@
-import { CartRepository } from '../repositories/CartRepository.js';
-import { ProductRepository } from '../repositories/ProductRepository.js';
-import { Cart } from '../entities/Cart.js';
-import appConfig from '../config/appConfig.js';
-
+import { Cart } from '../../entities/Cart.js';
+import { Product } from '../../entities/Product.js';
 
 export class ManageCartUseCase {
-  constructor() {
-    this.cartRepository = new CartRepository(appConfig.getDatabaseType());
-    this.productRepository = new ProductRepository(appConfig.getDatabaseType());
-  }
-
-  async addToCart(userId, productId, quantity = 1) {
-    try {
-      if (quantity <= 0) {
-        return {
-          success: false,
-          message: 'Quantity must be greater than 0',
-          cart: null
-        };
-      }
-
-      const product = await this.productRepository.findById(productId);
-      if (!product) {
-        return {
-          success: false,
-          message: 'Product not found',
-          cart: null
-        };
-      }
-
-      if (!product.isVisible) {
-        return {
-          success: false,
-          message: 'Product is not available',
-          cart: null
-        };
-      }
-
-      if (product.stock < quantity) {
-        return {
-          success: false,
-          message: 'Insufficient stock available',
-          cart: null
-        };
-      }
-
-      let cart = await this.cartRepository.findByUserId(userId);
-      if (!cart) {
-        cart = new Cart({ userId, items: [], totalAmount: 0 });
-        cart = await this.cartRepository.create(cart.toJSON());
-      } else {
-        cart = Cart.fromJSON(cart);
-      }
-
-      const result = cart.addItem(productId, quantity, product.price);
-      if (!result.success) {
-        return {
-          success: false,
-          message: result.message,
-          cart: null
-        };
-      }
-
-      const updatedCart = await this.cartRepository.update(cart.id, cart.toJSON());
-
-      return {
-        success: true,
-        message: 'Item added to cart successfully',
-        cart: Cart.fromJSON(updatedCart)
-      };
-
-    } catch (error) {
-      console.error('Add to cart error:', error);
-      return {
-        success: false,
-        message: 'Failed to add item to cart',
-        cart: null,
-        error: error.message
-      };
-    }
-  }
-
-  async removeFromCart(userId, productId) {
-    try {
-      const cart = await this.cartRepository.findByUserId(userId);
-      if (!cart) {
-        return {
-          success: false,
-          message: 'Cart not found',
-          cart: null
-        };
-      }
-
-      const cartEntity = Cart.fromJSON(cart);
-      const result = cartEntity.removeItem(productId);
-
-      if (!result.success) {
-        return {
-          success: false,
-          message: result.message,
-          cart: null
-        };
-      }
-
-      const updatedCart = await this.cartRepository.update(cartEntity.id, cartEntity.toJSON());
-
-      return {
-        success: true,
-        message: 'Item removed from cart successfully',
-        cart: Cart.fromJSON(updatedCart)
-      };
-
-    } catch (error) {
-      console.error('Remove from cart error:', error);
-      return {
-        success: false,
-        message: 'Failed to remove item from cart',
-        cart: null,
-        error: error.message
-      };
-    }
-  }
-
-  async updateCartItem(userId, productId, quantity) {
-    try {
-      if (quantity < 0) {
-        return {
-          success: false,
-          message: 'Quantity cannot be negative',
-          cart: null
-        };
-      }
-
-      const cart = await this.cartRepository.findByUserId(userId);
-      if (!cart) {
-        return {
-          success: false,
-          message: 'Cart not found',
-          cart: null
-        };
-      }
-
-      const cartEntity = Cart.fromJSON(cart);
-
-      if (quantity === 0) {
-        return await this.removeFromCart(userId, productId);
-      }
-
-      const result = cartEntity.updateItemQuantity(productId, quantity);
-      if (!result.success) {
-        return {
-          success: false,
-          message: result.message,
-          cart: null
-        };
-      }
-
-      const updatedCart = await this.cartRepository.update(cartEntity.id, cartEntity.toJSON());
-
-      return {
-        success: true,
-        message: 'Cart item updated successfully',
-        cart: Cart.fromJSON(updatedCart)
-      };
-
-    } catch (error) {
-      console.error('Update cart item error:', error);
-      return {
-        success: false,
-        message: 'Failed to update cart item',
-        cart: null,
-        error: error.message
-      };
-    }
+  /**
+   * @param {{ cartRepo: { findByUserId(userId):Promise<Cart>, create(data):Promise<Cart>, update(id, data):Promise<Cart>, delete(id):Promise<boolean> }, productRepo: { findById(id):Promise<Product> } }} deps
+   */
+  constructor({ cartRepo, productRepo }) {
+    this.cartRepository = cartRepo;
+    this.productRepository = productRepo;
   }
 
   async getCart(userId) {
     try {
-      const cart = await this.cartRepository.findByUserId(userId);
+      if (!userId) {
+        return {
+          success: false,
+          message: 'User ID is required',
+          cart: null
+        };
+      }
 
-      if (!cart) {
+      const cartData = await this.cartRepository.findByUserId(userId);
+
+      if (!cartData) {
+        // Create empty cart for user
+        const newCart = new Cart({ userId, items: [] });
+        const createdCart = await this.cartRepository.create(newCart.toJSON());
         return {
           success: true,
-          message: 'Cart is empty',
-          cart: null
+          message: 'Cart retrieved successfully',
+          cart: Cart.fromJSON(createdCart)
         };
       }
 
       return {
         success: true,
         message: 'Cart retrieved successfully',
-        cart: Cart.fromJSON(cart)
+        cart: Cart.fromJSON(cartData)
       };
 
     } catch (error) {
@@ -204,21 +50,96 @@ export class ManageCartUseCase {
     }
   }
 
-  async clearCart(userId) {
+  async updateCartItem(userId, productId, quantity) {
     try {
-      const cart = await this.cartRepository.findByUserId(userId);
-      if (!cart) {
+      if (!userId || !productId) {
         return {
-          success: true,
-          message: 'Cart is already empty',
+          success: false,
+          message: 'User ID and product ID are required',
           cart: null
         };
       }
 
-      const cartEntity = Cart.fromJSON(cart);
-      cartEntity.clearItems();
+      const cartData = await this.cartRepository.findByUserId(userId);
+      if (!cartData) {
+        return {
+          success: false,
+          message: 'Cart not found',
+          cart: null
+        };
+      }
 
-      const updatedCart = await this.cartRepository.update(cartEntity.id, cartEntity.toJSON());
+      const cart = Cart.fromJSON(cartData);
+
+      if (quantity <= 0) {
+        // Remove item from cart
+        cart.removeItem(productId);
+      } else {
+        // Update item quantity
+        const productData = await this.productRepository.findById(productId);
+        if (!productData) {
+          return {
+            success: false,
+            message: 'Product not found',
+            cart: null
+          };
+        }
+
+        const product = Product.fromJSON(productData);
+        if (product.stock < quantity) {
+          return {
+            success: false,
+            message: `Only ${product.stock} items available in stock`,
+            cart: null
+          };
+        }
+
+        cart.updateItemQuantity(productId, quantity);
+      }
+
+      cart.calculateTotals();
+      const updatedCart = await this.cartRepository.update(cart.id, cart.toJSON());
+
+      return {
+        success: true,
+        message: 'Cart updated successfully',
+        cart: Cart.fromJSON(updatedCart)
+      };
+
+    } catch (error) {
+      console.error('Update cart error:', error);
+      return {
+        success: false,
+        message: 'Failed to update cart',
+        cart: null,
+        error: error.message
+      };
+    }
+  }
+
+  async clearCart(userId) {
+    try {
+      if (!userId) {
+        return {
+          success: false,
+          message: 'User ID is required',
+          cart: null
+        };
+      }
+
+      const cartData = await this.cartRepository.findByUserId(userId);
+      if (!cartData) {
+        return {
+          success: false,
+          message: 'Cart not found',
+          cart: null
+        };
+      }
+
+      const cart = Cart.fromJSON(cartData);
+      cart.clearItems();
+
+      const updatedCart = await this.cartRepository.update(cart.id, cart.toJSON());
 
       return {
         success: true,
@@ -231,6 +152,57 @@ export class ManageCartUseCase {
       return {
         success: false,
         message: 'Failed to clear cart',
+        cart: null,
+        error: error.message
+      };
+    }
+  }
+
+  async removeCartItem(userId, productId) {
+    try {
+      if (!userId || !productId) {
+        return {
+          success: false,
+          message: 'User ID and product ID are required',
+          cart: null
+        };
+      }
+
+      const cartData = await this.cartRepository.findByUserId(userId);
+      if (!cartData) {
+        return {
+          success: false,
+          message: 'Cart not found',
+          cart: null
+        };
+      }
+
+      const cart = Cart.fromJSON(cartData);
+      const itemExists = cart.items.some(item => item.productId === productId);
+      
+      if (!itemExists) {
+        return {
+          success: false,
+          message: 'Item not found in cart',
+          cart: null
+        };
+      }
+
+      cart.removeItem(productId);
+      cart.calculateTotals();
+      const updatedCart = await this.cartRepository.update(cart.id, cart.toJSON());
+
+      return {
+        success: true,
+        message: 'Item removed from cart successfully',
+        cart: Cart.fromJSON(updatedCart)
+      };
+
+    } catch (error) {
+      console.error('Remove cart item error:', error);
+      return {
+        success: false,
+        message: 'Failed to remove cart item',
         cart: null,
         error: error.message
       };

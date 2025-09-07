@@ -1,15 +1,12 @@
-import { UserRepository } from '../../repositories/UserRepository.js';
 import { User } from '../../entities/User.js';
-import bcrypt from 'bcryptjs';
-import appConfig from '../../config/appConfig.js';
 
-/**
- * Create User Use Case - Business Logic
- * Handles user creation with validation and business rules
- */
 export class CreateUserUseCase {
-  constructor() {
-    this.userRepository = new UserRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ userRepo: { findByEmail(email):Promise<User>, create(data):Promise<User> }, passwordHasher: { hash(password):Promise<string> } }} deps
+   */
+  constructor({ userRepo, passwordHasher }) {
+    this.userRepository = userRepo;
+    this.passwordHasher = passwordHasher;
   }
 
   async execute(userData) {
@@ -24,10 +21,8 @@ export class CreateUserUseCase {
         };
       }
 
-      const { email, name, password, role = 'customer', phone, address } = userData;
-
       // Check if user already exists
-      const existingUser = await this.userRepository.findByEmail(email);
+      const existingUser = await this.userRepository.findByEmail(userData.email);
       if (existingUser) {
         return {
           success: false,
@@ -37,27 +32,30 @@ export class CreateUserUseCase {
       }
 
       // Hash password
-      const passwordHash = await bcrypt.hash(password, 12);
+      const hashedPassword = await this.passwordHasher.hash(userData.password);
 
       // Create user entity
       const userEntity = new User({
-        email,
-        name,
-        password: passwordHash,
-        role,
-        phone,
-        address,
-        isEmailVerified: false,
-        isPhoneVerified: false
+        ...userData,
+        password: hashedPassword
       });
 
-      // Save to repository
-      const createdUser = await this.userRepository.create(userEntity.toJSON());
+      // Validate user entity
+      if (!userEntity.isValid()) {
+        return {
+          success: false,
+          message: 'Invalid user data',
+          user: null
+        };
+      }
+
+      // Save user
+      const createdUser = await this.userRepository.create(userEntity.toPersistence());
 
       return {
         success: true,
         message: 'User created successfully',
-        user: User.fromJSON(createdUser)
+        user: User.fromJSON(createdUser).toPublicJSON()
       };
 
     } catch (error) {
@@ -72,37 +70,24 @@ export class CreateUserUseCase {
   }
 
   validateInput(userData) {
-    if (!userData || !userData.email || !userData.name || !userData.password) {
-      return {
-        isValid: false,
-        message: 'Email, name, and password are required'
-      };
+    if (!userData) {
+      return { isValid: false, message: 'User data is required' };
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userData.email)) {
-      return {
-        isValid: false,
-        message: 'Invalid email format'
-      };
+    if (!userData.email) {
+      return { isValid: false, message: 'Email is required' };
     }
 
-    // Password validation
-    if (userData.password.length < 8) {
-      return {
-        isValid: false,
-        message: 'Password must be at least 8 characters long'
-      };
+    if (!userData.password) {
+      return { isValid: false, message: 'Password is required' };
     }
 
-    // Role validation
-    const validRoles = ['admin', 'store_manager', 'customer'];
-    if (userData.role && !validRoles.includes(userData.role)) {
-      return {
-        isValid: false,
-        message: 'Invalid role. Must be admin, store_manager, or customer'
-      };
+    if (!userData.name) {
+      return { isValid: false, message: 'Name is required' };
+    }
+
+    if (userData.password.length < 6) {
+      return { isValid: false, message: 'Password must be at least 6 characters long' };
     }
 
     return { isValid: true };

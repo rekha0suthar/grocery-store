@@ -1,5 +1,5 @@
 import { Order, OrderItem } from '../../../entities/Order.js';
-import { InvalidTransitionError } from '../../../errors/DomainErrors.js';
+import { InvalidTransitionError } from '../../../errors/DomainErrors';
 
 // Test builders
 const anOrderItem = (overrides = {}) => new OrderItem({

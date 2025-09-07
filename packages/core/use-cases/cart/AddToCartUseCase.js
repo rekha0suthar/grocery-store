@@ -1,22 +1,19 @@
-import { CartRepository } from '../../repositories/CartRepository.js';
-import { ProductRepository } from '../../repositories/ProductRepository.js';
 import { Cart } from '../../entities/Cart.js';
 import { CartItem } from '../../entities/CartItem.js';
-import appConfig from '../../config/appConfig.js';
+import { Product } from '../../entities/Product.js';
 
-/**
- * Add to Cart Use Case - Business Logic
- * Handles adding products to cart with validation
- */
+
 export class AddToCartUseCase {
-  constructor() {
-    this.cartRepository = new CartRepository(appConfig.getDatabaseType());
-    this.productRepository = new ProductRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ cartRepo: { findByUserId(userId):Promise<Cart>, create(data):Promise<Cart>, update(id, data):Promise<Cart> }, productRepo: { findById(id):Promise<Product> } }} deps
+   */
+  constructor({ cartRepo, productRepo }) {
+    this.cartRepository = cartRepo;
+    this.productRepository = productRepo;
   }
 
   async execute(userId, productId, quantity) {
     try {
-      // Input validation
       if (!userId || !productId || !quantity) {
         return {
           success: false,
@@ -33,7 +30,6 @@ export class AddToCartUseCase {
         };
       }
 
-      // Get product
       const productData = await this.productRepository.findById(productId);
       if (!productData) {
         return {
@@ -45,7 +41,6 @@ export class AddToCartUseCase {
 
       const product = Product.fromJSON(productData);
 
-      // Check product availability
       if (!product.isVisible) {
         return {
           success: false,
@@ -62,12 +57,10 @@ export class AddToCartUseCase {
         };
       }
 
-      // Get or create cart
       let cartData = await this.cartRepository.findByUserId(userId);
       let cart;
 
       if (!cartData) {
-        // Create new cart
         cart = new Cart({ userId, items: [] });
         cartData = await this.cartRepository.create(cart.toJSON());
         cart = Cart.fromJSON(cartData);
@@ -81,7 +74,7 @@ export class AddToCartUseCase {
       if (existingItemIndex >= 0) {
         // Update existing item
         const newQuantity = cart.items[existingItemIndex].quantity + quantity;
-        
+
         if (product.stock < newQuantity) {
           return {
             success: false,

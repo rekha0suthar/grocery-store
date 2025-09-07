@@ -27,6 +27,8 @@ export class Order extends BaseEntity {
     this.trackingNumber = data.trackingNumber || null;
     this.cancelledAt = data.cancelledAt || null;
     this.cancellationReason = data.cancellationReason || null;
+    this.processedBy = data.processedBy || null;
+    this.processedAt = data.processedAt || null;
   }
 
   // Domain validation
@@ -219,7 +221,7 @@ export class Order extends BaseEntity {
       ...base,
       orderNumber: this.orderNumber,
       userId: this.userId,
-      items: this.items.map(item => item.toJSON()),
+      items: this.items.map(item => item.toJSON ? item.toJSON() : item),
       status: this.status,
       totalAmount: this.totalAmount,
       discountAmount: this.discountAmount,
@@ -255,17 +257,15 @@ export class OrderItem extends BaseEntity {
   constructor(data = {}) {
     super(data.id);
     this.productId = data.productId || null;
-    this.productName = data.productName || '';
+    this.productName = data.productName || null;
     this.productPrice = data.productPrice || 0;
-    this.quantity = data.quantity || 1;
-    this.unit = data.unit || 'piece';
+    this.quantity = data.quantity || 0;
   }
 
   // Domain validation
   isValid() {
     return this.validateProductId() && this.validateQuantity() && this.validatePrice();
   }
-
   validateProductId() {
     return this.productId !== null;
   }

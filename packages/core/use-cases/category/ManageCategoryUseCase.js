@@ -1,15 +1,35 @@
-import { CategoryRepository } from '../repositories/CategoryRepository.js';
-import { Category } from '../entities/Category.js';
-import appConfig from '../config/appConfig.js';
+import { Category } from '../../entities/Category.js';
 
-
+/**
+ * Manage Category Use Case - Business Logic
+ * Handles category creation, updates, and management
+ */
 export class ManageCategoryUseCase {
-  constructor() {
-    this.categoryRepository = new CategoryRepository(appConfig.getDatabaseType());
+  /**
+   * @param {{ categoryRepo: { findByName(name):Promise<Category>, findById(id):Promise<Category>, create(data):Promise<Category>, update(id, data):Promise<Category>, findAll(filters, limit, offset):Promise<Category[]> } }} deps
+   */
+  constructor({ categoryRepo }) {
+    this.categoryRepository = categoryRepo;
   }
 
-  async createCategory(categoryData, userId) {
+  async createCategory(categoryData, userRole, userId) {
     try {
+      if (!this.canManageCategories(userRole)) {
+        return {
+          success: false,
+          message: 'Insufficient permissions to manage categories',
+          category: null
+        };
+      }
+
+      if (!categoryData) {
+        return {
+          success: false,
+          message: 'Category data is required',
+          category: null
+        };
+      }
+
       const validation = this.validateCategoryData(categoryData);
       if (!validation.isValid) {
         return {
@@ -28,12 +48,15 @@ export class ManageCategoryUseCase {
         };
       }
 
-      const categoryEntity = new Category({
-        ...categoryData,
-        isVisible: true
+      const category = new Category({
+        name: categoryData.name,
+        description: categoryData.description || '',
+        parentId: categoryData.parentId || null,
+        isActive: true,
+        createdBy: userId
       });
 
-      const createdCategory = await this.categoryRepository.create(categoryEntity.toJSON());
+      const createdCategory = await this.categoryRepository.create(category.toJSON());
 
       return {
         success: true,
@@ -45,15 +68,23 @@ export class ManageCategoryUseCase {
       console.error('Category creation error:', error);
       return {
         success: false,
-        message: 'Category creation failed',
+        message: 'Failed to create category',
         category: null,
         error: error.message
       };
     }
   }
 
-  async updateCategory(categoryId, updateData, userId) {
+  async updateCategory(categoryId, updateData, userRole, userId) {
     try {
+      if (!this.canManageCategories(userRole)) {
+        return {
+          success: false,
+          message: 'Insufficient permissions to manage categories',
+          category: null
+        };
+      }
+
       const existingCategory = await this.categoryRepository.findById(categoryId);
       if (!existingCategory) {
         return {
@@ -63,7 +94,15 @@ export class ManageCategoryUseCase {
         };
       }
 
-      const validation = this.validateUpdateData(updateData);
+      const category = Category.fromJSON(existingCategory);
+
+      // Update category data
+      if (updateData.name !== undefined) category.name = updateData.name;
+      if (updateData.description !== undefined) category.description = updateData.description;
+      if (updateData.parentId !== undefined) category.parentId = updateData.parentId;
+      if (updateData.isActive !== undefined) category.isActive = updateData.isActive;
+
+      const validation = this.validateCategoryData(category.toJSON());
       if (!validation.isValid) {
         return {
           success: false,
@@ -72,7 +111,18 @@ export class ManageCategoryUseCase {
         };
       }
 
-      const updatedCategory = await this.categoryRepository.update(categoryId, updateData);
+      // Check for name conflicts
+      if (updateData.name !== undefined && updateData.name !== existingCategory.name) {
+        const conflictingCategory = await this.categoryRepository.findByName(updateData.name);
+        if (conflictingCategory && conflictingCategory.id !== categoryId) {
+          return {
+            success: false,
+            message: 'Category with this name already exists',
+            category: null
+          };
+        }
+      }
+      const updatedCategory = await this.categoryRepository.update(categoryId, category.toJSON());
 
       return {
         success: true,
@@ -84,15 +134,73 @@ export class ManageCategoryUseCase {
       console.error('Category update error:', error);
       return {
         success: false,
-        message: 'Category update failed',
+        message: 'Failed to update category',
         category: null,
         error: error.message
       };
     }
   }
 
-  async deleteCategory(categoryId, userId) {
+  async getCategory(categoryId) {
     try {
+      const categoryData = await this.categoryRepository.findById(categoryId);
+      if (!categoryData) {
+        return {
+          success: false,
+          message: 'Category not found',
+          category: null
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Category retrieved successfully',
+        category: Category.fromJSON(categoryData)
+      };
+
+    } catch (error) {
+      console.error('Category retrieval error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve category',
+        category: null,
+        error: error.message
+      };
+    }
+  }
+
+  async getAllCategories(filters = {}, limit = 50, offset = 0) {
+    try {
+      const categoriesData = await this.categoryRepository.findAll(filters, limit, offset);
+      const categories = categoriesData.map(data => Category.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Categories retrieved successfully',
+        categories: categories
+      };
+
+    } catch (error) {
+      console.error('Categories retrieval error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve categories',
+        categories: [],
+        error: error.message
+      };
+    }
+  }
+
+  async deleteCategory(categoryId, userRole, userId) {
+    try {
+      if (!this.canManageCategories(userRole)) {
+        return {
+          success: false,
+          message: 'Insufficient permissions to manage categories',
+          category: null
+        };
+      }
+
       const existingCategory = await this.categoryRepository.findById(categoryId);
       if (!existingCategory) {
         return {
@@ -102,16 +210,18 @@ export class ManageCategoryUseCase {
         };
       }
 
-      const productsInCategory = await this.categoryRepository.getProductsInCategory(categoryId);
-      if (productsInCategory.length > 0) {
+      const category = Category.fromJSON(existingCategory);
+
+      // Check if category can be deleted (business rules)
+      if (!category.canBeDeleted()) {
         return {
           success: false,
-          message: 'Cannot delete category with existing products',
+          message: 'Category cannot be deleted due to business constraints',
           category: null
         };
       }
 
-      await this.categoryRepository.update(categoryId, { isVisible: false });
+      await this.categoryRepository.delete(categoryId);
 
       return {
         success: true,
@@ -123,106 +233,70 @@ export class ManageCategoryUseCase {
       console.error('Category deletion error:', error);
       return {
         success: false,
-        message: 'Category deletion failed',
+        message: 'Failed to delete category',
         category: null,
         error: error.message
       };
     }
   }
 
-  async getCategories(filters = {}, limit = 50, offset = 0) {
+  async getCategoryById(categoryId) {
     try {
-      const categories = await this.categoryRepository.findAll(filters, limit, offset);
+      const categoryData = await this.categoryRepository.findById(categoryId);
+      if (!categoryData) {
+        return {
+          success: false,
+          message: 'Category not found',
+          category: null
+        };
+      }
 
       return {
         success: true,
-        message: 'Categories retrieved successfully',
-        categories: categories.map(category => Category.fromJSON(category)),
-        total: categories.length
+        message: 'Category retrieved successfully',
+        category: Category.fromJSON(categoryData)
       };
 
     } catch (error) {
-      console.error('Get categories error:', error);
+      console.error('Category retrieval error:', error);
       return {
         success: false,
-        message: 'Failed to retrieve categories',
-        categories: [],
-        total: 0,
-        error: error.message
-      };
-    }
-  }
-
-  async getCategoryTree() {
-    try {
-      const categories = await this.categoryRepository.findAll({ isVisible: true });
-      const categoryTree = this.buildCategoryTree(categories);
-
-      return {
-        success: true,
-        message: 'Category tree retrieved successfully',
-        categories: categoryTree
-      };
-
-    } catch (error) {
-      console.error('Get category tree error:', error);
-      return {
-        success: false,
-        message: 'Failed to retrieve category tree',
-        categories: [],
+        message: 'Failed to retrieve category',
+        category: null,
         error: error.message
       };
     }
   }
 
   validateCategoryData(categoryData) {
-    if (!categoryData || !categoryData.name) {
+    if (!categoryData.name || categoryData.name.trim().length === 0) {
       return {
         isValid: false,
         message: 'Category name is required'
       };
     }
 
-    if (categoryData.name.length < 2) {
+    if (categoryData.name.length > 100) {
       return {
         isValid: false,
-        message: 'Category name must be at least 2 characters long'
+        message: 'Category name must be less than 100 characters'
       };
     }
 
-    return { isValid: true };
-  }
-
-  validateUpdateData(updateData) {
-    if (updateData.name && updateData.name.length < 2) {
+    if (categoryData.description && categoryData.description.length > 500) {
       return {
         isValid: false,
-        message: 'Category name must be at least 2 characters long'
+        message: 'Category description must be less than 500 characters'
       };
     }
 
-    return { isValid: true };
+    return {
+      isValid: true,
+      message: 'Category data is valid'
+    };
   }
 
-  buildCategoryTree(categories) {
-    const categoryMap = new Map();
-    const rootCategories = [];
-
-    categories.forEach(category => {
-      categoryMap.set(category.id, { ...category, children: [] });
-    });
-
-    categories.forEach(category => {
-      if (category.parentId) {
-        const parent = categoryMap.get(category.parentId);
-        if (parent) {
-          parent.children.push(categoryMap.get(category.id));
-        }
-      } else {
-        rootCategories.push(categoryMap.get(category.id));
-      }
-    });
-
-    return rootCategories;
+  canManageCategories(userRole) {
+    return ['admin', 'store_manager'].includes(userRole);
   }
 }
