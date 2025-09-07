@@ -1,355 +1,226 @@
 import { BaseEntity } from './BaseEntity.js';
+import { CartItem } from './CartItem.js';
 
-/**
- * Cart Entity - Represents shopping cart
- * Each customer has one cart
- */
 export class Cart extends BaseEntity {
   constructor(data = {}) {
     super(data.id);
-    this.userId = data.userId || null;
-    this.items = data.items || []; // Array of CartItem objects
-    this.totalAmount = data.totalAmount || 0;
-    this.totalItems = data.totalItems || 0;
-    this.discountCode = data.discountCode || null;
-    this.discountAmount = data.discountAmount || 0;
-    this.shippingAddress = data.shippingAddress || null;
-    this.billingAddress = data.billingAddress || null;
-    this.paymentMethod = data.paymentMethod || null;
+    this.userId = data.userId || data.user_id || null;
+    this.items = (data.items || []).map(item => 
+      item instanceof CartItem ? item : new CartItem(item)
+    );
+    this.totalItems = data.totalItems || data.total_items || 0;
+    this.totalAmount = data.totalAmount || data.total_amount || 0;
+    this.discountAmount = data.discountAmount || data.discount_amount || 0;
+    this.shippingAddress = data.shippingAddress || data.shipping_address || null;
+    this.billingAddress = data.billingAddress || data.billing_address || null;
     this.notes = data.notes || '';
+    this.couponCode = data.couponCode || data.coupon_code || null;
+    this.shippingMethod = data.shippingMethod || data.shipping_method || null;
+    this.paymentMethod = data.paymentMethod || data.payment_method || null;
+    this.isAbandoned = data.isAbandoned || data.is_abandoned || false;
+    this.abandonedAt = data.abandonedAt || data.abandoned_at || null;
+    this.lastActivityAt = data.lastActivityAt || data.last_activity_at || new Date();
   }
 
-  // Domain validation
   isValid() {
     return this.validateUserId() && this.validateItems();
   }
 
   validateUserId() {
-    return this.userId !== null;
+    return this.userId !== null && this.userId.trim().length > 0;
   }
 
   validateItems() {
-    return Array.isArray(this.items) && this.items.every(item => item.isValid());
+    return this.items.every(item => item.isValid());
   }
 
-  // Business rules
-  isEmpty() {
-    return this.items.length === 0;
-  }
-
-  hasItems() {
-    return this.items.length > 0;
-  }
-
-  getItemCount() {
-    return this.items.reduce((total, item) => total + item.quantity, 0);
-  }
-
-  getTotalAmount() {
-    return this.items.reduce((total, item) => total + item.getTotalPrice(), 0);
-  }
-
-  getFinalAmount() {
-    return Math.max(0, this.getTotalAmount() - this.discountAmount);
-  }
-
-  // Cart operations
   addItem(product, quantity = 1) {
     if (!product || quantity <= 0) return false;
+    if (!product.id || !product.name || !product.getCurrentPrice || !product.unit) return false;
 
-    const existingItemIndex = this.items.findIndex(item => item.productId === product.id);
-    
+    // Check if item with same product ID and price already exists
+    const existingItemIndex = this.items.findIndex(item => 
+      item.productId === product.id && item.productPrice === product.getCurrentPrice()
+    );
+
     if (existingItemIndex >= 0) {
-      // Update existing item
       this.items[existingItemIndex].addQuantity(quantity);
     } else {
-      // Add new item
       const cartItem = new CartItem({
         productId: product.id,
         productName: product.name,
         productPrice: product.getCurrentPrice(),
-        productImage: product.images[0] || '',
         quantity: quantity,
         unit: product.unit
       });
       this.items.push(cartItem);
     }
 
-    this.updateTotals();
+    this.recomputeTotals();
     this.updateTimestamp();
     return true;
   }
 
   removeItem(productId) {
     this.items = this.items.filter(item => item.productId !== productId);
-    this.updateTotals();
+    this.recomputeTotals();
     this.updateTimestamp();
     return true;
   }
 
   updateItemQuantity(productId, quantity) {
     const item = this.items.find(item => item.productId === productId);
-    if (item) {
-      if (quantity <= 0) {
-        return this.removeItem(productId);
-      } else {
-        item.setQuantity(quantity);
-        this.updateTotals();
-        this.updateTimestamp();
-        return true;
-      }
+    if (!item) return false;
+
+    if (quantity <= 0) {
+      return this.removeItem(productId);
     }
-    return false;
+
+    item.setQuantity(quantity);
+    this.recomputeTotals();
+    this.updateTimestamp();
+    return true;
   }
 
-  clearCart() {
+  clearItems() {
     this.items = [];
-    this.discountCode = null;
-    this.discountAmount = 0;
-    this.updateTotals();
+    this.recomputeTotals();
     this.updateTimestamp();
+    return true;
   }
 
-  updateTotals() {
-    this.totalAmount = this.getTotalAmount();
-    this.totalItems = this.getItemCount();
-  }
-
-  applyDiscount(discountCode, discountAmount) {
-    this.discountCode = discountCode;
-    this.discountAmount = discountAmount;
+  applyDiscount(amount) {
+    if (amount < 0) return false;
+    this.discountAmount = amount;
     this.updateTimestamp();
+    return true;
   }
 
   removeDiscount() {
-    this.discountCode = null;
     this.discountAmount = 0;
     this.updateTimestamp();
+    return true;
   }
 
-  setShippingAddress(address) {
-    this.shippingAddress = address;
-    this.updateTimestamp();
+  recomputeTotals() {
+    this.totalItems = this.items.reduce((total, item) => total + item.quantity, 0);
+    this.totalAmount = this.items.reduce((total, item) => total + item.lineTotal(), 0);
   }
 
-  setBillingAddress(address) {
-    this.billingAddress = address;
-    this.updateTimestamp();
+  getSubtotal() {
+    return this.items.reduce((total, item) => total + item.lineTotal(), 0);
   }
 
-  setPaymentMethod(paymentMethod) {
-    this.paymentMethod = paymentMethod;
-    this.updateTimestamp();
+  getFinalAmount() {
+    return Math.max(0, this.getSubtotal() - this.discountAmount);
   }
 
-  setNotes(notes) {
-    this.notes = notes;
-    this.updateTimestamp();
+  isEmpty() {
+    return this.items.length === 0;
   }
 
-  // Getters
-  getUserId() {
-    return this.userId;
+  getItemCount() {
+    return this.items.length;
   }
 
-  getItems() {
-    return this.items;
+  getTotalQuantity() {
+    return this.totalItems;
   }
 
   getTotalAmount() {
     return this.totalAmount;
   }
 
-  getTotalItems() {
-    return this.totalItems;
-  }
-
-  getDiscountCode() {
-    return this.discountCode;
-  }
-
   getDiscountAmount() {
     return this.discountAmount;
   }
 
-  getFinalAmount() {
-    return this.getFinalAmount();
+  hasItem(productId) {
+    return this.items.some(item => item.productId === productId);
   }
 
-  getShippingAddress() {
-    return this.shippingAddress;
+  getItem(productId) {
+    return this.items.find(item => item.productId === productId);
   }
 
-  getBillingAddress() {
-    return this.billingAddress;
-  }
-
-  getPaymentMethod() {
-    return this.paymentMethod;
-  }
-
-  getNotes() {
-    return this.notes;
-  }
-
-  // Setters
-  setUserId(userId) {
-    this.userId = userId;
+  setShippingAddress(address) {
+    this.shippingAddress = address;
     this.updateTimestamp();
     return this;
   }
 
-  // Convert to plain object
+  setBillingAddress(address) {
+    this.billingAddress = address;
+    this.updateTimestamp();
+    return this;
+  }
+
+  setNotes(notes) {
+    this.notes = notes;
+    this.updateTimestamp();
+    return this;
+  }
+
+  setCouponCode(code) {
+    this.couponCode = code;
+    this.updateTimestamp();
+    return this;
+  }
+
+  setShippingMethod(method) {
+    this.shippingMethod = method;
+    this.updateTimestamp();
+    return this;
+  }
+
+  setPaymentMethod(method) {
+    this.paymentMethod = method;
+    this.updateTimestamp();
+    return this;
+  }
+
+  markAsAbandoned() {
+    this.isAbandoned = true;
+    this.abandonedAt = new Date();
+    this.updateTimestamp();
+    return this;
+  }
+
+  restoreFromAbandoned() {
+    this.isAbandoned = false;
+    this.abandonedAt = null;
+    this.updateTimestamp();
+    return this;
+  }
+
+  updateLastActivity() {
+    this.lastActivityAt = new Date();
+    this.updateTimestamp();
+    return this;
+  }
+
   toJSON() {
     const base = super.toJSON();
     return {
       ...base,
       userId: this.userId,
       items: this.items.map(item => item.toJSON()),
-      totalAmount: this.totalAmount,
       totalItems: this.totalItems,
-      finalAmount: this.getFinalAmount(),
-      discountCode: this.discountCode,
+      totalAmount: this.totalAmount,
       discountAmount: this.discountAmount,
       shippingAddress: this.shippingAddress,
       billingAddress: this.billingAddress,
+      notes: this.notes,
+      couponCode: this.couponCode,
+      shippingMethod: this.shippingMethod,
       paymentMethod: this.paymentMethod,
-      notes: this.notes
+      isAbandoned: this.isAbandoned,
+      abandonedAt: this.abandonedAt,
+      lastActivityAt: this.lastActivityAt
     };
   }
 
-  // Create from plain object
   static fromJSON(data) {
-    const cart = new Cart(data);
-    cart.items = data.items ? data.items.map(item => CartItem.fromJSON(item)) : [];
-    return cart;
-  }
-}
-
-/**
- * CartItem Entity - Represents individual items in cart
- */
-export class CartItem extends BaseEntity {
-  constructor(data = {}) {
-    super(data.id);
-    this.productId = data.productId || null;
-    this.productName = data.productName || '';
-    this.productPrice = data.productPrice || 0;
-    this.productImage = data.productImage || '';
-    this.quantity = data.quantity || 1;
-    this.unit = data.unit || 'piece';
-  }
-
-  // Domain validation
-  isValid() {
-    return this.validateProductId() && this.validateQuantity();
-  }
-
-  validateProductId() {
-    return this.productId !== null;
-  }
-
-  validateQuantity() {
-    return this.quantity > 0;
-  }
-
-  // Business rules
-  getTotalPrice() {
-    return this.productPrice * this.quantity;
-  }
-
-  addQuantity(amount) {
-    this.quantity += amount;
-    this.updateTimestamp();
-  }
-
-  subtractQuantity(amount) {
-    this.quantity = Math.max(0, this.quantity - amount);
-    this.updateTimestamp();
-  }
-
-  setQuantity(quantity) {
-    this.quantity = Math.max(1, quantity);
-    this.updateTimestamp();
-  }
-
-  // Getters
-  getProductId() {
-    return this.productId;
-  }
-
-  getProductName() {
-    return this.productName;
-  }
-
-  getProductPrice() {
-    return this.productPrice;
-  }
-
-  getProductImage() {
-    return this.productImage;
-  }
-
-  getQuantity() {
-    return this.quantity;
-  }
-
-  getUnit() {
-    return this.unit;
-  }
-
-  getTotalPrice() {
-    return this.getTotalPrice();
-  }
-
-  // Setters
-  setProductId(productId) {
-    this.productId = productId;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setProductName(productName) {
-    this.productName = productName;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setProductPrice(productPrice) {
-    this.productPrice = productPrice;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setProductImage(productImage) {
-    this.productImage = productImage;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setUnit(unit) {
-    this.unit = unit;
-    this.updateTimestamp();
-    return this;
-  }
-
-  // Convert to plain object
-  toJSON() {
-    const base = super.toJSON();
-    return {
-      ...base,
-      productId: this.productId,
-      productName: this.productName,
-      productPrice: this.productPrice,
-      productImage: this.productImage,
-      quantity: this.quantity,
-      unit: this.unit,
-      totalPrice: this.getTotalPrice()
-    };
-  }
-
-  // Create from plain object
-  static fromJSON(data) {
-    return new CartItem(data);
+    return new Cart(data);
   }
 }

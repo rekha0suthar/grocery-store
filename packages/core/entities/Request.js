@@ -1,29 +1,24 @@
 import { BaseEntity } from './BaseEntity.js';
 
-/**
- * Request Entity - Represents various types of requests
- * Used for store manager approval and category management requests
- */
 export class Request extends BaseEntity {
   constructor(data = {}) {
     super(data.id);
-    this.type = data.type || ''; // 'store_manager_approval', 'category_creation', 'category_modification'
-    this.status = data.status || 'pending'; // pending, approved, rejected
-    this.requestedBy = data.requestedBy || null; // User ID who made the request
-    this.reviewedBy = data.reviewedBy || null; // Admin ID who reviewed the request
+    this.type = data.type || '';
+    this.status = data.status || 'pending';
+    this.requestedBy = data.requestedBy || null;
+    this.reviewedBy = data.reviewedBy || null;
     this.reviewedAt = data.reviewedAt || null;
     this.rejectionReason = data.rejectionReason || null;
-    this.requestData = data.requestData || {}; // Additional data specific to request type
-    this.priority = data.priority || 'normal'; // low, normal, high, urgent
+    this.requestData = data.requestData || {};
+    this.priority = data.priority || 'normal';
     this.notes = data.notes || '';
   }
 
-  // Domain validation
   isValid() {
-    return this.validateType() && 
-           this.validateStatus() && 
-           this.validateRequestedBy() &&
-           this.validateRequestData();
+    return this.validateType() &&
+      this.validateStatus() &&
+      this.validateRequestedBy() &&
+      this.validateRequestData();
   }
 
   validateType() {
@@ -41,7 +36,6 @@ export class Request extends BaseEntity {
   }
 
   validateRequestData() {
-    // Validate based on request type
     switch (this.type) {
       case 'store_manager_approval':
         return this.validateStoreManagerRequestData();
@@ -63,7 +57,6 @@ export class Request extends BaseEntity {
     return required.every(field => this.requestData[field]);
   }
 
-  // Business rules
   isPending() {
     return this.status === 'pending';
   }
@@ -92,7 +85,6 @@ export class Request extends BaseEntity {
     return this.priority === 'high' || this.priority === 'urgent';
   }
 
-  // Request operations
   approve(reviewedBy, notes = '') {
     if (this.canBeReviewed()) {
       this.status = 'approved';
@@ -200,7 +192,6 @@ export class Request extends BaseEntity {
     return this;
   }
 
-  // Convert to plain object
   toJSON() {
     const base = super.toJSON();
     return {
@@ -217,12 +208,10 @@ export class Request extends BaseEntity {
     };
   }
 
-  // Create from plain object
   static fromJSON(data) {
     return new Request(data);
   }
 
-  // Factory methods for different request types
   static createStoreManagerApprovalRequest(userId, requestData) {
     const request = new Request({
       type: 'store_manager_approval',

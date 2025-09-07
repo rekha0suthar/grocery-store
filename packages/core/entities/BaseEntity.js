@@ -15,19 +15,19 @@ export class BaseEntity {
     return true; // Override in child classes
   }
 
-  // Generic business rules
-  updateTimestamp() {
-    this.updatedAt = new Date();
+  // Generic business rules - accepts time injection for testing
+  updateTimestamp(now = new Date()) {
+    this.updatedAt = now;
   }
 
-  activate() {
+  activate(now = new Date()) {
     this.isActive = true;
-    this.updateTimestamp();
+    this.updateTimestamp(now);
   }
 
-  deactivate() {
+  deactivate(now = new Date()) {
     this.isActive = false;
-    this.updateTimestamp();
+    this.updateTimestamp(now);
   }
 
   // Getters
@@ -63,10 +63,22 @@ export class BaseEntity {
     };
   }
 
-  // Create from plain object
+  // Create from plain object - Date-safe rehydration
   static fromJSON(data) {
-    const entity = new this();
-    Object.assign(entity, data);
+    const entity = new this(data.id ?? null);
+    
+    // Rehydrate Dates explicitly
+    entity.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
+    entity.updatedAt = data.updatedAt ? new Date(data.updatedAt) : new Date();
+    entity.isActive = data.isActive ?? true;
+    
+    // Assign the rest safely
+    for (const key of Object.keys(data)) {
+      if (!(key in entity)) {
+        entity[key] = data[key];
+      }
+    }
+    
     return entity;
   }
 }

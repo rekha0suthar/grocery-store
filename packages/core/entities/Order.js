@@ -1,4 +1,5 @@
 import { BaseEntity } from './BaseEntity.js';
+import { InvalidTransitionError } from '../errors/DomainErrors.js';
 
 /**
  * Order Entity - Represents customer orders
@@ -30,10 +31,7 @@ export class Order extends BaseEntity {
 
   // Domain validation
   isValid() {
-    return this.validateUserId() && 
-           this.validateItems() && 
-           this.validateAmounts() &&
-           this.validateAddresses();
+    return this.validateUserId() && this.validateItems() && this.validateStatus();
   }
 
   validateUserId() {
@@ -44,30 +42,26 @@ export class Order extends BaseEntity {
     return Array.isArray(this.items) && this.items.length > 0 && this.items.every(item => item.isValid());
   }
 
-  validateAmounts() {
-    return this.totalAmount >= 0 && 
-           this.discountAmount >= 0 && 
-           this.shippingAmount >= 0 && 
-           this.taxAmount >= 0 && 
-           this.finalAmount >= 0;
-  }
-
-  validateAddresses() {
-    return this.shippingAddress !== null && this.billingAddress !== null;
+  validateStatus() {
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+    return validStatuses.includes(this.status);
   }
 
   // Business rules
-  canBeCancelled() {
-    const cancellableStatuses = ['pending', 'confirmed'];
-    return cancellableStatuses.includes(this.status);
-  }
-
-  canBeModified() {
+  isPending() {
     return this.status === 'pending';
   }
 
-  isPaid() {
-    return this.paymentStatus === 'paid';
+  isConfirmed() {
+    return this.status === 'confirmed';
+  }
+
+  isProcessing() {
+    return this.status === 'processing';
+  }
+
+  isShipped() {
+    return this.status === 'shipped';
   }
 
   isDelivered() {
@@ -78,60 +72,76 @@ export class Order extends BaseEntity {
     return this.status === 'cancelled';
   }
 
-  isInProgress() {
-    const inProgressStatuses = ['confirmed', 'processing', 'shipped'];
-    return inProgressStatuses.includes(this.status);
+  canBeCancelled() {
+    return this.status === 'pending' || this.status === 'confirmed';
   }
 
-  // Order operations
+  canBeConfirmed() {
+    return this.status === 'pending';
+  }
+
+  canBeProcessed() {
+    return this.status === 'confirmed';
+  }
+
+  canBeShipped() {
+    return this.status === 'processing';
+  }
+
+  canBeDelivered() {
+    return this.status === 'shipped';
+  }
+
+  // Safe status transitions (no direct setter)
   confirm() {
-    if (this.status === 'pending') {
-      this.status = 'confirmed';
-      this.updateTimestamp();
-      return true;
+    if (!this.canBeConfirmed()) {
+      throw new InvalidTransitionError(this.status, 'confirmed');
     }
-    return false;
+    this.status = 'confirmed';
+    this.updateTimestamp();
+    return true;
   }
 
   startProcessing() {
-    if (this.status === 'confirmed') {
-      this.status = 'processing';
-      this.updateTimestamp();
-      return true;
+    if (!this.canBeProcessed()) {
+      throw new InvalidTransitionError(this.status, 'processing');
     }
-    return false;
+    this.status = 'processing';
+    this.updateTimestamp();
+    return true;
   }
 
   ship(trackingNumber = null) {
-    if (this.status === 'processing') {
-      this.status = 'shipped';
-      this.trackingNumber = trackingNumber;
-      this.updateTimestamp();
-      return true;
+    if (!this.canBeShipped()) {
+      throw new InvalidTransitionError(this.status, 'shipped');
     }
-    return false;
+    this.status = 'shipped';
+    this.trackingNumber = trackingNumber;
+    this.updateTimestamp();
+    return true;
   }
 
   deliver() {
-    if (this.status === 'shipped') {
-      this.status = 'delivered';
-      this.updateTimestamp();
-      return true;
+    if (!this.canBeDelivered()) {
+      throw new InvalidTransitionError(this.status, 'delivered');
     }
-    return false;
+    this.status = 'delivered';
+    this.updateTimestamp();
+    return true;
   }
 
-  cancel(reason = '') {
-    if (this.canBeCancelled()) {
-      this.status = 'cancelled';
-      this.cancelledAt = new Date();
-      this.cancellationReason = reason;
-      this.updateTimestamp();
-      return true;
+  cancel(reason = null) {
+    if (!this.canBeCancelled()) {
+      throw new InvalidTransitionError(this.status, 'cancelled');
     }
-    return false;
+    this.status = 'cancelled';
+    this.cancellationReason = reason;
+    this.cancelledAt = new Date();
+    this.updateTimestamp();
+    return true;
   }
 
+  // Payment status transitions
   markAsPaid(paymentId = null) {
     this.paymentStatus = 'paid';
     this.paymentId = paymentId;
@@ -144,11 +154,14 @@ export class Order extends BaseEntity {
   }
 
   refund() {
+    if (this.paymentStatus !== 'paid') {
+      throw new InvalidTransitionError(this.paymentStatus, 'refunded', 'Only paid orders can be refunded');
+    }
     this.paymentStatus = 'refunded';
     this.updateTimestamp();
   }
 
-  // Generate unique order number
+  // Generate unique order number (deterministic for testing)
   generateOrderNumber() {
     const timestamp = Date.now().toString();
     const random = Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -157,15 +170,12 @@ export class Order extends BaseEntity {
 
   // Calculate totals
   calculateTotals() {
-    this.totalAmount = this.items.reduce((total, item) => total + item.getTotalPrice(), 0);
+    this.totalAmount = this.items.reduce((total, item) => total + item.lineTotal(), 0);
     this.finalAmount = Math.max(0, this.totalAmount + this.shippingAmount + this.taxAmount - this.discountAmount);
+    this.updateTimestamp();
   }
 
   // Getters
-  getOrderNumber() {
-    return this.orderNumber;
-  }
-
   getUserId() {
     return this.userId;
   }
@@ -182,144 +192,24 @@ export class Order extends BaseEntity {
     return this.totalAmount;
   }
 
-  getDiscountAmount() {
-    return this.discountAmount;
-  }
-
-  getShippingAmount() {
-    return this.shippingAmount;
-  }
-
-  getTaxAmount() {
-    return this.taxAmount;
-  }
-
   getFinalAmount() {
     return this.finalAmount;
-  }
-
-  getShippingAddress() {
-    return this.shippingAddress;
-  }
-
-  getBillingAddress() {
-    return this.billingAddress;
-  }
-
-  getPaymentMethod() {
-    return this.paymentMethod;
   }
 
   getPaymentStatus() {
     return this.paymentStatus;
   }
 
-  getPaymentId() {
-    return this.paymentId;
-  }
-
-  getNotes() {
-    return this.notes;
-  }
-
-  getDeliveryDate() {
-    return this.deliveryDate;
-  }
-
-  getDeliveryTimeSlot() {
-    return this.deliveryTimeSlot;
+  getOrderNumber() {
+    return this.orderNumber;
   }
 
   getTrackingNumber() {
     return this.trackingNumber;
   }
 
-  getCancelledAt() {
-    return this.cancelledAt;
-  }
-
   getCancellationReason() {
     return this.cancellationReason;
-  }
-
-  // Setters
-  setUserId(userId) {
-    this.userId = userId;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setItems(items) {
-    this.items = Array.isArray(items) ? items : [];
-    this.calculateTotals();
-    this.updateTimestamp();
-    return this;
-  }
-
-  setStatus(status) {
-    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
-    if (validStatuses.includes(status)) {
-      this.status = status;
-      this.updateTimestamp();
-    }
-    return this;
-  }
-
-  setDiscountAmount(amount) {
-    this.discountAmount = parseFloat(amount) || 0;
-    this.calculateTotals();
-    this.updateTimestamp();
-    return this;
-  }
-
-  setShippingAmount(amount) {
-    this.shippingAmount = parseFloat(amount) || 0;
-    this.calculateTotals();
-    this.updateTimestamp();
-    return this;
-  }
-
-  setTaxAmount(amount) {
-    this.taxAmount = parseFloat(amount) || 0;
-    this.calculateTotals();
-    this.updateTimestamp();
-    return this;
-  }
-
-  setShippingAddress(address) {
-    this.shippingAddress = address;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setBillingAddress(address) {
-    this.billingAddress = address;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setPaymentMethod(paymentMethod) {
-    this.paymentMethod = paymentMethod;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setNotes(notes) {
-    this.notes = notes;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setDeliveryDate(date) {
-    this.deliveryDate = date;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setDeliveryTimeSlot(timeSlot) {
-    this.deliveryTimeSlot = timeSlot;
-    this.updateTimestamp();
-    return this;
   }
 
   // Convert to plain object
@@ -367,10 +257,8 @@ export class OrderItem extends BaseEntity {
     this.productId = data.productId || null;
     this.productName = data.productName || '';
     this.productPrice = data.productPrice || 0;
-    this.productImage = data.productImage || '';
     this.quantity = data.quantity || 1;
     this.unit = data.unit || 'piece';
-    this.totalPrice = data.totalPrice || 0;
   }
 
   // Domain validation
@@ -387,11 +275,11 @@ export class OrderItem extends BaseEntity {
   }
 
   validatePrice() {
-    return this.productPrice >= 0;
+    return this.productPrice > 0;
   }
 
   // Business rules
-  getTotalPrice() {
+  lineTotal() {
     return this.productPrice * this.quantity;
   }
 
@@ -408,57 +296,12 @@ export class OrderItem extends BaseEntity {
     return this.productPrice;
   }
 
-  getProductImage() {
-    return this.productImage;
-  }
-
   getQuantity() {
     return this.quantity;
   }
 
   getUnit() {
     return this.unit;
-  }
-
-  getTotalPrice() {
-    return this.getTotalPrice();
-  }
-
-  // Setters
-  setProductId(productId) {
-    this.productId = productId;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setProductName(productName) {
-    this.productName = productName;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setProductPrice(productPrice) {
-    this.productPrice = productPrice;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setProductImage(productImage) {
-    this.productImage = productImage;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setQuantity(quantity) {
-    this.quantity = quantity;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setUnit(unit) {
-    this.unit = unit;
-    this.updateTimestamp();
-    return this;
   }
 
   // Convert to plain object
@@ -469,10 +312,9 @@ export class OrderItem extends BaseEntity {
       productId: this.productId,
       productName: this.productName,
       productPrice: this.productPrice,
-      productImage: this.productImage,
       quantity: this.quantity,
       unit: this.unit,
-      totalPrice: this.getTotalPrice()
+      lineTotal: this.lineTotal()
     };
   }
 

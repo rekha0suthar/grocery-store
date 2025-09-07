@@ -1,9 +1,5 @@
 import { BaseEntity } from './BaseEntity.js';
 
-/**
- * Product Entity - Represents grocery products
- * Store managers can add products, admins can manage everything
- */
 export class Product extends BaseEntity {
   constructor(data = {}) {
     super(data.id);
@@ -13,7 +9,7 @@ export class Product extends BaseEntity {
     this.categoryId = data.categoryId || data.category_id || null;
     this.sku = data.sku || '';
     this.barcode = data.barcode || '';
-    this.unit = data.unit || 'piece'; // piece, kg, liter, etc.
+    this.unit = data.unit || 'piece';
     this.weight = data.weight || 0;
     this.dimensions = data.dimensions || { length: 0, width: 0, height: 0 };
     this.stock = data.stock || 0;
@@ -31,115 +27,139 @@ export class Product extends BaseEntity {
     this.expiryDate = data.expiryDate || data.expiry_date || null;
     this.manufacturer = data.manufacturer || '';
     this.countryOfOrigin = data.countryOfOrigin || data.country_of_origin || '';
-    this.addedBy = data.addedBy || data.added_by || null; // User ID who added the product
+    this.addedBy = data.addedBy || data.added_by || null;
   }
 
-  // Domain validation
   isValid() {
-    return this.validateName() && 
-           this.validatePrice() && 
-           this.validateStock() && 
-           this.validateSku() &&
-           this.validateCategory();
+    return this.validateName() && this.validatePrice() && this.validateSku() && this.validateStock();
   }
 
   validateName() {
-    return this.name && this.name.trim().length >= 2;
+    return !!(this.name && this.name.trim().length > 0);
+    return this.name && this.name.trim().length > 0;
   }
 
   validatePrice() {
-    return this.price >= 0;
-  }
-
-  validateStock() {
-    return this.stock >= 0 && this.stock <= this.maxStock;
+    return this.price > 0;
   }
 
   validateSku() {
-    return this.sku && this.sku.trim().length >= 3;
+    return !!(this.sku && this.sku.trim().length > 0);
+    return this.sku && this.sku.trim().length > 0;
+  }
+
+  validateStock() {
+    return this.stock >= 0;
   }
 
   validateCategory() {
     return this.categoryId !== null;
   }
 
-  validateDiscount() {
-    if (this.discountPrice && this.discountPrice > 0) {
-      return this.discountPrice < this.price;
-    }
-    return true;
-  }
-
-  // Business rules
-  isInStock() {
-    return this.stock > 0;
+  isAvailable() {
+    return this.isVisible && this.stock > 0;
   }
 
   isLowStock() {
     return this.stock <= this.minStock;
   }
 
-  isAvailable() {
-    return this.isActive && this.isVisible && this.isInStock();
+  isOutOfStock() {
+    return this.stock === 0;
   }
 
   canPurchase(quantity) {
-    return this.isAvailable() && quantity <= this.stock && quantity > 0;
+    if (quantity <= 0) return false;
+    return this.isAvailable() && this.stock >= quantity;
   }
 
-  isOnDiscount() {
+  isOnDiscount(now = new Date()) {
     if (!this.discountPrice || this.discountPrice <= 0) return false;
-    
-    const now = new Date();
+
     const startDate = this.discountStartDate ? new Date(this.discountStartDate) : null;
     const endDate = this.discountEndDate ? new Date(this.discountEndDate) : null;
-    
+
     if (startDate && now < startDate) return false;
     if (endDate && now > endDate) return false;
-    
+
     return true;
   }
 
-  getCurrentPrice() {
-    return this.isOnDiscount() ? this.discountPrice : this.price;
+  isExpired(now = new Date()) {
+    return this.expiryDate ? now > new Date(this.expiryDate) : false;
   }
 
-  getDiscountPercentage() {
-    if (!this.isOnDiscount()) return 0;
-    return Math.round(((this.price - this.discountPrice) / this.price) * 100);
+  getCurrentPrice(now = new Date()) {
+    return this.isOnDiscount(now) ? this.discountPrice : this.price;
   }
 
-  isExpired() {
-    if (!this.expiryDate) return false;
-    return new Date() > new Date(this.expiryDate);
-  }
-
-  // Business operations
   reduceStock(quantity) {
-    if (this.canPurchase(quantity)) {
-      this.stock -= quantity;
-      this.updateTimestamp();
-      return true;
-    }
-    return false;
+    if (quantity <= 0) return false;
+    if (this.stock < quantity) return false;
+
+    this.stock -= quantity;
+    this.updateTimestamp();
+    return true;
   }
 
   addStock(quantity) {
-    if (quantity > 0 && (this.stock + quantity) <= this.maxStock) {
-      this.stock += quantity;
-      this.updateTimestamp();
-      return true;
-    }
-    return false;
+    if (quantity <= 0) return false;
+
+    this.stock += quantity;
+    this.updateTimestamp();
+    return true;
   }
 
   setStock(quantity) {
-    if (quantity >= 0 && quantity <= this.maxStock) {
-      this.stock = quantity;
-      this.updateTimestamp();
-      return true;
+    if (quantity < 0) return false;
+
+    this.stock = quantity;
+    this.updateTimestamp();
+    return true;
+  }
+
+  changePrice(newPrice) {
+    if (newPrice <= 0) {
+      throw new Error('Price must be positive');
     }
-    return false;
+    this.price = newPrice;
+    this.updateTimestamp();
+    return this;
+  }
+
+  scheduleDiscount(discountPrice, startDate, endDate) {
+    if (discountPrice <= 0) {
+      throw new Error('Discount price must be positive');
+    }
+    if (startDate && endDate && startDate >= endDate) {
+      throw new Error('Start date must be before end date');
+    }
+
+    this.discountPrice = discountPrice;
+    this.discountStartDate = startDate;
+    this.discountEndDate = endDate;
+    this.updateTimestamp();
+    return this;
+  }
+
+  removeDiscount() {
+    this.discountPrice = null;
+    this.discountStartDate = null;
+    this.discountEndDate = null;
+    this.updateTimestamp();
+    return this;
+  }
+
+  makeVisible() {
+    this.isVisible = true;
+    this.updateTimestamp();
+    return this;
+  }
+
+  makeHidden() {
+    this.isVisible = false;
+    this.updateTimestamp();
+    return this;
   }
 
   // Getters
@@ -163,32 +183,12 @@ export class Product extends BaseEntity {
     return this.sku;
   }
 
-  getBarcode() {
-    return this.barcode;
-  }
-
-  getUnit() {
-    return this.unit;
-  }
-
   getStock() {
     return this.stock;
   }
 
-  getMinStock() {
-    return this.minStock;
-  }
-
-  getMaxStock() {
-    return this.maxStock;
-  }
-
-  getImages() {
-    return this.images;
-  }
-
-  getTags() {
-    return this.tags;
+  getUnit() {
+    return this.unit;
   }
 
   getIsVisible() {
@@ -199,134 +199,14 @@ export class Product extends BaseEntity {
     return this.isFeatured;
   }
 
-  getAddedBy() {
-    return this.addedBy;
+  getDiscountPrice() {
+    return this.discountPrice;
   }
 
-  // Setters
-  setName(name) {
-    this.name = name.trim();
-    this.updateTimestamp();
-    return this;
+  getExpiryDate() {
+    return this.expiryDate;
   }
 
-  setDescription(description) {
-    this.description = description.trim();
-    this.updateTimestamp();
-    return this;
-  }
-
-  setPrice(price) {
-    this.price = parseFloat(price) || 0;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setCategoryId(categoryId) {
-    this.categoryId = categoryId;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setSku(sku) {
-    this.sku = sku.trim().toUpperCase();
-    this.updateTimestamp();
-    return this;
-  }
-
-  setBarcode(barcode) {
-    this.barcode = barcode;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setUnit(unit) {
-    this.unit = unit;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setMinStock(minStock) {
-    this.minStock = parseInt(minStock) || 0;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setMaxStock(maxStock) {
-    this.maxStock = parseInt(maxStock) || 1000;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setImages(images) {
-    this.images = Array.isArray(images) ? images : [];
-    this.updateTimestamp();
-    return this;
-  }
-
-  addImage(imageUrl) {
-    if (imageUrl && !this.images.includes(imageUrl)) {
-      this.images.push(imageUrl);
-      this.updateTimestamp();
-    }
-    return this;
-  }
-
-  removeImage(imageUrl) {
-    this.images = this.images.filter(img => img !== imageUrl);
-    this.updateTimestamp();
-    return this;
-  }
-
-  setTags(tags) {
-    this.tags = Array.isArray(tags) ? tags : [];
-    this.updateTimestamp();
-    return this;
-  }
-
-  addTag(tag) {
-    if (tag && !this.tags.includes(tag)) {
-      this.tags.push(tag);
-      this.updateTimestamp();
-    }
-    return this;
-  }
-
-  setIsVisible(isVisible) {
-    this.isVisible = isVisible;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setIsFeatured(isFeatured) {
-    this.isFeatured = isFeatured;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setDiscount(discountPrice, startDate = null, endDate = null) {
-    this.discountPrice = parseFloat(discountPrice) || null;
-    this.discountStartDate = startDate;
-    this.discountEndDate = endDate;
-    this.updateTimestamp();
-    return this;
-  }
-
-  removeDiscount() {
-    this.discountPrice = null;
-    this.discountStartDate = null;
-    this.discountEndDate = null;
-    this.updateTimestamp();
-    return this;
-  }
-
-  setAddedBy(userId) {
-    this.addedBy = userId;
-    this.updateTimestamp();
-    return this;
-  }
-
-  // Convert to plain object
   toJSON() {
     const base = super.toJSON();
     return {
@@ -334,7 +214,6 @@ export class Product extends BaseEntity {
       name: this.name,
       description: this.description,
       price: this.price,
-      currentPrice: this.getCurrentPrice(),
       categoryId: this.categoryId,
       sku: this.sku,
       barcode: this.barcode,
@@ -351,8 +230,6 @@ export class Product extends BaseEntity {
       discountPrice: this.discountPrice,
       discountStartDate: this.discountStartDate,
       discountEndDate: this.discountEndDate,
-      discountPercentage: this.getDiscountPercentage(),
-      isOnDiscount: this.isOnDiscount(),
       nutritionInfo: this.nutritionInfo,
       allergens: this.allergens,
       expiryDate: this.expiryDate,
@@ -362,7 +239,6 @@ export class Product extends BaseEntity {
     };
   }
 
-  // Create from plain object
   static fromJSON(data) {
     return new Product(data);
   }

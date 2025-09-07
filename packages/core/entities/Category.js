@@ -1,9 +1,5 @@
 import { BaseEntity } from './BaseEntity.js';
 
-/**
- * Category Entity - Represents product categories
- * Only admins can create/modify categories
- */
 export class Category extends BaseEntity {
   constructor(data = {}) {
     super(data.id);
@@ -11,17 +7,17 @@ export class Category extends BaseEntity {
     this.description = data.description || '';
     this.slug = data.slug || '';
     this.imageUrl = data.imageUrl || '';
-    this.parentId = data.parentId || null; // For subcategories
+    this.parentId = data.parentId || null;
     this.sortOrder = data.sortOrder || 0;
     this.isVisible = data.isVisible !== undefined ? data.isVisible : true;
   }
 
-  // Domain validation
   isValid() {
     return this.validateName() && this.validateSlug();
   }
 
   validateName() {
+    return !!(this.name && this.name.trim().length >= 2);
     return this.name && this.name.trim().length >= 2;
   }
 
@@ -33,7 +29,6 @@ export class Category extends BaseEntity {
     return slugRegex.test(this.slug);
   }
 
-  // Business rules
   isRootCategory() {
     return !this.parentId;
   }
@@ -46,18 +41,16 @@ export class Category extends BaseEntity {
     return this.isVisible && this.isActive;
   }
 
-  // Generate slug from name
   generateSlug() {
     this.slug = this.name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
-      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
     return this.slug;
   }
 
-  // Getters
   getName() {
     return this.name;
   }
@@ -130,7 +123,6 @@ export class Category extends BaseEntity {
     return this;
   }
 
-  // Convert to plain object
   toJSON() {
     const base = super.toJSON();
     return {
@@ -145,7 +137,6 @@ export class Category extends BaseEntity {
     };
   }
 
-  // Create from plain object
   static fromJSON(data) {
     return new Category(data);
   }

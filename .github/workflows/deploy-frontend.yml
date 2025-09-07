@@ -1,0 +1,66 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths: 
+      - 'frontend/**'
+      - 'packages/core/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    branches: [main]
+    paths: 
+      - 'frontend/**'
+      - 'packages/core/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Test Core
+        run: npm run test:core
+      
+      - name: Test Frontend
+        run: npm run test:frontend
+      
+      - name: Lint Frontend
+        run: npm run lint --workspace=frontend
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build Core
+        run: npm run build --workspace=@grocery-store/core
+      
+      - name: Build Frontend
+        run: npm run build --workspace=frontend
+      
+      - name: Deploy to Production
+        run: |
+          echo "Deploying frontend to production..."
+          # Add your deployment commands here
+          # Example: Vercel, Netlify, AWS S3, etc.
