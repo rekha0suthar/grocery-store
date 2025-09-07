@@ -1,11 +1,11 @@
 import { BaseController } from './BaseController.js';
-import { ProductRepository } from '../repositories/ProductRepository.js';
+import { ProductComposition } from '../composition/ProductComposition.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 export class ProductController extends BaseController {
   constructor() {
     super();
-    this.productRepository = new ProductRepository();
+    this.productComposition = new ProductComposition();
   }
 
   getAllProducts = asyncHandler(async (req, res) => {
@@ -15,125 +15,106 @@ export class ProductController extends BaseController {
     let products;
 
     if (search) {
-      products = await this.productRepository.searchProducts(search, parseInt(limit), offset);
+      products = await this.productComposition.getManageProductUseCase().execute('searchProducts', {
+        query: search,
+        limit: parseInt(limit),
+        offset
+      });
     } else if (category) {
-      products = await this.productRepository.findByCategory(category, parseInt(limit), offset);
-    } else if (featured === 'true') {
-      products = await this.productRepository.findFeatured(parseInt(limit));
-    } else if (inStock === 'true') {
-      products = await this.productRepository.findInStock(parseInt(limit), offset);
+      products = await this.productComposition.getManageProductUseCase().execute('findByCategory', {
+        categoryId: category,
+        limit: parseInt(limit),
+        offset
+      });
     } else {
-      products = await this.productRepository.findAll(parseInt(limit), offset);
+      products = await this.productComposition.getManageProductUseCase().execute('getAllProducts', {
+        limit: parseInt(limit),
+        offset,
+        filters: { featured, inStock }
+      });
     }
 
-    return this.sendSuccess(res, {
-      products: products.map(product => product.toJSON()),
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: products.length
-      }
-    }, 'Products retrieved successfully');
+    this.sendSuccess(res, products, 'Products retrieved successfully');
   });
 
   getProductById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const product = await this.productRepository.findById(id);
-
+    
+    const product = await this.productComposition.getManageProductUseCase().execute('getProductById', { id });
+    
     if (!product) {
       return this.sendNotFound(res, 'Product not found');
     }
-
-    return this.sendSuccess(res, product.toJSON(), 'Product retrieved successfully');
+    
+    this.sendSuccess(res, product, 'Product retrieved successfully');
   });
 
   createProduct = asyncHandler(async (req, res) => {
-    const productData = {
-      ...req.body,
-      addedBy: req.user.id
-    };
-
-    const product = await this.productRepository.create(productData);
-    return this.sendSuccess(res, product.toJSON(), 'Product created successfully', 201);
+    const productData = req.body;
+    
+    const product = await this.productComposition.getCreateProductUseCase().execute('createProduct', productData);
+    
+    this.sendSuccess(res, product, 'Product created successfully', 201);
   });
 
   updateProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
-
-    // Check if product exists
-    const existingProduct = await this.productRepository.findById(id);
-    if (!existingProduct) {
+    
+    const product = await this.productComposition.getManageProductUseCase().execute('updateProduct', {
+      id,
+      ...updateData
+    });
+    
+    if (!product) {
       return this.sendNotFound(res, 'Product not found');
     }
-
-    // Check permissions (only admin or the user who added the product can update)
-    if (req.user.role !== 'admin' && existingProduct.addedBy !== req.user.id) {
-      return this.sendForbidden(res, 'You can only update products you added');
-    }
-
-    const updatedProduct = await this.productRepository.update(id, updateData);
-    return this.sendSuccess(res, updatedProduct.toJSON(), 'Product updated successfully');
+    
+    this.sendSuccess(res, product, 'Product updated successfully');
   });
 
   deleteProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
-
-    // Check if product exists
-    const existingProduct = await this.productRepository.findById(id);
-    if (!existingProduct) {
+    
+    const success = await this.productComposition.getManageProductUseCase().execute('deleteProduct', { id });
+    
+    if (!success) {
       return this.sendNotFound(res, 'Product not found');
     }
-
-    // Check permissions (only admin or the user who added the product can delete)
-    if (req.user.role !== 'admin' && existingProduct.addedBy !== req.user.id) {
-      return this.sendForbidden(res, 'You can only delete products you added');
-    }
-
-    await this.productRepository.delete(id);
-    return this.sendSuccess(res, null, 'Product deleted successfully');
+    
+    this.sendSuccess(res, null, 'Product deleted successfully');
   });
 
   updateStock = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { stock } = req.body;
-
-    if (typeof stock !== 'number' || stock < 0) {
-      return this.sendError(res, 'Stock must be a non-negative number', 400);
-    }
-
-    const updatedProduct = await this.productRepository.updateStock(id, stock);
-    if (!updatedProduct) {
+    
+    const product = await this.productComposition.getUpdateProductStockUseCase().execute('updateStock', {
+      productId: id,
+      stock
+    });
+    
+    if (!product) {
       return this.sendNotFound(res, 'Product not found');
     }
-
-    return this.sendSuccess(res, updatedProduct.toJSON(), 'Stock updated successfully');
-  });
-
-  getLowStockProducts = asyncHandler(async (req, res) => {
-    const products = await this.productRepository.findLowStock();
-    return this.sendSuccess(res, {
-      products: products.map(product => product.toJSON())
-    }, 'Low stock products retrieved successfully');
+    
+    this.sendSuccess(res, product, 'Stock updated successfully');
   });
 
   searchProducts = asyncHandler(async (req, res) => {
-    const { q, page = 1, limit = 20 } = req.query;
+    const { q: query, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
-
-    if (!q) {
+    
+    if (!query) {
       return this.sendError(res, 'Search query is required', 400);
     }
-
-    const products = await this.productRepository.searchProducts(q, parseInt(limit), offset);
-    return this.sendSuccess(res, {
-      products: products.map(product => product.toJSON()),
-      query: q,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: products.length
-      }
-    }, 'Search results retrieved successfully');
+    
+    const products = await this.productComposition.getManageProductUseCase().execute('searchProducts', {
+      query,
+      limit: parseInt(limit),
+      offset
+    });
+    
+    this.sendSuccess(res, products, 'Search results retrieved successfully');
   });
 }

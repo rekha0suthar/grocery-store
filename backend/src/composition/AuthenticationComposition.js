@@ -12,12 +12,13 @@ import { CreateUserUseCase } from '@grocery-store/core/use-cases/auth/CreateUser
 import { UserRepository } from '../repositories/UserRepository.js';
 import { BcryptPasswordHasher } from '../adapters/BcryptPasswordHasher.js';
 import appConfig from '../config/appConfig.js';
+import { DatabaseFactory } from '../factories/DatabaseFactory.js';
 
 export class AuthenticationComposition {
   constructor() {
     // Create infrastructure adapters
     this.passwordHasher = new BcryptPasswordHasher();
-    this.userRepository = new UserRepository(appConfig.getDatabaseType());
+    this.userRepository = new UserRepository(DatabaseFactory.createAdapter(appConfig.getDatabaseType()));
     
     // Create use cases with injected dependencies
     this.authenticateUserUseCase = new AuthenticateUserUseCase(

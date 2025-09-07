@@ -6,7 +6,10 @@ export const errorHandler = (err, req, res, next) => {
   let message = 'Internal server error';
 
   // Handle specific error types
-  if (err.name === 'ValidationError') {
+  if (err.statusCode) {
+    statusCode = err.statusCode;
+    message = err.message || message;
+  } else if (err.name === 'ValidationError') {
     statusCode = 400;
     message = err.message;
   } else if (err.name === 'UnauthorizedError') {
@@ -29,18 +32,24 @@ export const errorHandler = (err, req, res, next) => {
     message = 'Required field missing';
   }
 
-  res.status(statusCode).json({
+  // Prepare error response
+  const errorResponse = {
     success: false,
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-};
+    message: message
+  };
 
-export const notFound = (req, res, next) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.originalUrl} not found`
-  });
+  // Add error details in development
+  if (process.env.NODE_ENV === 'development') {
+    errorResponse.error = err.message;
+    errorResponse.stack = err.stack;
+  }
+
+  // Add validation details if available
+  if (err.details) {
+    errorResponse.details = err.details;
+  }
+
+  res.status(statusCode).json(errorResponse);
 };
 
 export const asyncHandler = (fn) => {

@@ -73,7 +73,7 @@ export class ConfigController extends BaseController {
       services: {
         database: 'connected', // This would be checked against actual DB
         redis: 'not_configured', // This would be checked if Redis is configured
-        email: config.email.host ? 'configured' : 'not_configured'
+        email: 'not_configured'
       },
       endpoints: {
         auth: `${config.getApiUrl()}/auth`,

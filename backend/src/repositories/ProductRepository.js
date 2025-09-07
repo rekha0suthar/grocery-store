@@ -2,8 +2,8 @@ import { BaseRepository } from './BaseRepository.js';
 import { Product } from '@grocery-store/core/entities/Product.js';
 
 export class ProductRepository extends BaseRepository {
-  constructor() {
-    super('products');
+  constructor(databaseAdapter) {
+    super('products', databaseAdapter);
   }
 
   async findByCategory(categoryId, limit = 100, offset = 0) {

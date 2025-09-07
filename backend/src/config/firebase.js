@@ -8,7 +8,7 @@ let firebaseApp;
 
 try {
   // Check if Firebase is already initialized
-  if (admin.apps.length === 0) {
+  if (!admin.apps || !admin.apps || admin.apps.length === 0) {
     // Initialize with service account key (for production)
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
