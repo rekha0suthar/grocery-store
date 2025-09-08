@@ -7,7 +7,7 @@ import { DatabaseFactory } from '../factories/DatabaseFactory.js';
 export class AuthenticationComposition {
   constructor() {
     this.passwordHasher = new BcryptPasswordHasher();
-    this.userRepository = new UserRepository(DatabaseFactory.createAdapter(appConfig.getDatabaseType()));
+    this.userRepository = new UserRepository(appConfig.getDatabaseType());
     
     this.authenticateUserUseCase = new AuthenticateUserUseCase(
       this.userRepository,

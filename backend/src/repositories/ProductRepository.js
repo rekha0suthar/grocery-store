@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository.js';
-import { Product } from '@grocery-store/core/entities/Product.js';
+import { Product } from '@grocery-store/core/entities';
 
 export class ProductRepository extends BaseRepository {
   constructor(databaseAdapter) {

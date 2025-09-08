@@ -67,4 +67,11 @@ export class CategoryController extends BaseController {
     
     this.sendSuccess(res, null, 'Category deleted successfully');
   });
+
+  getCategoryTree = asyncHandler(async (req, res) => {
+    const categories = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryTree');
+    
+    this.sendSuccess(res, categories, 'Category tree retrieved successfully');
+  });
+
 }

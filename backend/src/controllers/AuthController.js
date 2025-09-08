@@ -49,4 +49,18 @@ export class AuthController extends BaseController {
     
     this.sendSuccess(res, user, 'Profile updated successfully');
   });
+
+  changePassword = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+    
+    // For now, we'll use the updateUser use case to change password
+    // In a real implementation, you might want a dedicated changePassword use case
+    const user = await this.authComposition.getCreateUserUseCase().execute('updateUser', {
+      id: userId,
+      password: newPassword
+    });
+    
+    this.sendSuccess(res, user, 'Password changed successfully');
+  });
 }

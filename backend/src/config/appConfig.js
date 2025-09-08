@@ -56,6 +56,50 @@ class AppConfig {
   getDatabaseType() {
     return this.config.database.type;
   }
+
+  log() {
+    console.log('📋 Configuration loaded:');
+    console.log(`   Environment: ${this.environment}`);
+    console.log(`   Port: ${this.config.port}`);
+    console.log(`   Host: ${this.config.host}`);
+    console.log(`   Database: ${this.config.database.type}`);
+    console.log(`   API Prefix: ${this.config.api.prefix}`);
+  }
+
+  getBaseUrl() {
+    return `http://${this.config.host}:${this.config.port}`;
+  }
+
+  getApiUrl() {
+    return `${this.getBaseUrl()}${this.config.api.prefix}`;
+  }
+
+  getFrontendUrl() {
+    return this.config.frontend.url;
+  }
+
+  // Add missing properties
+  get upload() {
+    return {
+      maxFileSize: process.env.UPLOAD_MAX_FILE_SIZE || '10mb'
+    };
+  }
+
+  get security() {
+    return {
+      trustProxy: process.env.TRUST_PROXY === 'true' || false
+    };
+  }
+
+  // Add missing database properties
+  get database() {
+    return {
+      ...this.config.database,
+      host: process.env.DATABASE_HOST || 'localhost',
+      port: process.env.DATABASE_PORT || 5432,
+      name: process.env.DATABASE_NAME || 'grocery_store'
+    };
+  }
 }
 
 const appConfig = new AppConfig();

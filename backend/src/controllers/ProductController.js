@@ -117,4 +117,10 @@ export class ProductController extends BaseController {
     
     this.sendSuccess(res, products, 'Search results retrieved successfully');
   });
+
+  getLowStockProducts = asyncHandler(async (req, res) => {
+    const products = await this.productComposition.getManageProductUseCase().execute('getLowStockProducts');
+    
+    this.sendSuccess(res, products, 'Low stock products retrieved successfully');
+  });
 }

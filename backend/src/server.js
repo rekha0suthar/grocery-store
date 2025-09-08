@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import routes from './routes/index.js';
-import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger, morganLogger, errorLogger } from './middleware/requestLogger.js';
 import config from './config/appConfig.js';
 
@@ -24,15 +24,15 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-app.use(cors(config.cors));
+app.use(cors(config.get('cors')));
 
 const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
+  windowMs: config.get('rateLimit').windowMs,
+  max: config.get('rateLimit').max,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
-    retryAfter: Math.ceil(config.rateLimit.windowMs / 1000)
+    retryAfter: Math.ceil(config.get('rateLimit').windowMs / 1000)
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -67,10 +67,10 @@ app.use(express.urlencoded({ extended: true, limit: config.upload.maxFileSize })
 
 app.set('trust proxy', config.security.trustProxy);
 
-app.use(config.api.prefix, routes);
+app.use(config.get('api').prefix, routes);
 
 app.use(errorLogger);
-app.use(notFound);
+// app.use(notFound);
 app.use(errorHandler);
 
 const gracefulShutdown = async (signal) => {
@@ -115,7 +115,7 @@ const server = app.listen(config.port, config.host, () => {
   console.log(`🌐 Frontend URL: ${config.getFrontendUrl()}`);
   console.log(`❤️  Health check: ${config.getApiUrl()}/config/health`);
   console.log(`⚙️  Configuration: ${config.getApiUrl()}/config`);
-  console.log(`🔒 Rate limit: ${config.rateLimit.max} requests per ${Math.ceil(config.rateLimit.windowMs / 1000 / 60)} minutes`);
+  console.log(`🔒 Rate limit: ${config.get('rateLimit').max} requests per ${Math.ceil(config.get('rateLimit').windowMs / 1000 / 60)} minutes`);
   console.log(`🗄️  Database: ${config.database.host}:${config.database.port}/${config.database.name}`);
 });
 
