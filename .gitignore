@@ -3,7 +3,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-jest.config.*
+# jest.config.*
 # babel.config.*  # Remove this line to allow babel configs
 
 # Environment variables
@@ -247,8 +247,8 @@ package.json.temp
 *.temp
 
 # Local development configuration changes
-jest.config.cjs
-**/jest.config.cjs
+# jest.config.cjs
+# **/jest.config.cjs
 
 # Local environment files
 .env.local
