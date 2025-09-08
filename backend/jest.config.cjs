@@ -4,7 +4,7 @@ module.exports = {
     '^.+\\.js$': 'babel-jest'
   },
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
+    '^@grocery-store/core/(.*)$': '<rootDir>/node_modules/@grocery-store/core/$1'
   },
   testMatch: [
     '**/tests/**/*.test.js'
@@ -17,5 +17,6 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
-  testTimeout: 10000
+  testTimeout: 10000,
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.js']
 };

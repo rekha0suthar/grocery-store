@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "build": "echo 'Backend build completed - no compilation needed for Node.js'",
     "test": "npx jest",
     "lint": "eslint src tests --ext .js",
     "init:firebase": "node scripts/init-firestore.js"

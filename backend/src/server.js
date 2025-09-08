@@ -89,7 +89,7 @@ const gracefulShutdown = async (signal) => {
   
   try {
     // Close database connections
-    await pool.end();
+    // await pool.end(); // No database pool in Firebase setup
     console.log('✅ Database connections closed');
     
     // Close server

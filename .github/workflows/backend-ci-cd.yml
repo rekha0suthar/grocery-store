@@ -5,11 +5,13 @@ on:
     branches: [ main, develop ]
     paths:
       - 'backend/**'
+      - 'packages/core/**'
       - '.github/workflows/backend-ci-cd.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'backend/**'
+      - 'packages/core/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -38,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: ./
     
     services:
       postgres:
@@ -63,16 +65,21 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup monorepo
+        run: |
+          chmod +x scripts/setup-monorepo.sh
+          ./scripts/setup-monorepo.sh
+
       - name: Run linting
-        run: npm run lint || echo "Linting completed with warnings"
+        run: npm run lint --workspace=backend || echo "Linting completed with warnings"
 
       - name: Run tests
-        run: npm test || echo "Tests completed with some failures"
+        run: npm run test:backend || echo "Tests completed with some failures"
         env:
           NODE_ENV: test
           DB_HOST: localhost
@@ -83,10 +90,10 @@ jobs:
           JWT_SECRET: test-secret-key
 
       - name: Run security audit
-        run: npm audit --audit-level moderate || echo "Security audit found issues"
+        run: npm audit --audit-level moderate --workspace=backend || echo "Security audit found issues"
 
       - name: Build application
-        run: npm run build || echo "No build script found, skipping..."
+        run: npm run build --workspace=backend || echo "No build script found, skipping..."
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -102,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: ./
     needs: test-and-build
     
     steps:
@@ -114,10 +121,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Setup monorepo
+        run: |
+          chmod +x scripts/setup-monorepo.sh
+          ./scripts/setup-monorepo.sh
 
       - name: Run Snyk security scan
         uses: snyk/actions/node@master
@@ -125,7 +137,14 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+
   # Build Docker Image Job
   build-docker:
     name: Build Docker Image
