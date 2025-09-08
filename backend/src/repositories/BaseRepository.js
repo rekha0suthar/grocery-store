@@ -1,6 +1,5 @@
 import { IDatabaseAdapter } from '@grocery-store/core/interfaces';
 
-
 export class BaseRepository {
   constructor(collectionName, databaseAdapter) {
     if (!(databaseAdapter instanceof IDatabaseAdapter)) {

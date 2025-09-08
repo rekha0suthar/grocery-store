@@ -1,7 +1,5 @@
 import bcrypt from 'bcryptjs';
 import { IPasswordHasher } from '@grocery-store/core/interfaces';
-
-
 export class BcryptPasswordHasher extends IPasswordHasher {
   constructor(saltRounds = 12) {
     super();

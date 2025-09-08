@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { IAuthProvider } from '@grocery-store/core/interfaces';
 
-
 export class JWTAuthProvider extends IAuthProvider {
   constructor(options = {}) {
     super();

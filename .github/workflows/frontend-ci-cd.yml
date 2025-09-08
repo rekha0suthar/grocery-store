@@ -140,9 +140,6 @@ jobs:
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-        uses: github/codeql-action/analyze@v3
-
   # Build Docker Image Job
   build-docker:
     name: Build Docker Image

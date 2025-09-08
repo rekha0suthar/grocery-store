@@ -1,7 +1,5 @@
 import { db } from '../config/firebase.js';
 import { IDatabaseAdapter } from '@grocery-store/core/interfaces';
-
-
 export class FirebaseAdapter extends IDatabaseAdapter {
   constructor() {
     super();
