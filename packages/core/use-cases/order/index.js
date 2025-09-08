@@ -1,2 +1,2 @@
-export { default as CreateOrderUseCase } from './CreateOrderUseCase.js';
-export { default as ProcessOrderUseCase } from './ProcessOrderUseCase.js';
+export { CreateOrderUseCase } from './CreateOrderUseCase.js';
+export { ProcessOrderUseCase } from './ProcessOrderUseCase.js';

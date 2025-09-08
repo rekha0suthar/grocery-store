@@ -1,1 +1,1 @@
-export { default as ManageCategoryUseCase } from './ManageCategoryUseCase.js';
+export { ManageCategoryUseCase } from './ManageCategoryUseCase.js';

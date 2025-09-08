@@ -1,2 +1,2 @@
-export { default as AddToCartUseCase } from './AddToCartUseCase.js';
-export { default as ManageCartUseCase } from './ManageCartUseCase.js';
+export { AddToCartUseCase } from './AddToCartUseCase.js';
+export { ManageCartUseCase } from './ManageCartUseCase.js';

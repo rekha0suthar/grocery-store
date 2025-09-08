@@ -1,4 +1,5 @@
 import { ConfigController } from '../../src/controllers/ConfigController.js';
+import config from '../../src/config/appConfig.js';
 
 // Mock dependencies
 jest.mock('../../src/config/appConfig.js', () => ({
@@ -10,8 +11,6 @@ jest.mock('../../src/config/appConfig.js', () => ({
   isStaging: jest.fn(),
   environment: 'test'
 }));
-
-import config from '../../src/config/appConfig.js';
 
 describe('ConfigController - HTTP Interface Adapter', () => {
   let controller;

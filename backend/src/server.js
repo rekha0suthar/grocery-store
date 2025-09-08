@@ -6,7 +6,6 @@ import routes from './routes/index.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { requestLogger, morganLogger, errorLogger } from './middleware/requestLogger.js';
 import config from './config/appConfig.js';
-import pool from './config/database.js';
 
 const app = express();
 

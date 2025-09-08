@@ -1,9 +1,8 @@
 import { ProductController } from '../../src/controllers/ProductController.js';
+import { ProductComposition } from '../../src/composition/ProductComposition.js';
 
 // Mock dependencies
 jest.mock('../../src/composition/ProductComposition.js');
-
-import { ProductComposition } from '../../src/composition/ProductComposition.js';
 
 describe('ProductController - HTTP Interface Adapter', () => {
   let controller;

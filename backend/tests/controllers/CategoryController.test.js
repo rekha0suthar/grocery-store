@@ -1,9 +1,8 @@
 import { CategoryController } from '../../src/controllers/CategoryController.js';
+import { CategoryComposition } from '../../src/composition/CategoryComposition.js';
 
 // Mock dependencies
 jest.mock('../../src/composition/CategoryComposition.js');
-
-import { CategoryComposition } from '../../src/composition/CategoryComposition.js';
 
 describe('CategoryController - HTTP Interface Adapter', () => {
   let controller;

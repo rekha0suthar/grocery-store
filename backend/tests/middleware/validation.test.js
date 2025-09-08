@@ -8,28 +8,6 @@ import {
 } from '../../src/middleware/validation.js';
 
 describe('Validation Middleware - Input Validation', () => {
-  let mockReq;
-  let mockRes;
-  let mockNext;
-
-  beforeEach(() => {
-    mockReq = {
-      body: {},
-      query: {},
-      params: {}
-    };
-    
-    mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis()
-    };
-    
-    mockNext = jest.fn();
-    
-    // Clear all mocks
-    jest.clearAllMocks();
-  });
-
   describe('Validation Rules', () => {
     test('register validation rules are defined', () => {
       expect(registerValidation).toBeDefined();

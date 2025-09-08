@@ -1,3 +1,3 @@
-export { default as CreateProductUseCase } from './CreateProductUseCase.js';
-export { default as UpdateProductStockUseCase } from './UpdateProductStockUseCase.js';
-export { default as ManageProductUseCase } from './ManageProductUseCase.js';
+export { CreateProductUseCase } from './CreateProductUseCase.js';
+export { UpdateProductStockUseCase } from './UpdateProductStockUseCase.js';
+export { ManageProductUseCase } from './ManageProductUseCase.js';

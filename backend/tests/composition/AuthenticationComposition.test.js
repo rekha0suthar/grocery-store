@@ -1,15 +1,14 @@
 import { AuthenticationComposition } from '../../src/composition/AuthenticationComposition.js';
+import { AuthenticateUserUseCase } from '@grocery-store/core/use-cases/auth/AuthenticateUserUseCase.js';
+import { CreateUserUseCase } from '@grocery-store/core/use-cases/auth/CreateUserUseCase.js';
+import { UserRepository } from '../../src/repositories/UserRepository.js';
+import { BcryptPasswordHasher } from '../../src/adapters/BcryptPasswordHasher.js';
 
 // Mock dependencies
 jest.mock('@grocery-store/core/use-cases/auth/AuthenticateUserUseCase.js');
 jest.mock('@grocery-store/core/use-cases/auth/CreateUserUseCase.js');
 jest.mock('../../src/repositories/UserRepository.js');
 jest.mock('../../src/adapters/BcryptPasswordHasher.js');
-
-import { AuthenticateUserUseCase } from '@grocery-store/core/use-cases/auth/AuthenticateUserUseCase.js';
-import { CreateUserUseCase } from '@grocery-store/core/use-cases/auth/CreateUserUseCase.js';
-import { UserRepository } from '../../src/repositories/UserRepository.js';
-import { BcryptPasswordHasher } from '../../src/adapters/BcryptPasswordHasher.js';
 
 describe('AuthenticationComposition - Dependency Injection Container', () => {
   let composition;

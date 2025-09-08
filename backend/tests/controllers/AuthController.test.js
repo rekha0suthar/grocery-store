@@ -1,9 +1,8 @@
 import { AuthController } from '../../src/controllers/AuthController.js';
+import { AuthenticationComposition } from '../../src/composition/AuthenticationComposition.js';
 
 // Mock dependencies
 jest.mock('../../src/composition/AuthenticationComposition.js');
-
-import { AuthenticationComposition } from '../../src/composition/AuthenticationComposition.js';
 
 describe('AuthController - HTTP Interface Adapter', () => {
   let controller;
