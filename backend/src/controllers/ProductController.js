@@ -26,14 +26,14 @@ export class ProductController extends BaseController {
         limit: parseInt(limit),
         offset
       });
-    }  else {
+    } else {
       const filters = {};
       if (featured !== undefined) filters.featured = featured;
       if (inStock !== undefined) filters.inStock = inStock;
       
       products = await this.productComposition.getManageProductUseCase().execute('getAllProducts', {
+        page: parseInt(page),
         limit: parseInt(limit),
-        offset,
         ...filters
       });
     }
