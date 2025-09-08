@@ -4,7 +4,10 @@ module.exports = {
     '^.+\\.js$': 'babel-jest'
   },
   moduleNameMapper: {
-    '^@grocery-store/core/(.*)$': '<rootDir>/node_modules/@grocery-store/core/$1'
+    '^@grocery-store/core/(.*)$': '<rootDir>/../packages/core/$1',
+    '^../config/firebase\\.js$': '<rootDir>/tests/__mocks__/firebase.js',
+    '^../../config/firebase\\.js$': '<rootDir>/tests/__mocks__/firebase.js',
+    '^src/config/firebase\\.js$': '<rootDir>/tests/__mocks__/firebase.js'
   },
   testMatch: [
     '**/tests/**/*.test.js'
@@ -18,5 +21,5 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
   testTimeout: 10000,
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js']
+  setupFiles: ['<rootDir>/tests/setup.js']
 };
