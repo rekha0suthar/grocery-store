@@ -233,3 +233,25 @@ temp/
 # OS files
 .DS_Store
 Thumbs.db
+
+# ===========================================
+# PROJECT-SPECIFIC FILES TO IGNORE
+# ===========================================
+
+# Firebase Service Account (contains private keys)
+firebase-service-account.json
+**/firebase-service-account.json
+
+# Temporary files
+package.json.temp
+*.temp
+
+# Local development configuration changes
+jest.config.cjs
+**/jest.config.cjs
+
+# Local environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
