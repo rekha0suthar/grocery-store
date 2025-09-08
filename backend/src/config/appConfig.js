@@ -2,9 +2,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-/**
- * Application Configuration - Minimal
- */
 class AppConfig {
   constructor() {
     this.environment = process.env.NODE_ENV || 'development';

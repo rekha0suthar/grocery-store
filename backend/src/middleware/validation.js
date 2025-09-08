@@ -1,6 +1,5 @@
 import { body, param, query, validationResult } from 'express-validator';
 
-// Validation result handler
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -17,7 +16,6 @@ export const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Auth validation rules
 export const registerValidation = [
   body('email')
     .isEmail()
@@ -85,7 +83,6 @@ export const updateProfileValidation = [
     .withMessage('Address must be less than 500 characters')
 ];
 
-// Product validation rules
 export const productValidation = [
   body('name')
     .trim()
@@ -196,7 +193,6 @@ export const productIdValidation = [
     .withMessage('Product ID must be a valid UUID')
 ];
 
-// Query parameter validation
 export const paginationValidation = [
   query('page')
     .optional()
@@ -235,7 +231,6 @@ export const searchValidation = [
     .withMessage('Limit must be between 1 and 100')
 ];
 
-// Category validation rules
 export const categoryValidation = [
   body('name')
     .trim()
@@ -274,7 +269,6 @@ export const categoryIdValidation = [
     .withMessage('Category ID must be a valid UUID')
 ];
 
-// Cart validation rules
 export const cartItemValidation = [
   body('productId')
     .isUUID()
@@ -290,7 +284,6 @@ export const cartIdValidation = [
     .withMessage('Cart ID must be a valid UUID')
 ];
 
-// Order validation rules
 export const orderValidation = [
   body('items')
     .isArray({ min: 1 })
@@ -340,7 +333,6 @@ export const orderIdValidation = [
     .withMessage('Order ID must be a valid UUID')
 ];
 
-// Request validation rules
 export const requestValidation = [
   body('type')
     .isIn(['store_manager_approval', 'category_creation', 'category_modification'])

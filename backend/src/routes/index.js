@@ -6,7 +6,6 @@ import configRoutes from './config.js';
 
 const router = express.Router();
 
-// Health check (legacy endpoint for backward compatibility)
 router.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -22,7 +21,6 @@ router.get('/health', (req, res) => {
   });
 });
 
-// API routes
 router.use('/auth', authRoutes);
 router.use('/products', productRoutes);
 router.use('/categories', categoryRoutes);

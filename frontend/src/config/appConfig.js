@@ -231,10 +231,8 @@ export class AppConfig {
   }
 }
 
-// Create singleton instance
 export const appConfig = new AppConfig();
 
-// Update device config on window resize
 if (typeof window !== 'undefined') {
   window.addEventListener('resize', () => {
     appConfig.updateDeviceConfig();

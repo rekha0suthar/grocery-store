@@ -1,12 +1,7 @@
 import bcrypt from 'bcryptjs';
-import { IPasswordHasher } from '@grocery-store/core/interfaces/IPasswordHasher.js';
+import { IPasswordHasher } from '@grocery-store/core/interfaces';
 
-/**
- * Bcrypt Password Hasher Adapter
- * 
- * This adapter implements the IPasswordHasher interface using bcrypt.
- * This is a framework/infrastructure detail that the core doesn't know about.
- */
+
 export class BcryptPasswordHasher extends IPasswordHasher {
   constructor(saltRounds = 12) {
     super();

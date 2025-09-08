@@ -8,18 +8,14 @@ export class ConfigController extends BaseController {
   }
 
   getConfig = asyncHandler(async (req, res) => {
-    // Get client IP and user agent for dynamic configuration
     const clientIP = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent') || '';
     const acceptLanguage = req.get('Accept-Language') || 'en';
     
-    // Determine if client is mobile
     const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
     
-    // Get frontend configuration
     const frontendConfig = config.getFrontendConfig();
     
-    // Add dynamic configuration based on client
     const dynamicConfig = {
       ...frontendConfig,
       client: {
@@ -49,8 +45,7 @@ export class ConfigController extends BaseController {
       }
     };
 
-    // Cache headers for configuration
-    const cacheMaxAge = config.isProduction() ? 300 : 0; // 5 minutes in production, no cache in dev
+    const cacheMaxAge = config.isProduction() ? 300 : 0; 
     res.set({
       'Cache-Control': `public, max-age=${cacheMaxAge}`,
       'ETag': `"${Buffer.from(JSON.stringify(dynamicConfig)).toString('base64').slice(0, 16)}"`
@@ -71,8 +66,8 @@ export class ConfigController extends BaseController {
         platform: process.platform
       },
       services: {
-        database: 'connected', // This would be checked against actual DB
-        redis: 'not_configured', // This would be checked if Redis is configured
+        database: 'connected', 
+        redis: 'not_configured', 
         email: 'not_configured'
       },
       endpoints: {

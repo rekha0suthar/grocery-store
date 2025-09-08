@@ -1,4 +1,3 @@
-// use-cases/auth/AuthenticateUserUseCase.js
 import { User } from '../../entities/User.js';
 
 export class AuthenticateUserUseCase {
@@ -21,7 +20,6 @@ export class AuthenticateUserUseCase {
         return { success: false, message: 'Invalid credentials', user: null };
       }
 
-      // If your User entity doesn’t implement this, wire a LoginPolicy or stub.
       if (typeof user.isAccountLocked === 'function' && user.isAccountLocked()) {
         return { success: false, message: 'Account is locked', user: null };
       }
@@ -43,7 +41,6 @@ export class AuthenticateUserUseCase {
     }
   }
 
-  // ——— Application-specific rules ———
 
   validateInput(credentials) {
     if (!credentials) {
@@ -84,7 +81,6 @@ export class AuthenticateUserUseCase {
     );
   }
 
-  // fallback if toPublicJSON is missing
   safePublicUser(user) {
     const { password, loginAttempts, lockedUntil, ...rest } = user;
     return rest;

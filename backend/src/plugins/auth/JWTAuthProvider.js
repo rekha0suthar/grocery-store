@@ -1,10 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { IAuthProvider } from '@grocery-store/core/interfaces/IAuthProvider.js';
+import { IAuthProvider } from '@grocery-store/core/interfaces';
 
-/**
- * JWT Authentication Provider
- * Implements JWT-based authentication
- */
+
 export class JWTAuthProvider extends IAuthProvider {
   constructor(options = {}) {
     super();
@@ -15,8 +12,6 @@ export class JWTAuthProvider extends IAuthProvider {
   }
 
   async authenticate(credentials) {
-    // This should be implemented based on your user repository
-    // For now, return a mock implementation
     throw new Error('authenticate method must be implemented with your user repository');
   }
 
@@ -68,8 +63,7 @@ export class JWTAuthProvider extends IAuthProvider {
         throw new Error('Invalid refresh token');
       }
 
-      // Generate new tokens
-      const user = { id: decoded.id }; // You should fetch full user data
+      const user = { id: decoded.id }; 
       return await this.generateToken(user);
     } catch (error) {
       throw new Error('Invalid refresh token');
@@ -77,8 +71,6 @@ export class JWTAuthProvider extends IAuthProvider {
   }
 
   async revokeToken(token) {
-    // JWT tokens are stateless, so revocation requires a blacklist
-    // This is a simplified implementation
     return true;
   }
 

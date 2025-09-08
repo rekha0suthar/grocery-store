@@ -1,15 +1,11 @@
 import { db } from '../src/config/firebase.js';
 import bcrypt from 'bcryptjs';
 
-/**
- * Initialize Firestore with sample data
- * This script creates the initial collections and data for the grocery store
- */
+
 async function initializeFirestore() {
   try {
     console.log('🔥 Initializing Firestore database...');
 
-    // Create default admin user
     const adminPassword = 'admin123';
     const adminPasswordHash = await bcrypt.hash(adminPassword, 12);
     
@@ -29,11 +25,9 @@ async function initializeFirestore() {
       updated_at: new Date().toISOString()
     };
 
-    // Add admin user
     const adminRef = await db.collection('users').add(adminUser);
     console.log('✅ Admin user created with ID:', adminRef.id);
 
-    // Create default categories
     const categories = [
       {
         name: 'Fruits & Vegetables',
@@ -97,7 +91,6 @@ async function initializeFirestore() {
       }
     ];
 
-    // Add categories
     const categoryRefs = [];
     for (const category of categories) {
       const categoryRef = await db.collection('categories').add(category);
@@ -105,7 +98,6 @@ async function initializeFirestore() {
       console.log('✅ Category created:', category.name);
     }
 
-    // Create sample products
     const products = [
       {
         name: 'Fresh Apples',
@@ -169,7 +161,6 @@ async function initializeFirestore() {
       }
     ];
 
-    // Add products
     for (const product of products) {
       const productRef = await db.collection('products').add(product);
       console.log('✅ Product created:', product.name);
@@ -190,5 +181,4 @@ async function initializeFirestore() {
   }
 }
 
-// Run initialization
 initializeFirestore();

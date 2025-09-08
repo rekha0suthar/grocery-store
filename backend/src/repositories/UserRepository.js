@@ -1,11 +1,8 @@
 import { BaseRepository } from './BaseRepository.js';
-import { User } from '@grocery-store/core/entities/User.js';
+import { User } from '@grocery-store/core/entities';
 import { DatabaseFactory } from '../factories/DatabaseFactory.js';
 
-/**
- * User Repository - Minimal Implementation
- * Easy to switch databases by changing DATABASE_TYPE in .env
- */
+
 export class UserRepository extends BaseRepository {
   constructor(databaseType = 'firebase') {
     const adapter = DatabaseFactory.createAdapter(databaseType);

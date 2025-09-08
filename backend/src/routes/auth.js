@@ -12,7 +12,6 @@ import {
 const router = express.Router();
 const authController = new AuthController();
 
-// Routes
 router.post('/register', registerValidation, handleValidationErrors, authController.register);
 router.post('/login', loginValidation, handleValidationErrors, authController.login);
 router.get('/profile', authenticateToken, authController.getProfile);

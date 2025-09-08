@@ -1,9 +1,6 @@
-import { IDatabaseAdapter } from '@grocery-store/core/interfaces/IDatabaseAdapter.js';
+import { IDatabaseAdapter } from '@grocery-store/core/interfaces';
 
-/**
- * Base Repository - Refactored to use Database Adapter Pattern
- * Follows Dependency Inversion Principle and Open/Closed Principle
- */
+
 export class BaseRepository {
   constructor(collectionName, databaseAdapter) {
     if (!(databaseAdapter instanceof IDatabaseAdapter)) {
@@ -43,7 +40,6 @@ export class BaseRepository {
     return result !== null;
   }
 
-  // Generic query method (works with PostgreSQL, not Firebase)
   async query(text, params = []) {
     if (typeof this.db.query === 'function') {
       return await this.db.query(text, params);

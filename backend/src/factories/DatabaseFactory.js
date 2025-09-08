@@ -1,9 +1,5 @@
 import { FirebaseAdapter } from '../adapters/FirebaseAdapter.js';
 
-/**
- * Database Factory - Minimal Implementation
- * Only Firebase support, easy to extend for other databases
- */
 export class DatabaseFactory {
   static createAdapter(databaseType = 'firebase') {
     switch (databaseType.toLowerCase()) {

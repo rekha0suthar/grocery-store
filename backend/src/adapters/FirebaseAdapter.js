@@ -1,11 +1,7 @@
 import { db } from '../config/firebase.js';
-import { IDatabaseAdapter } from '@grocery-store/core/interfaces/IDatabaseAdapter.js';
+import { IDatabaseAdapter } from '@grocery-store/core/interfaces';
 
-/**
- * Firebase Database Adapter
- * Implements IDatabaseAdapter interface
- * Follows Open/Closed Principle - open for extension, closed for modification
- */
+
 export class FirebaseAdapter extends IDatabaseAdapter {
   constructor() {
     super();

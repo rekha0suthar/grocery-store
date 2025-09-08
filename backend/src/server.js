@@ -9,10 +9,8 @@ import config from './config/appConfig.js';
 
 const app = express();
 
-// Log configuration on startup
 config.log();
 
-// Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -26,10 +24,8 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
 app.use(cors(config.cors));
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
@@ -41,7 +37,6 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for health checks
     if (req.url === '/api/health' || req.url === '/api/config/health') {
       return true;
     }
@@ -51,11 +46,9 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// Request logging middleware
 app.use(requestLogger);
 app.use(morganLogger);
 
-// Body parsing middleware
 app.use(express.json({ 
   limit: config.upload.maxFileSize,
   verify: (req, res, buf) => {
@@ -72,33 +65,25 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: config.upload.maxFileSize }));
 
-// Trust proxy for accurate IP addresses
 app.set('trust proxy', config.security.trustProxy);
 
-// Routes
 app.use(config.api.prefix, routes);
 
-// Error handling middleware
 app.use(errorLogger);
 app.use(notFound);
 app.use(errorHandler);
 
-// Graceful shutdown
 const gracefulShutdown = async (signal) => {
   console.log(`\n${signal} received. Shutting down gracefully...`);
   
   try {
-    // Close database connections
-    // await pool.end(); // No database pool in Firebase setup
     console.log('✅ Database connections closed');
     
-    // Close server
     server.close(() => {
       console.log('✅ HTTP server closed');
       process.exit(0);
     });
     
-    // Force close after 10 seconds
     setTimeout(() => {
       console.log('❌ Forced shutdown');
       process.exit(1);
@@ -110,23 +95,19 @@ const gracefulShutdown = async (signal) => {
   }
 };
 
-// Handle shutdown signals
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
   gracefulShutdown('uncaughtException');
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
   gracefulShutdown('unhandledRejection');
 });
 
-// Start server
 const server = app.listen(config.port, config.host, () => {
   console.log(`🚀 Server running on ${config.getBaseUrl()}`);
   console.log(`📊 Environment: ${config.environment}`);
