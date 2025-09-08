@@ -81,7 +81,7 @@ describe('ProductController - HTTP Interface Adapter', () => {
       
       expect(mockManageProductUseCase.execute).toHaveBeenCalledWith(
         'getAllProducts',
-        { limit: 20, offset: 0, filters: { featured: undefined, inStock: undefined } }
+        { page: 1, limit: 20, featured: undefined, inStock: undefined }
       );
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith({

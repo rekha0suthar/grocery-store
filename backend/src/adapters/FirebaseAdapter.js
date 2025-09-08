@@ -77,17 +77,18 @@ export class FirebaseAdapter extends IDatabaseAdapter {
 
   async create(collection, data) {
     try {
+      // Remove id from data since Firestore manages document IDs
+      const { id, ...dataWithoutId } = data;
+      
       const docRef = await this.db.collection(collection).add({
-        ...data,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        ...dataWithoutId
+        // Removed created_at and updated_at since they're already in data
       });
       
       return {
-        id: docRef.id,
-        ...data,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        ...dataWithoutId,
+        id: docRef.id
+        // Removed created_at and updated_at since they're already in data
       };
     } catch (error) {
       throw new Error(`Failed to create document: ${error.message}`);
@@ -99,8 +100,8 @@ export class FirebaseAdapter extends IDatabaseAdapter {
       const docRef = this.db.collection(collection).doc(id);
       
       await docRef.update({
-        ...data,
-        updated_at: new Date().toISOString()
+        ...data
+        // Removed updated_at since it's already in data
       });
       
       const updatedDoc = await docRef.get();

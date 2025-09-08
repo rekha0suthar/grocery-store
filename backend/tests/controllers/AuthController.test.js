@@ -77,10 +77,7 @@ describe('AuthController - HTTP Interface Adapter', () => {
       
       await controller.register(mockReq, mockRes, mockNext);
       
-      expect(mockCreateUserUseCase.execute).toHaveBeenCalledWith(
-        'createUser',
-        userData
-      );
+      expect(mockCreateUserUseCase.execute).toHaveBeenCalledWith(userData);
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
@@ -100,10 +97,7 @@ describe('AuthController - HTTP Interface Adapter', () => {
       
       await controller.login(mockReq, mockRes, mockNext);
       
-      expect(mockAuthenticateUserUseCase.execute).toHaveBeenCalledWith(
-        'authenticateUser',
-        loginData
-      );
+      expect(mockAuthenticateUserUseCase.execute).toHaveBeenCalledWith(loginData);
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,

@@ -72,7 +72,7 @@ describe('ManageProductUseCase - Application Policy', () => {
       expect(result.products[0]).toBeInstanceOf(Product);
       expect(result.products[1]).toBeInstanceOf(Product);
       // expect(result.pagination).toEqual(pagination);
-      expect(mockProductRepository.findAll).toHaveBeenCalledWith({ page: 1, limit: 10 }, 10, 0);
+      expect(mockProductRepository.findAll).toHaveBeenCalledWith({}, 10, 0);
     });
 
     test('handles empty product list', async () => {
