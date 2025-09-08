@@ -11,7 +11,7 @@ export class AuthController extends BaseController {
   register = asyncHandler(async (req, res) => {
     const userData = req.body;
     
-    const user = await this.authComposition.getCreateUserUseCase().execute('createUser', userData);
+    const user = await this.authComposition.getCreateUserUseCase().execute(userData);
     
     this.sendSuccess(res, user, 'User registered successfully', 201);
   });
@@ -19,7 +19,7 @@ export class AuthController extends BaseController {
   login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     
-    const result = await this.authComposition.getAuthenticateUserUseCase().execute('authenticateUser', {
+    const result = await this.authComposition.getAuthenticateUserUseCase().execute({
       email,
       password
     });

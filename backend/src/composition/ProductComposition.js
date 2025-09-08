@@ -9,19 +9,18 @@ export class ProductComposition {
     this.productRepository = new ProductRepository(DatabaseFactory.createAdapter(appConfig.getDatabaseType()));
     this.categoryRepository = new CategoryRepository(DatabaseFactory.createAdapter(appConfig.getDatabaseType()));
     
-    this.manageProductUseCase = new ManageProductUseCase(
-      this.productRepository,
-      this.categoryRepository
-    );
+    this.manageProductUseCase = new ManageProductUseCase({
+      productRepo: this.productRepository
+    });
     
-    this.createProductUseCase = new CreateProductUseCase(
-      this.productRepository,
-      this.categoryRepository
-    );
+    this.createProductUseCase = new CreateProductUseCase({
+      productRepo: this.productRepository,
+      categoryRepo: this.categoryRepository
+    });
     
-    this.updateProductStockUseCase = new UpdateProductStockUseCase(
-      this.productRepository
-    );
+    this.updateProductStockUseCase = new UpdateProductStockUseCase({
+      productRepo: this.productRepository
+    });
   }
 
   getManageProductUseCase() {

@@ -39,13 +39,17 @@ export class FirebaseAdapter extends IDatabaseAdapter {
     try {
       let query = this.db.collection(collection);
 
+      // Apply filters
       Object.keys(filters).forEach(key => {
         if (filters[key] !== undefined) {
           query = query.where(key, '==', filters[key]);
         }
       });
 
-      query = query.orderBy('created_at', 'desc').limit(limit);
+      // For now, let's avoid orderBy to prevent index requirements
+      // We'll get more documents and handle sorting/pagination in memory
+      const maxLimit = Math.max(limit + offset, 1000);
+      query = query.limit(maxLimit);
 
       const snapshot = await query.get();
       const documents = [];
@@ -57,7 +61,15 @@ export class FirebaseAdapter extends IDatabaseAdapter {
         });
       });
 
-      return documents;
+      // Sort by created_at in memory and apply offset
+      documents.sort((a, b) => {
+        const aTime = new Date(a.created_at || 0).getTime();
+        const bTime = new Date(b.created_at || 0).getTime();
+        return bTime - aTime; // desc order
+      });
+
+      // Apply offset and limit
+      return documents.slice(offset, offset + limit);
     } catch (error) {
       throw new Error(`Failed to find documents: ${error.message}`);
     }

@@ -299,4 +299,70 @@ export class ManageCategoryUseCase {
   canManageCategories(userRole) {
     return ['admin', 'store_manager'].includes(userRole);
   }
+
+  async execute(action, params = {}) {
+    switch (action) {
+      case 'getAllCategories':
+        return await this.getAllCategories(params.filters, params.limit, params.offset);
+      
+      case 'getCategoryById':
+        return await this.getCategoryById(params.id);
+      
+      case 'createCategory':
+        return await this.createCategory(params, params.userRole, params.userId);
+      
+      case 'updateCategory':
+        return await this.updateCategory(params.id, params, params.userRole, params.userId);
+      
+      case 'deleteCategory':
+        return await this.deleteCategory(params.id, params.userRole, params.userId);
+      
+      case 'getCategoryTree':
+        return await this.getCategoryTree();
+      
+      default:
+        return {
+          success: false,
+          message: `Unknown action: ${action}`,
+          data: null
+        };
+    }
+  }
+
+  async getCategoryTree() {
+    try {
+      const categoriesData = await this.categoryRepository.findAll({}, 1000, 0);
+      const categories = categoriesData.map(data => Category.fromJSON(data));
+      
+      // Build tree structure
+      const categoryMap = new Map();
+      const rootCategories = [];
+      
+      categories.forEach(category => {
+        categoryMap.set(category.id, { ...category, children: [] });
+      });
+      
+      categories.forEach(category => {
+        if (category.parentId && categoryMap.has(category.parentId)) {
+          categoryMap.get(category.parentId).children.push(categoryMap.get(category.id));
+        } else {
+          rootCategories.push(categoryMap.get(category.id));
+        }
+      });
+      
+      return {
+        success: true,
+        message: 'Category tree retrieved successfully',
+        categories: rootCategories
+      };
+    } catch (error) {
+      console.error('Category tree retrieval error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve category tree',
+        categories: [],
+        error: error.message
+      };
+    }
+  }
 }

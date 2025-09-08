@@ -14,10 +14,10 @@ export class AuthenticationComposition {
       this.passwordHasher
     );
     
-    this.createUserUseCase = new CreateUserUseCase(
-      this.userRepository,
-      this.passwordHasher
-    );
+    this.createUserUseCase = new CreateUserUseCase({
+      userRepo: this.userRepository,
+      passwordHasher: this.passwordHasher
+    });
   }
 
   getAuthenticateUserUseCase() {

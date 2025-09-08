@@ -18,6 +18,10 @@ export class BaseRepository {
     return await this.db.findAll(this.collectionName, filters, limit, offset);
   }
 
+  async findByField(field, value) {
+    return await this.db.findByField(this.collectionName, field, value);
+  }
+
   async create(data) {
     return await this.db.create(this.collectionName, data);
   }

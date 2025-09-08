@@ -108,7 +108,7 @@ process.on('unhandledRejection', (reason, promise) => {
   gracefulShutdown('unhandledRejection');
 });
 
-const server = app.listen(config.port, config.host, () => {
+const server = app.listen(config.get('port'), config.get('host'), () => {
   console.log(`🚀 Server running on ${config.getBaseUrl()}`);
   console.log(`📊 Environment: ${config.environment}`);
   console.log(`🔗 API URL: ${config.getApiUrl()}`);

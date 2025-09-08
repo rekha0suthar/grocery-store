@@ -221,10 +221,10 @@ export class ManageProductUseCase {
 
   async getAllProducts(filters = {}) {
     try {
-      const { page = 1, limit = 10 } = filters;
+      const { page = 1, limit = 10, ...actualFilters } = filters;
       const offset = (page - 1) * limit;
       
-      const productsData = await this.productRepository.findAll(filters, limit, offset);
+      const productsData = await this.productRepository.findAll(actualFilters, limit, offset);
       const products = productsData.map(data => Product.fromJSON(data));
 
       return {

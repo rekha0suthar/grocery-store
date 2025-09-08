@@ -7,9 +7,9 @@ export class CategoryComposition {
   constructor() {
     this.categoryRepository = new CategoryRepository(DatabaseFactory.createAdapter(appConfig.getDatabaseType()));
     
-    this.manageCategoryUseCase = new ManageCategoryUseCase(
-      this.categoryRepository
-    );
+    this.manageCategoryUseCase = new ManageCategoryUseCase({
+      categoryRepo: this.categoryRepository
+    });
   }
 
   getManageCategoryUseCase() {

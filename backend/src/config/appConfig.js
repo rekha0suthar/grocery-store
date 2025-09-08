@@ -28,9 +28,12 @@ class AppConfig {
       },
 
       cors: {
-        origins: process.env.CORS_ORIGINS 
+        origin: process.env.CORS_ORIGINS 
           ? process.env.CORS_ORIGINS.split(',')
-          : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']
+          : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
       },
 
       rateLimit: {
@@ -100,6 +103,49 @@ class AppConfig {
       name: process.env.DATABASE_NAME || 'grocery_store'
     };
   }
+
+    // Environment check methods
+    isDevelopment() {
+      return this.environment === 'development';
+    }
+  
+    isProduction() {
+      return this.environment === 'production';
+    }
+  
+    isStaging() {
+      return this.environment === 'staging';
+    }
+  
+    // Frontend configuration
+    getFrontendConfig() {
+      return {
+        features: {
+          registration: true,
+          socialLogin: false,
+          darkMode: true,
+          notifications: true,
+          search: true,
+          filters: true,
+          wishlist: true,
+          reviews: true
+        },
+        limits: {
+          maxFileSize: '10MB',
+          maxProductsPerPage: 50,
+          maxSearchResults: 100,
+          maxCartItems: 50,
+          maxWishlistItems: 100
+        },
+        ui: {
+          theme: 'light',
+          language: 'en',
+          currency: 'USD',
+          dateFormat: 'MM/DD/YYYY',
+          timeFormat: '12h'
+        }
+      };
+    }
 }
 
 const appConfig = new AppConfig();

@@ -9,8 +9,7 @@ export class UserRepository extends BaseRepository {
   }
 
   async findByEmail(email) {
-    const result = await this.db.findByField('users', 'email', email);
-    return result ? User.fromJSON(result) : null;
+    return await this.findByField('email', email);
   }
 
   async findByRole(role) {
