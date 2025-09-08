@@ -28,6 +28,11 @@ on:
         default: false
         type: boolean
 
+# Add permissions for GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+
 env:
   NODE_VERSION: '18'
   REGISTRY: ghcr.io
