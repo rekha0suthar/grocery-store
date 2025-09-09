@@ -3,6 +3,7 @@ import authRoutes from './auth.js';
 import productRoutes from './products.js';
 import categoryRoutes from './categories.js';
 import configRoutes from './config.js';
+import requestRoutes from './requests.js';
 
 const router = express.Router();
 
@@ -16,7 +17,8 @@ router.get('/health', (req, res) => {
       auth: '/api/auth',
       products: '/api/products',
       categories: '/api/categories',
-      config: '/api/config'
+      config: '/api/config',
+      requests: '/api/requests'
     }
   });
 });
@@ -25,5 +27,6 @@ router.use('/auth', authRoutes);
 router.use('/products', productRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/config', configRoutes);
+router.use('/requests', requestRoutes);
 
 export default router;

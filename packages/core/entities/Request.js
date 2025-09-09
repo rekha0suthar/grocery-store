@@ -208,6 +208,10 @@ export class Request extends BaseEntity {
     };
   }
 
+  toPersistence() {
+    return this.toJSON();
+  }
+
   static fromJSON(data) {
     return new Request(data);
   }
