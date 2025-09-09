@@ -6,28 +6,48 @@ export class ProductRepository extends BaseRepository {
     super('products', databaseAdapter);
   }
 
+  async create(productData) {
+    const product = new Product(productData);
+    const result = await super.create(product.toPersistence());
+    return Product.fromJSON(result);
+  }
+
+  async update(id, productData) {
+    const result = await super.update(id, productData);
+    return result ? Product.fromJSON(result) : null;
+  }
+
+  async findById(id) {
+    const result = await super.findById(id);
+    return result ? Product.fromJSON(result) : null;
+  }
+
+  async findAll(filters = {}, limit = 100, offset = 0) {
+    const results = await super.findAll(filters, limit, offset);
+    return results.map(product => Product.fromJSON(product));
+  }
+
   async findByCategory(categoryId, limit = 100, offset = 0) {
-    return await this.findAll({ categoryId, isVisible: true }, limit, offset);
+    const results = await this.findAll({ categoryId, isVisible: true }, limit, offset);
+    return results;
   }
 
   async findFeatured(limit = 20) {
-    return await this.findAll({ isFeatured: true, isVisible: true }, limit, 0);
+    const results = await this.findAll({ isFeatured: true, isVisible: true }, limit, 0);
+    return results;
   }
 
   async findInStock(limit = 100, offset = 0) {
-    return await this.findAll({ isVisible: true }, limit, offset);
+    const results = await this.findAll({ isVisible: true }, limit, offset);
+    return results;
   }
 
   async findLowStock() {
-    // Note: This would need a more complex query in Firestore
-    // For now, we'll get all products and filter in memory
     const products = await this.findAll({ isVisible: true }, 1000, 0);
     return products.filter(product => product.stock <= product.minStock);
   }
 
   async searchProducts(searchTerm, limit = 50, offset = 0) {
-    // Note: Firestore doesn't support full-text search natively
-    // This is a simplified implementation
     const products = await this.findAll({ isVisible: true }, 1000, 0);
     const filtered = products.filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -37,11 +57,13 @@ export class ProductRepository extends BaseRepository {
   }
 
   async findBySku(sku) {
-    return await this.findByField('sku', sku);
+    const result = await this.findByField('sku', sku);
+    return result ? Product.fromJSON(result) : null;
   }
 
   async updateStock(id, newStock) {
-    return await this.update(id, { stock: newStock });
+    const result = await this.update(id, { stock: newStock });
+    return result;
   }
 
   async reduceStock(id, quantity) {

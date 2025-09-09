@@ -3,8 +3,13 @@ import { User } from '@grocery-store/core/entities';
 import { DatabaseFactory } from '../factories/DatabaseFactory.js';
 
 export class UserRepository extends BaseRepository {
-  constructor(databaseType = 'firebase') {
-    const adapter = DatabaseFactory.createAdapter(databaseType);
+  constructor(databaseTypeOrAdapter = 'firebase') {
+    let adapter;
+    if (typeof databaseTypeOrAdapter === 'string') {
+      adapter = DatabaseFactory.createAdapter(databaseTypeOrAdapter);
+    } else {
+      adapter = databaseTypeOrAdapter;
+    }
     super('users', adapter);
   }
 
@@ -15,7 +20,12 @@ export class UserRepository extends BaseRepository {
 
   async findByRole(role) {
     const users = await this.findAll({ role });
-    return users.map(user => User.fromJSON(user));
+    return users;
+  }
+
+  async findActive() {
+    const users = await this.findAll({ isActive: true });
+    return users;
   }
 
   async updateLoginAttempts(id, attempts, lockedUntil = null) {
@@ -24,8 +34,8 @@ export class UserRepository extends BaseRepository {
     return result ? User.fromJSON(result) : null;
   }
 
-  async updateLastLogin(id) {
-    const updateData = { last_login_at: new Date().toISOString() };
+  async updateLastLogin(id, lastLoginTime = new Date()) {
+    const updateData = { lastLoginAt: lastLoginTime };
     const result = await this.update(id, updateData);
     return result ? User.fromJSON(result) : null;
   }
@@ -34,6 +44,14 @@ export class UserRepository extends BaseRepository {
     const updateData = { login_attempts: 0, locked_until: null };
     const result = await this.update(id, updateData);
     return result ? User.fromJSON(result) : null;
+  }
+
+  async countByRole(role) {
+    return await this.db.count('users', { role });
+  }
+
+  async countActive() {
+    return await this.db.count('users', { isActive: true });
   }
 
   async create(userData) {

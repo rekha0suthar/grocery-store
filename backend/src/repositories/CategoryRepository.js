@@ -6,26 +6,50 @@ export class CategoryRepository extends BaseRepository {
     super('categories', databaseAdapter);
   }
 
+  async create(categoryData) {
+    const category = new Category(categoryData);
+    const result = await super.create(category.toPersistence());
+    return Category.fromJSON(result);
+  }
+
+  async update(id, categoryData) {
+    const result = await super.update(id, categoryData);
+    return result ? Category.fromJSON(result) : null;
+  }
+
+  async findById(id) {
+    const result = await super.findById(id);
+    return result ? Category.fromJSON(result) : null;
+  }
+
+  async findAll(filters = {}, limit = 100, offset = 0) {
+    const results = await super.findAll(filters, limit, offset);
+    return results.map(category => Category.fromJSON(category));
+  }
+
   async findBySlug(slug) {
-    return await this.findByField('slug', slug);
+    const result = await this.findByField('slug', slug);
+    return result ? Category.fromJSON(result) : null;
   }
 
   async findRootCategories(limit = 100, offset = 0) {
-    return await this.findAll({ parentId: null, isVisible: true }, limit, offset);
+    const results = await this.findAll({ parentId: null, isVisible: true }, limit, offset);
+    return results;
   }
 
   async findByParent(parentId, limit = 100, offset = 0) {
-    return await this.findAll({ parentId, isVisible: true }, limit, offset);
+    const results = await this.findAll({ parentId, isVisible: true }, limit, offset);
+    return results;
   }
 
   async findVisible(limit = 100, offset = 0) {
-    return await this.findAll({ isVisible: true }, limit, offset);
+    const results = await this.findAll({ isVisible: true }, limit, offset);
+    return results;
   }
 
   async hasProducts(categoryId) {
-    // Note: This would need a more complex query in Firestore
-    // For now, we'll return false as a placeholder
-    return false;
+    const count = await this.db.count('products', { categoryId });
+    return count > 0;
   }
 
   async hasSubcategories(categoryId) {
@@ -34,8 +58,6 @@ export class CategoryRepository extends BaseRepository {
   }
 
   async getCategoryTree() {
-    // Note: This is a simplified implementation for Firestore
-    // Firestore doesn't support recursive queries natively
     const categories = await this.findAll({ isVisible: true }, 1000, 0);
     
     // Build tree structure in memory
@@ -43,7 +65,8 @@ export class CategoryRepository extends BaseRepository {
     const rootCategories = [];
     
     categories.forEach(category => {
-      categoryMap.set(category.id, { ...category, children: [] });
+      const categoryObj = { ...category.toJSON(), children: [] };
+      categoryMap.set(category.id, categoryObj);
     });
     
     categories.forEach(category => {
@@ -54,7 +77,7 @@ export class CategoryRepository extends BaseRepository {
       }
     });
     
-    return rootCategories;
+    return rootCategories.map(cat => Category.fromJSON(cat));
   }
 
   generateSlug(name) {

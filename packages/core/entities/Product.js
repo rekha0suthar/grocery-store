@@ -239,6 +239,10 @@ export class Product extends BaseEntity {
     };
   }
 
+  toPersistence() {
+    return this.toJSON();
+  }
+
   static fromJSON(data) {
     return new Product(data);
   }

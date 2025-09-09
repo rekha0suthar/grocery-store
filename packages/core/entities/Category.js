@@ -137,6 +137,10 @@ export class Category extends BaseEntity {
     };
   }
 
+  toPersistence() {
+    return this.toJSON();
+  }
+
   canBeDeleted() {
     // Business rule: Category can be deleted if it has no active products
     // For now, allow deletion of all categories
