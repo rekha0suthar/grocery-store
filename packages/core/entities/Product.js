@@ -162,6 +162,54 @@ export class Product extends BaseEntity {
     return this;
   }
 
+  // Image Management Methods
+  addImage(imageUrl) {
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      throw new Error('Image URL must be a valid string');
+    }
+    if (!this.images.includes(imageUrl)) {
+      this.images.push(imageUrl);
+      this.updateTimestamp();
+    }
+    return this;
+  }
+
+  removeImage(imageUrl) {
+    const index = this.images.indexOf(imageUrl);
+    if (index > -1) {
+      this.images.splice(index, 1);
+      this.updateTimestamp();
+    }
+    return this;
+  }
+
+  setImages(imageUrls) {
+    if (!Array.isArray(imageUrls)) {
+      throw new Error('Images must be an array');
+    }
+    this.images = imageUrls.filter(url => typeof url === 'string');
+    this.updateTimestamp();
+    return this;
+  }
+
+  getImages() {
+    return [...this.images]; // Return a copy to prevent external modification
+  }
+
+  getPrimaryImage() {
+    return this.images.length > 0 ? this.images[0] : null;
+  }
+
+  hasImages() {
+    return this.images.length > 0;
+  }
+
+  clearImages() {
+    this.images = [];
+    this.updateTimestamp();
+    return this;
+  }
+
   // Getters
   getName() {
     return this.name;

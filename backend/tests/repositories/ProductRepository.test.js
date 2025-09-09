@@ -40,6 +40,7 @@ describe('ProductRepository - Data Access Layer', () => {
         isVisible: true,
         isFeatured: false,
         addedBy: 'user1',
+        images: ['https://example.com/iphone15-1.jpg', 'https://example.com/iphone15-2.jpg'],
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -97,6 +98,7 @@ describe('ProductRepository - Data Access Layer', () => {
         isVisible: true,
         isFeatured: false,
         addedBy: 'user1',
+        images: ['https://example.com/iphone15-1.jpg', 'https://example.com/iphone15-2.jpg'],
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -392,6 +394,126 @@ describe('ProductRepository - Data Access Layer', () => {
 
     test('uses correct collection name', () => {
       expect(productRepository.collectionName).toBe('products');
+    });
+  });
+
+  describe('Image Management', () => {
+    test('adds image to product', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001'
+      });
+
+      product.addImage('https://example.com/image1.jpg');
+      
+      expect(product.getImages()).toHaveLength(1);
+      expect(product.getImages()).toContain('https://example.com/image1.jpg');
+      expect(product.hasImages()).toBe(true);
+    });
+
+    test('does not add duplicate images', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001'
+      });
+
+      product.addImage('https://example.com/image1.jpg');
+      product.addImage('https://example.com/image1.jpg');
+      
+      expect(product.getImages()).toHaveLength(1);
+    });
+
+    test('removes image from product', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001',
+        images: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg']
+      });
+
+      product.removeImage('https://example.com/image1.jpg');
+      
+      expect(product.getImages()).toHaveLength(1);
+      expect(product.getImages()).toContain('https://example.com/image2.jpg');
+    });
+
+    test('sets multiple images', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001'
+      });
+
+      const imageUrls = [
+        'https://example.com/image1.jpg',
+        'https://example.com/image2.jpg',
+        'https://example.com/image3.jpg'
+      ];
+
+      product.setImages(imageUrls);
+      
+      expect(product.getImages()).toHaveLength(3);
+      expect(product.getImages()).toEqual(imageUrls);
+    });
+
+    test('gets primary image', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001',
+        images: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg']
+      });
+
+      expect(product.getPrimaryImage()).toBe('https://example.com/image1.jpg');
+    });
+
+    test('returns null for primary image when no images', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001'
+      });
+
+      expect(product.getPrimaryImage()).toBeNull();
+    });
+
+    test('clears all images', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001',
+        images: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg']
+      });
+
+      product.clearImages();
+      
+      expect(product.getImages()).toHaveLength(0);
+      expect(product.hasImages()).toBe(false);
+    });
+
+    test('validates image URL when adding', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001'
+      });
+
+      expect(() => product.addImage('')).toThrow('Image URL must be a valid string');
+      expect(() => product.addImage(null)).toThrow('Image URL must be a valid string');
+      expect(() => product.addImage(123)).toThrow('Image URL must be a valid string');
+    });
+
+    test('validates images array when setting', () => {
+      const product = new Product({
+        name: 'Test Product',
+        price: 100,
+        sku: 'TEST-001'
+      });
+
+      expect(() => product.setImages('not an array')).toThrow('Images must be an array');
+      expect(() => product.setImages(null)).toThrow('Images must be an array');
     });
   });
 });
