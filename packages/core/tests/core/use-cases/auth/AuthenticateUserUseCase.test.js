@@ -21,7 +21,7 @@ describe('AuthenticateUserUseCase - Application Policy', () => {
       compare: jest.fn()
     };
 
-    useCase = new AuthenticateUserUseCase(mockUserRepository, mockPasswordHasher);
+    useCase = new AuthenticateUserUseCase(mockUserRepository, mockPasswordHasher, fakeClock);
   });
 
   describe('Input Validation', () => {

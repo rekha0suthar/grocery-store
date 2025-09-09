@@ -2,7 +2,7 @@ import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { User } from '../../entities/User.js';
 
 export class AuthenticateUserUseCase {
-  constructor(userRepository, passwordHasher /*, clock? */) {
+  constructor(userRepository, passwordHasher, clock = null) {
     this.userRepository = userRepository;
     this.clock = clock || new DefaultClock();
     this.passwordHasher = passwordHasher;
