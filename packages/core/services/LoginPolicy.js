@@ -1,3 +1,4 @@
+import { DefaultClock } from "../adapters/DefaultClock.js";
 /**
  * Login Policy - Application-specific business rules for authentication
  * 
@@ -8,7 +9,7 @@ export class LoginPolicy {
   constructor(config = {}, clock = null) {
     this.maxAttempts = config.maxAttempts || 5;
     this.lockoutDurationMs = config.lockoutDurationMs || (2 * 60 * 60 * 1000); // 2 hours
-    this.clock = clock || { now: () => new Date() };
+    this.clock = clock || new DefaultClock();
   }
 
   // Create initial login state
@@ -24,7 +25,7 @@ export class LoginPolicy {
     loginState.attempts += 1;
     
     if (this.shouldLockAccount(loginState)) {
-      loginState.lockedUntil = new Date(this.clock.now().getTime() + this.lockoutDurationMs);
+      loginState.lockedUntil = this.clock.addTime(this.clock.now(), this.lockoutDurationMs);
     }
     
     return loginState;

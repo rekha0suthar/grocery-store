@@ -2,8 +2,8 @@ import { BaseEntity } from './BaseEntity.js';
 import { CartItem } from './CartItem.js';
 
 export class Cart extends BaseEntity {
-  constructor(data = {}) {
-    super(data.id);
+  constructor(data = {}, clock = null) {
+    super(data.id, clock);
     this.userId = data.userId || data.user_id || null;
     this.items = (data.items || []).map(item => 
       item instanceof CartItem ? item : new CartItem(item)
@@ -19,7 +19,7 @@ export class Cart extends BaseEntity {
     this.paymentMethod = data.paymentMethod || data.payment_method || null;
     this.isAbandoned = data.isAbandoned || data.is_abandoned || false;
     this.abandonedAt = data.abandonedAt || data.abandoned_at || null;
-    this.lastActivityAt = data.lastActivityAt || data.last_activity_at || new Date();
+    this.lastActivityAt = data.lastActivityAt || data.last_activity_at || this.clock.now();
   }
 
   isValid() {
@@ -184,7 +184,7 @@ export class Cart extends BaseEntity {
 
   markAsAbandoned() {
     this.isAbandoned = true;
-    this.abandonedAt = new Date();
+    this.abandonedAt = this.clock.now();
     this.updateTimestamp();
     return this;
   }
@@ -197,7 +197,7 @@ export class Cart extends BaseEntity {
   }
 
   updateLastActivity() {
-    this.lastActivityAt = new Date();
+    this.lastActivityAt = this.clock.now();
     this.updateTimestamp();
     return this;
   }

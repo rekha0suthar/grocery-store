@@ -1,8 +1,10 @@
+import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { User } from '../../entities/User.js';
 
 export class AuthenticateUserUseCase {
   constructor(userRepository, passwordHasher /*, clock? */) {
     this.userRepository = userRepository;
+    this.clock = clock || new DefaultClock();
     this.passwordHasher = passwordHasher;
   }
 
@@ -74,7 +76,7 @@ export class AuthenticateUserUseCase {
     if (typeof user.resetLoginAttempts === 'function') {
       user.resetLoginAttempts();
     }
-    user.lastLoginAt = new Date();
+    user.lastLoginAt = this.clock.now();
     await this.userRepository.update(
       user.id,
       user.toPersistence ? user.toPersistence() : user.toJSON()
@@ -86,3 +88,4 @@ export class AuthenticateUserUseCase {
     return rest;
   }
 }
+

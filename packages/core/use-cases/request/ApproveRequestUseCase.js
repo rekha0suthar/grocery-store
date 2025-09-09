@@ -1,3 +1,4 @@
+import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { Request } from '../../entities/Request.js';
 import { User } from '../../entities/User.js';
 import { Category } from '../../entities/Category.js';
@@ -7,10 +8,11 @@ export class ApproveRequestUseCase {
   /**
    * @param {{ requestRepo: { findById(id):Promise<Request>, update(id, data):Promise<Request> }, userRepo: { findById(id):Promise<User>, update(id, data):Promise<User> }, categoryRepo: { findById(id):Promise<Category>, create(data):Promise<Category> } }} deps
    */
-  constructor({ requestRepo, userRepo, categoryRepo }) {
+  constructor({ requestRepo, userRepo, categoryRepo }, clock = null) {
     this.requestRepository = requestRepo;
     this.userRepository = userRepo;
     this.categoryRepository = categoryRepo;
+    this.clock = clock || new DefaultClock();
   }
 
   async execute(requestId, approverId, userRole, action) {
@@ -94,7 +96,7 @@ export class ApproveRequestUseCase {
     const updatedRequest = await this.requestRepository.update(request.id, {
       ...request,
       status: 'rejected',
-      rejectedAt: new Date().toISOString(),
+      rejectedAt: this.clock.now().toISOString(),
       rejectedBy: approverId
     });
 

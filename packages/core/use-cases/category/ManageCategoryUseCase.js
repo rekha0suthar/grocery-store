@@ -1,15 +1,14 @@
+import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { Category } from '../../entities/Category.js';
 
-/**
- * Manage Category Use Case - Business Logic
- * Handles category creation, updates, and management
- */
+
 export class ManageCategoryUseCase {
   /**
    * @param {{ categoryRepo: { findByName(name):Promise<Category>, findById(id):Promise<Category>, create(data):Promise<Category>, update(id, data):Promise<Category>, findAll(filters, limit, offset):Promise<Category[]> } }} deps
    */
-  constructor({ categoryRepo }) {
+  constructor({ categoryRepo }, clock = null) {
     this.categoryRepository = categoryRepo;
+    this.clock = clock || new DefaultClock();
   }
 
   async createCategory(categoryData, userRole, userId) {
@@ -123,7 +122,7 @@ export class ManageCategoryUseCase {
       const updatedData = {
         ...existingCategory,
         ...categoryData,
-        updatedAt: new Date(),
+        updatedAt: this.clock.now(),
         updatedBy: userId
       };
 

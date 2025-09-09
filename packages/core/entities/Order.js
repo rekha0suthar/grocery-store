@@ -5,8 +5,8 @@ import { InvalidTransitionError } from '../errors/DomainErrors.js';
  * Order Entity - Represents customer orders
  */
 export class Order extends BaseEntity {
-  constructor(data = {}) {
-    super(data.id);
+  constructor(data = {}, clock = null) {
+    super(data.id, clock);
     this.orderNumber = data.orderNumber || this.generateOrderNumber();
     this.userId = data.userId || null;
     this.items = data.items || []; // Array of OrderItem objects
@@ -138,7 +138,7 @@ export class Order extends BaseEntity {
     }
     this.status = 'cancelled';
     this.cancellationReason = reason;
-    this.cancelledAt = new Date();
+    this.cancelledAt = this.clock.now();
     this.updateTimestamp();
     return true;
   }
@@ -165,7 +165,7 @@ export class Order extends BaseEntity {
 
   // Generate unique order number (deterministic for testing)
   generateOrderNumber() {
-    const timestamp = Date.now().toString();
+    const timestamp = this.clock.timestamp().toString();
     const random = Math.random().toString(36).substr(2, 5).toUpperCase();
     return `ORD-${timestamp.slice(-6)}-${random}`;
   }
@@ -254,8 +254,8 @@ export class Order extends BaseEntity {
  * OrderItem Entity - Represents individual items in an order
  */
 export class OrderItem extends BaseEntity {
-  constructor(data = {}) {
-    super(data.id);
+  constructor(data = {}, clock = null) {
+    super(data.id, clock);
     this.productId = data.productId || null;
     this.productName = data.productName || null;
     this.productPrice = data.productPrice || 0;

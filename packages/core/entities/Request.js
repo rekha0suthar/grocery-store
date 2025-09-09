@@ -1,8 +1,8 @@
 import { BaseEntity } from './BaseEntity.js';
 
 export class Request extends BaseEntity {
-  constructor(data = {}) {
-    super(data.id);
+  constructor(data = {}, clock = null) {
+    super(data.id, clock);
     this.type = data.type || '';
     this.status = data.status || 'pending';
     this.requestedBy = data.requestedBy || null;
@@ -89,7 +89,7 @@ export class Request extends BaseEntity {
     if (this.canBeReviewed()) {
       this.status = 'approved';
       this.reviewedBy = reviewedBy;
-      this.reviewedAt = new Date();
+      this.reviewedAt = this.clock.now();
       this.notes = notes;
       this.updateTimestamp();
       return true;
@@ -101,7 +101,7 @@ export class Request extends BaseEntity {
     if (this.canBeReviewed()) {
       this.status = 'rejected';
       this.reviewedBy = reviewedBy;
-      this.reviewedAt = new Date();
+      this.reviewedAt = this.clock.now();
       this.rejectionReason = reason;
       this.notes = notes;
       this.updateTimestamp();

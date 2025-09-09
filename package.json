@@ -18,11 +18,17 @@
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "install:all": "npm install",
-    "clean": "rm -rf node_modules packages/*/node_modules backend/node_modules frontend/node_modules"
+    "clean": "rm -rf node_modules packages/*/node_modules backend/node_modules frontend/node_modules",
+    "arch:check": "npx depcruise --config .dependency-cruiser.cjs --include-only \"^packages/|^backend/src/|^frontend/src/\" \"packages/**\" \"backend/src/**\" \"frontend/src/**\"",
+    "arch:test": "npm test -- --runTestsByPath tests/architecture/layering.test.js",
+    "arch:lint": "npx eslint . --config .eslintrc.cjs",
+    "arch:all": "npm run arch:check && npm run arch:lint && npm run arch:test"
   },
   "devDependencies": {
-    "jest": "^29.0.0",
-    "eslint": "^8.0.0"
+    "dependency-cruiser": "^16.10.4",
+    "eslint": "^8.0.0",
+    "eslint-plugin-import": "^2.32.0",
+    "jest": "^29.0.0"
   },
   "engines": {
     "node": ">=18.0.0",

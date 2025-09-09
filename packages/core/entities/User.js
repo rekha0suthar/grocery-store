@@ -1,8 +1,8 @@
 import { BaseEntity } from './BaseEntity.js';
 
 export class User extends BaseEntity {
-  constructor(data = {}) {
-    super(data.id);
+  constructor(data = {}, clock = null) {
+    super(data.id, clock);
     this.email = data.email || '';
     this.name = data.name || '';
     this.password = data.password || '';
@@ -48,14 +48,14 @@ export class User extends BaseEntity {
     if (!this.lockedUntil) {
       return false;
     }
-    return new Date() < new Date(this.lockedUntil);
+    return this.clock.now() < this.clock.createDate(this.lockedUntil);
   }
 
   incrementLoginAttempts(maxAttempts = 5, lockDurationMinutes = 30) {
     this.loginAttempts = (this.loginAttempts || 0) + 1;
 
     if (this.loginAttempts >= maxAttempts) {
-      this.lockedUntil = new Date(Date.now() + lockDurationMinutes * 60 * 1000);
+      this.lockedUntil = this.clock.addTime(this.clock.now(), lockDurationMinutes * 60 * 1000);
     }
 
     this.updateTimestamp();

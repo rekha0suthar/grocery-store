@@ -1,17 +1,15 @@
+import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { Order } from '../../entities/Order.js';
 
-/**
- * Process Order Use Case - Business Logic
- * Handles order processing and status updates
- */
 export class ProcessOrderUseCase {
   /**
    * @param {{ orderRepo: { findById(id):Promise<Order>, update(id, data):Promise<Order> }, cartRepo: { findById(id):Promise<Cart> }, productRepo: { findById(id):Promise<Product>, update(id, data):Promise<Product> } }} deps
    */
-  constructor({ orderRepo, cartRepo, productRepo }) {
+  constructor({ orderRepo, cartRepo, productRepo }, clock = null) {
     this.orderRepository = orderRepo;
     this.cartRepository = cartRepo;
     this.productRepository = productRepo;
+    this.clock = clock || new DefaultClock();
   }
 
   async execute(orderId, action, userRole, userId) {
@@ -95,7 +93,7 @@ export class ProcessOrderUseCase {
     orderEntity.confirm();
     orderEntity.startProcessing();
     orderEntity.processedBy = userId;
-    orderEntity.processedAt = new Date();
+    orderEntity.processedAt = this.clock.now();
     
     // Update order in repository
     const updatedOrder = await this.orderRepository.update(order.id, orderEntity.toJSON());
@@ -112,7 +110,7 @@ export class ProcessOrderUseCase {
     const updatedOrder = await this.orderRepository.update(order.id, {
       ...order,
       status: 'shipped',
-      shippedAt: new Date().toISOString(),
+      shippedAt: this.clock.now().toISOString(),
       shippedBy: userId
     });
 
@@ -128,7 +126,7 @@ export class ProcessOrderUseCase {
     const updatedOrder = await this.orderRepository.update(order.id, {
       ...order,
       status: 'delivered',
-      deliveredAt: new Date().toISOString(),
+      deliveredAt: this.clock.now().toISOString(),
       deliveredBy: userId
     });
 
@@ -147,7 +145,7 @@ export class ProcessOrderUseCase {
     const updatedOrder = await this.orderRepository.update(order.id, {
       ...order,
       status: 'cancelled',
-      cancelledAt: new Date().toISOString(),
+      cancelledAt: this.clock.now().toISOString(),
       cancelledBy: userId
     });
 
@@ -170,4 +168,5 @@ export class ProcessOrderUseCase {
     }
   }
 }
+
 

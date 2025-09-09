@@ -1,0 +1,43 @@
+name: Clean Architecture Enforcement
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  architecture-check:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Architecture check (dependency-cruiser)
+      run: npm run arch:check
+      
+    - name: Lint (Clean Architecture rules)
+      run: npm run arch:lint
+      
+    - name: Architecture tests
+      run: npm run arch:test
+      
+    - name: Run all tests
+      run: npm test
+      
+    - name: Build all packages
+      run: npm run build

@@ -2,11 +2,14 @@
  * Base Entity - Core domain object for all entities
  * Database-independent base class
  */
+import { DefaultClock } from '../adapters/DefaultClock.js';
+
 export class BaseEntity {
-  constructor(id = null) {
+  constructor(id = null, clock = null) {
     this.id = id;
-    this.createdAt = new Date();
-    this.updatedAt = new Date();
+    this.clock = clock || new DefaultClock();
+    this.createdAt = this.clock.now();
+    this.updatedAt = this.clock.now();
     this.isActive = true;
   }
 
@@ -15,17 +18,17 @@ export class BaseEntity {
     return true; // Override in child classes
   }
 
-  // Generic business rules - accepts time injection for testing
-  updateTimestamp(now = new Date()) {
-    this.updatedAt = now;
+  // Generic business rules - uses injected clock
+  updateTimestamp(now = null) {
+    this.updatedAt = now || this.clock.now();
   }
 
-  activate(now = new Date()) {
+  activate(now = null) {
     this.isActive = true;
     this.updateTimestamp(now);
   }
 
-  deactivate(now = new Date()) {
+  deactivate(now = null) {
     this.isActive = false;
     this.updateTimestamp(now);
   }
@@ -50,10 +53,15 @@ export class BaseEntity {
   // Setters
   setId(id) {
     this.id = id;
-    return this;
+    this.updateTimestamp();
   }
 
-  // Convert to plain object (for database operations)
+  setActive(isActive) {
+    this.isActive = isActive;
+    this.updateTimestamp();
+  }
+
+  // Serialization
   toJSON() {
     return {
       id: this.id,
@@ -64,12 +72,12 @@ export class BaseEntity {
   }
 
   // Create from plain object - Date-safe rehydration
-  static fromJSON(data) {
-    const entity = new this(data.id ?? null);
+  static fromJSON(data, clock = null) {
+    const entity = new this(data.id ?? null, clock);
     
     // Rehydrate Dates explicitly
-    entity.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
-    entity.updatedAt = data.updatedAt ? new Date(data.updatedAt) : new Date();
+    entity.createdAt = data.createdAt ? entity.clock.createDate(data.createdAt) : entity.clock.now();
+    entity.updatedAt = data.updatedAt ? entity.clock.createDate(data.updatedAt) : entity.clock.now();
     entity.isActive = data.isActive ?? true;
     
     // Assign the rest safely

@@ -1,8 +1,8 @@
 import { BaseEntity } from './BaseEntity.js';
 
 export class Product extends BaseEntity {
-  constructor(data = {}) {
-    super(data.id);
+  constructor(data = {}, clock = null) {
+    super(data.id, clock);
     this.name = data.name || '';
     this.description = data.description || '';
     this.price = data.price || 0;
@@ -71,11 +71,11 @@ export class Product extends BaseEntity {
     return this.isAvailable() && this.stock >= quantity;
   }
 
-  isOnDiscount(now = new Date()) {
+  isOnDiscount(now = null) {
     if (!this.discountPrice || this.discountPrice <= 0) return false;
 
-    const startDate = this.discountStartDate ? new Date(this.discountStartDate) : null;
-    const endDate = this.discountEndDate ? new Date(this.discountEndDate) : null;
+    const startDate = this.discountStartDate ? this.clock.createDate(this.discountStartDate) : null;
+    const endDate = this.discountEndDate ? this.clock.createDate(this.discountEndDate) : null;
 
     if (startDate && now < startDate) return false;
     if (endDate && now > endDate) return false;
@@ -83,11 +83,11 @@ export class Product extends BaseEntity {
     return true;
   }
 
-  isExpired(now = new Date()) {
-    return this.expiryDate ? now > new Date(this.expiryDate) : false;
+  isExpired(now = null) {
+    return this.expiryDate ? now > this.clock.createDate(this.expiryDate) : false;
   }
 
-  getCurrentPrice(now = new Date()) {
+  getCurrentPrice(now = null) {
     return this.isOnDiscount(now) ? this.discountPrice : this.price;
   }
 
