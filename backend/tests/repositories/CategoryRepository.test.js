@@ -79,7 +79,16 @@ describe('CategoryRepository - Data Access Layer', () => {
       const category = new Category(categoryData);
       const result = await categoryRepository.create(category);
 
-      expect(mockDatabaseAdapter.create).toHaveBeenCalledWith('categories', category.toPersistence());
+      expect(mockDatabaseAdapter.create).toHaveBeenCalledWith('categories', expect.objectContaining({
+        name: 'Electronics',
+        description: 'Electronic items',
+        slug: 'electronics',
+        parentId: null,
+        isVisible: true,
+        sortOrder: 1,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date)
+      }));
       expect(result).toBeInstanceOf(Category);
       expect(result.id).toBe('cat1');
     });

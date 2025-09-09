@@ -18,12 +18,10 @@ export class CartItem extends BaseEntity {
 
   validateProductId() {
     return !!(this.productId && this.productId.trim().length > 0);
-    return this.productId && this.productId.trim().length > 0;
   }
 
   validateProductName() {
     return !!(this.productName && this.productName.trim().length > 0);
-    return this.productName && this.productName.trim().length > 0;
   }
 
   validatePrice() {

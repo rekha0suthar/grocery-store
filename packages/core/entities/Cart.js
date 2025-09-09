@@ -38,7 +38,6 @@ export class Cart extends BaseEntity {
     if (!product || quantity <= 0) return false;
     if (!product.id || !product.name || !product.getCurrentPrice || !product.unit) return false;
 
-    // Check if item with same product ID and price already exists
     const existingItemIndex = this.items.findIndex(item => 
       item.productId === product.id && item.productPrice === product.getCurrentPrice()
     );

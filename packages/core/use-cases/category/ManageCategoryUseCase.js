@@ -48,15 +48,20 @@ export class ManageCategoryUseCase {
         };
       }
 
+      // Generate slug if not provided
+      const slug = categoryData.slug || this.generateSlug(categoryData.name);
+
       const category = new Category({
         name: categoryData.name,
         description: categoryData.description || '',
+        slug: slug,
+        imageUrl: categoryData.imageUrl || '',
         parentId: categoryData.parentId || null,
         isActive: true,
         createdBy: userId
       });
 
-      const createdCategory = await this.categoryRepository.create(category.toJSON());
+      const createdCategory = await this.categoryRepository.create(category.toPersistence());
 
       return {
         success: true,
@@ -75,7 +80,7 @@ export class ManageCategoryUseCase {
     }
   }
 
-  async updateCategory(categoryId, updateData, userRole, userId) {
+  async updateCategory(categoryId, categoryData, userRole, userId) {
     try {
       if (!this.canManageCategories(userRole)) {
         return {
@@ -94,15 +99,7 @@ export class ManageCategoryUseCase {
         };
       }
 
-      const category = Category.fromJSON(existingCategory);
-
-      // Update category data
-      if (updateData.name !== undefined) category.name = updateData.name;
-      if (updateData.description !== undefined) category.description = updateData.description;
-      if (updateData.parentId !== undefined) category.parentId = updateData.parentId;
-      if (updateData.isActive !== undefined) category.isActive = updateData.isActive;
-
-      const validation = this.validateCategoryData(category.toJSON());
+      const validation = this.validateCategoryData(categoryData);
       if (!validation.isValid) {
         return {
           success: false,
@@ -111,10 +108,10 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Check for name conflicts
-      if (updateData.name !== undefined && updateData.name !== existingCategory.name) {
-        const conflictingCategory = await this.categoryRepository.findByName(updateData.name);
-        if (conflictingCategory && conflictingCategory.id !== categoryId) {
+      // Check for name conflicts with other categories
+      if (categoryData.name && categoryData.name !== existingCategory.name) {
+        const nameConflict = await this.categoryRepository.findByName(categoryData.name);
+        if (nameConflict && nameConflict.id !== categoryId) {
           return {
             success: false,
             message: 'Category with this name already exists',
@@ -122,7 +119,15 @@ export class ManageCategoryUseCase {
           };
         }
       }
-      const updatedCategory = await this.categoryRepository.update(categoryId, category.toJSON());
+
+      const updatedData = {
+        ...existingCategory,
+        ...categoryData,
+        updatedAt: new Date(),
+        updatedBy: userId
+      };
+
+      const updatedCategory = await this.categoryRepository.update(categoryId, updatedData);
 
       return {
         success: true,
@@ -136,56 +141,6 @@ export class ManageCategoryUseCase {
         success: false,
         message: 'Failed to update category',
         category: null,
-        error: error.message
-      };
-    }
-  }
-
-  async getCategory(categoryId) {
-    try {
-      const categoryData = await this.categoryRepository.findById(categoryId);
-      if (!categoryData) {
-        return {
-          success: false,
-          message: 'Category not found',
-          category: null
-        };
-      }
-
-      return {
-        success: true,
-        message: 'Category retrieved successfully',
-        category: Category.fromJSON(categoryData)
-      };
-
-    } catch (error) {
-      console.error('Category retrieval error:', error);
-      return {
-        success: false,
-        message: 'Failed to retrieve category',
-        category: null,
-        error: error.message
-      };
-    }
-  }
-
-  async getAllCategories(filters = {}, limit = 50, offset = 0) {
-    try {
-      const categoriesData = await this.categoryRepository.findAll(filters, limit, offset);
-      const categories = categoriesData.map(data => Category.fromJSON(data));
-
-      return {
-        success: true,
-        message: 'Categories retrieved successfully',
-        categories: categories
-      };
-
-    } catch (error) {
-      console.error('Categories retrieval error:', error);
-      return {
-        success: false,
-        message: 'Failed to retrieve categories',
-        categories: [],
         error: error.message
       };
     }
@@ -210,15 +165,28 @@ export class ManageCategoryUseCase {
         };
       }
 
-      const category = Category.fromJSON(existingCategory);
+      // Check if category has products (if method exists)
+      if (this.categoryRepository.hasProducts) {
+        const hasProducts = await this.categoryRepository.hasProducts(categoryId);
+        if (hasProducts) {
+          return {
+            success: false,
+            message: 'Cannot delete category with existing products',
+            category: null
+          };
+        }
+      }
 
-      // Check if category can be deleted (business rules)
-      if (!category.canBeDeleted()) {
-        return {
-          success: false,
-          message: 'Category cannot be deleted due to business constraints',
-          category: null
-        };
+      // Check if category has subcategories (if method exists)
+      if (this.categoryRepository.hasSubcategories) {
+        const hasSubcategories = await this.categoryRepository.hasSubcategories(categoryId);
+        if (hasSubcategories) {
+          return {
+            success: false,
+            message: 'Cannot delete category with subcategories',
+            category: null
+          };
+        }
       }
 
       await this.categoryRepository.delete(categoryId);
@@ -240,6 +208,27 @@ export class ManageCategoryUseCase {
     }
   }
 
+  async getAllCategories(limit = 20, offset = 0) {
+    try {
+      const categoriesData = await this.categoryRepository.findAll({}, limit, offset);
+      const categories = categoriesData.map(data => Category.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Categories retrieved successfully',
+        categories
+      };
+    } catch (error) {
+      console.error('Category retrieval error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve categories',
+        categories: [],
+        error: error.message
+      };
+    }
+  }
+
   async getCategoryById(categoryId) {
     try {
       const categoryData = await this.categoryRepository.findById(categoryId);
@@ -256,7 +245,6 @@ export class ManageCategoryUseCase {
         message: 'Category retrieved successfully',
         category: Category.fromJSON(categoryData)
       };
-
     } catch (error) {
       console.error('Category retrieval error:', error);
       return {
@@ -268,55 +256,18 @@ export class ManageCategoryUseCase {
     }
   }
 
-  validateCategoryData(categoryData) {
-    if (!categoryData.name || categoryData.name.trim().length === 0) {
-      return {
-        isValid: false,
-        message: 'Category name is required'
-      };
-    }
-
-    if (categoryData.name.length > 100) {
-      return {
-        isValid: false,
-        message: 'Category name must be less than 100 characters'
-      };
-    }
-
-    if (categoryData.description && categoryData.description.length > 500) {
-      return {
-        isValid: false,
-        message: 'Category description must be less than 500 characters'
-      };
-    }
-
-    return {
-      isValid: true,
-      message: 'Category data is valid'
-    };
-  }
-
-  canManageCategories(userRole) {
-    return ['admin', 'store_manager'].includes(userRole);
-  }
-
-  async execute(action, params = {}) {
+  async execute(action, params) {
     switch (action) {
-      case 'getAllCategories':
-        return await this.getAllCategories(params.filters, params.limit, params.offset);
-      
-      case 'getCategoryById':
-        return await this.getCategoryById(params.id);
-      
       case 'createCategory':
         return await this.createCategory(params, params.userRole, params.userId);
-      
       case 'updateCategory':
         return await this.updateCategory(params.id, params, params.userRole, params.userId);
-      
       case 'deleteCategory':
         return await this.deleteCategory(params.id, params.userRole, params.userId);
-      
+      case 'getAllCategories':
+        return await this.getAllCategories(params.limit, params.offset);
+      case 'getCategoryById':
+        return await this.getCategoryById(params.id);
       case 'getCategoryTree':
         return await this.getCategoryTree();
       
@@ -353,7 +304,7 @@ export class ManageCategoryUseCase {
       return {
         success: true,
         message: 'Category tree retrieved successfully',
-        categories: rootCategories
+        categories: rootCategories.map(cat => Category.fromJSON(cat))
       };
     } catch (error) {
       console.error('Category tree retrieval error:', error);
@@ -364,5 +315,56 @@ export class ManageCategoryUseCase {
         error: error.message
       };
     }
+  }
+
+  generateSlug(name) {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  validateCategoryData(categoryData) {
+    if (!categoryData.name || categoryData.name.trim().length < 2) {
+      return {
+        isValid: false,
+        message: 'Category name is required'
+      };
+    }
+
+    if (categoryData.description && categoryData.description.length > 1000) {
+      return {
+        isValid: false,
+        message: 'Category description must be less than 1000 characters'
+      };
+    }
+
+    if (categoryData.imageUrl && !this.isValidUrl(categoryData.imageUrl)) {
+      return {
+        isValid: false,
+        message: 'Category image URL must be a valid URL'
+      };
+    }
+
+    return {
+      isValid: true,
+      message: 'Category data is valid'
+    };
+  }
+
+  isValidUrl(string) {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  canManageCategories(userRole) {
+    return ['admin', 'store_manager'].includes(userRole);
   }
 }

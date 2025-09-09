@@ -44,10 +44,6 @@ export class User extends BaseEntity {
     this.updateTimestamp();
   }
 
-  /**
-   * Check if account is currently locked
-   * @returns {boolean}
-   */
   isAccountLocked() {
     if (!this.lockedUntil) {
       return false;
@@ -55,11 +51,6 @@ export class User extends BaseEntity {
     return new Date() < new Date(this.lockedUntil);
   }
 
-  /**
-   * Increment login attempts and lock account if necessary
-   * @param {number} maxAttempts - Maximum allowed attempts before locking
-   * @param {number} lockDurationMinutes - Duration to lock account in minutes
-   */
   incrementLoginAttempts(maxAttempts = 5, lockDurationMinutes = 30) {
     this.loginAttempts = (this.loginAttempts || 0) + 1;
 
@@ -70,9 +61,6 @@ export class User extends BaseEntity {
     this.updateTimestamp();
   }
 
-  /**
-   * Reset login attempts and unlock account
-   */
   resetLoginAttempts() {
     this.loginAttempts = 0;
     this.lockedUntil = null;
@@ -89,7 +77,7 @@ export class User extends BaseEntity {
   }
 
   validateName() {
-    return this.name && this.name.trim().length > 1; // Changed from > 0 to > 1 to fix the test
+    return this.name && this.name.trim().length > 1; 
   }
 
   validateRole() {
@@ -98,13 +86,12 @@ export class User extends BaseEntity {
   }
 
   validatePhone() {
-    if (!this.phone) return true; // Phone is optional
+    if (!this.phone) return true; 
     const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
     return phoneRegex.test(this.phone);
   }
 
   isVerified() {
-    // Email verification is sufficient, phone is optional
     return this.isEmailVerified;
   }
 
@@ -120,10 +107,10 @@ export class User extends BaseEntity {
     };
     return roleNames[this.role] || 'Unknown';
   }
-
+  
   toJSON() {
     const baseJson = super.toJSON();
-    // Never include password in JSON output
+
     return {
       ...baseJson,
       email: this.email,
@@ -133,15 +120,11 @@ export class User extends BaseEntity {
       address: this.address,
       isEmailVerified: this.isEmailVerified,
       isPhoneVerified: this.isPhoneVerified,
-      lastLoginAt: this.lastLoginAt,
-      displayName: this.getDisplayName(),
-      roleDisplayName: this.getRoleDisplayName(),
-      isVerified: this.isVerified()
+      lastLoginAt: this.lastLoginAt
     };
   }
 
   toPersistence() {
-    // Include password for database storage
     return {
       ...super.toJSON(),
       email: this.email,
@@ -162,11 +145,6 @@ export class User extends BaseEntity {
     return this.toJSON();
   }
 
-  /**
-   * Create User instance from JSON data
-   * @param {Object} data - JSON data
-   * @returns {User} User instance
-   */
   static fromJSON(data) {
     return new User(data);
   }

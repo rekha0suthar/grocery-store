@@ -32,6 +32,11 @@ export class CategoryRepository extends BaseRepository {
     return result ? Category.fromJSON(result) : null;
   }
 
+  async findByName(name) {
+    const result = await this.findByField('name', name);
+    return result ? Category.fromJSON(result) : null;
+  }
+
   async findRootCategories(limit = 100, offset = 0) {
     const results = await this.findAll({ parentId: null, isVisible: true }, limit, offset);
     return results;

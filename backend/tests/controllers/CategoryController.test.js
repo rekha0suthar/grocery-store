@@ -31,7 +31,8 @@ describe('CategoryController - HTTP Interface Adapter', () => {
     mockReq = {
       body: {},
       query: {},
-      params: {}
+      params: {},
+      user: { id: 'user1', role: 'admin' }
     };
     
     mockRes = {
@@ -57,29 +58,39 @@ describe('CategoryController - HTTP Interface Adapter', () => {
       expect(typeof controller.createCategory).toBe('function');
       expect(typeof controller.updateCategory).toBe('function');
       expect(typeof controller.deleteCategory).toBe('function');
+      expect(typeof controller.getCategoryTree).toBe('function');
     });
   });
 
   describe('Get All Categories', () => {
-    test('retrieves categories successfully', async () => {
+    test('retrieves all categories successfully', async () => {
       const mockCategories = [
         { id: 'cat1', name: 'Category 1' },
         { id: 'cat2', name: 'Category 2' }
       ];
       
-      mockManageCategoryUseCase.execute.mockResolvedValue(mockCategories);
+      mockReq.query = { page: 1, limit: 20 };
+      mockManageCategoryUseCase.execute.mockResolvedValue({
+        success: true,
+        message: 'Categories retrieved successfully',
+        categories: mockCategories
+      });
       
       await controller.getAllCategories(mockReq, mockRes, mockNext);
       
-      expect(mockManageCategoryUseCase.execute).toHaveBeenCalledWith(
-        'getAllCategories',
-        { limit: 20, offset: 0 }
-      );
+      expect(mockManageCategoryUseCase.execute).toHaveBeenCalledWith('getAllCategories', {
+        limit: 20,
+        offset: 0
+      });
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: 'Categories retrieved successfully',
-        data: mockCategories
+        data: {
+          success: true,
+          message: 'Categories retrieved successfully',
+          categories: mockCategories
+        }
       });
     });
   });
@@ -90,19 +101,29 @@ describe('CategoryController - HTTP Interface Adapter', () => {
       const createdCategory = { id: 'cat1', ...categoryData };
       
       mockReq.body = categoryData;
-      mockManageCategoryUseCase.execute.mockResolvedValue(createdCategory);
+      mockReq.user = { id: 'user1', role: 'admin' };
+      mockManageCategoryUseCase.execute.mockResolvedValue({
+        success: true,
+        message: 'Category created successfully',
+        category: createdCategory
+      });
       
       await controller.createCategory(mockReq, mockRes, mockNext);
       
-      expect(mockManageCategoryUseCase.execute).toHaveBeenCalledWith(
-        'createCategory',
-        categoryData
-      );
+      expect(mockManageCategoryUseCase.execute).toHaveBeenCalledWith('createCategory', {
+        ...categoryData,
+        userRole: 'admin',
+        userId: 'user1'
+      });
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: 'Category created successfully',
-        data: createdCategory
+        data: {
+          success: true,
+          message: 'Category created successfully',
+          category: createdCategory
+        }
       });
     });
   });

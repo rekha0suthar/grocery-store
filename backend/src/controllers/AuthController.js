@@ -1,11 +1,13 @@
 import { BaseController } from './BaseController.js';
 import { AuthenticationComposition } from '../composition/AuthenticationComposition.js';
+import { JWTAuthProvider } from '../plugins/auth/JWTAuthProvider.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 export class AuthController extends BaseController {
   constructor() {
     super();
     this.authComposition = new AuthenticationComposition();
+    this.jwtProvider = new JWTAuthProvider();
   }
 
   register = asyncHandler(async (req, res) => {
@@ -19,12 +21,23 @@ export class AuthController extends BaseController {
   login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     
-    const result = await this.authComposition.getAuthenticateUserUseCase().execute({
+    // Use case handles business logic (authentication validation)
+    const authResult = await this.authComposition.getAuthenticateUserUseCase().execute({
       email,
       password
     });
     
-    this.sendSuccess(res, result, 'Login successful');
+    if (!authResult.success) {
+      return this.sendError(res, authResult.message, 401);
+    }
+    
+    // Controller handles framework concerns (JWT token generation)
+    const tokenData = await this.jwtProvider.generateToken(authResult.user);
+    
+    this.sendSuccess(res, {
+      user: authResult.user,
+      ...tokenData
+    }, 'Login successful');
   });
 
   logout = asyncHandler(async (req, res) => {

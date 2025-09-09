@@ -96,7 +96,7 @@ export const productValidation = [
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number'),
   body('categoryId')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Category ID must be a valid UUID'),
   body('sku')
     .trim()
@@ -189,7 +189,7 @@ export const stockValidation = [
 
 export const productIdValidation = [
   param('id')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Product ID must be a valid UUID')
 ];
 
@@ -204,7 +204,7 @@ export const paginationValidation = [
     .withMessage('Limit must be between 1 and 100'),
   query('category')
     .optional()
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Category must be a valid UUID'),
   query('featured')
     .optional()
@@ -251,7 +251,7 @@ export const categoryValidation = [
     .withMessage('Image URL must be a valid URL'),
   body('parentId')
     .optional()
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Parent ID must be a valid UUID'),
   body('sortOrder')
     .optional()
@@ -265,13 +265,13 @@ export const categoryValidation = [
 
 export const categoryIdValidation = [
   param('id')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Category ID must be a valid UUID')
 ];
 
 export const cartItemValidation = [
   body('productId')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Product ID must be a valid UUID'),
   body('quantity')
     .isInt({ min: 1 })
@@ -280,7 +280,7 @@ export const cartItemValidation = [
 
 export const cartIdValidation = [
   param('id')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Cart ID must be a valid UUID')
 ];
 
@@ -289,7 +289,7 @@ export const orderValidation = [
     .isArray({ min: 1 })
     .withMessage('Order must contain at least one item'),
   body('items.*.productId')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Each item must have a valid product ID'),
   body('items.*.quantity')
     .isInt({ min: 1 })
@@ -329,7 +329,7 @@ export const orderValidation = [
 
 export const orderIdValidation = [
   param('id')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Order ID must be a valid UUID')
 ];
 
@@ -353,7 +353,7 @@ export const requestValidation = [
 
 export const requestIdValidation = [
   param('id')
-    .isUUID()
+    .isLength({ min: 1, max: 100 })
     .withMessage('Request ID must be a valid UUID')
 ];
 

@@ -34,8 +34,14 @@ export class CategoryController extends BaseController {
 
   createCategory = asyncHandler(async (req, res) => {
     const categoryData = req.body;
+    const userRole = req.user.role;
+    const userId = req.user.id;
     
-    const category = await this.categoryComposition.getManageCategoryUseCase().execute('createCategory', categoryData);
+    const category = await this.categoryComposition.getManageCategoryUseCase().execute('createCategory', {
+      ...categoryData,
+      userRole,
+      userId
+    });
     
     this.sendSuccess(res, category, 'Category created successfully', 201);
   });
@@ -43,10 +49,14 @@ export class CategoryController extends BaseController {
   updateCategory = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
+    const userRole = req.user.role;
+    const userId = req.user.id;
     
     const category = await this.categoryComposition.getManageCategoryUseCase().execute('updateCategory', {
       id,
-      ...updateData
+      ...updateData,
+      userRole,
+      userId
     });
     
     if (!category) {
@@ -58,20 +68,25 @@ export class CategoryController extends BaseController {
 
   deleteCategory = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const userRole = req.user.role;
+    const userId = req.user.id;
     
-    const success = await this.categoryComposition.getManageCategoryUseCase().execute('deleteCategory', { id });
+    const result = await this.categoryComposition.getManageCategoryUseCase().execute('deleteCategory', { 
+      id, 
+      userRole, 
+      userId 
+    });
     
-    if (!success) {
+    if (!result) {
       return this.sendNotFound(res, 'Category not found');
     }
     
-    this.sendSuccess(res, null, 'Category deleted successfully');
+    this.sendSuccess(res, result, 'Category deleted successfully');
   });
 
   getCategoryTree = asyncHandler(async (req, res) => {
-    const categories = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryTree');
+    const tree = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryTree');
     
-    this.sendSuccess(res, categories, 'Category tree retrieved successfully');
+    this.sendSuccess(res, tree, 'Category tree retrieved successfully');
   });
-
 }

@@ -10,6 +10,9 @@ export class Category extends BaseEntity {
     this.parentId = data.parentId || null;
     this.sortOrder = data.sortOrder || 0;
     this.isVisible = data.isVisible !== undefined ? data.isVisible : true;
+    
+    // Generate slug if not provided
+    this.slug = data.slug || this.generateSlug(data.name || '');
   }
 
   isValid() {
@@ -18,7 +21,6 @@ export class Category extends BaseEntity {
 
   validateName() {
     return !!(this.name && this.name.trim().length >= 2);
-    return this.name && this.name.trim().length >= 2;
   }
 
   validateSlug() {
@@ -41,16 +43,17 @@ export class Category extends BaseEntity {
     return this.isVisible && this.isActive;
   }
 
-  generateSlug() {
-    this.slug = this.name
+  generateSlug(name = this.name) {
+    return name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    return this.slug;
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 
+  // Getters
   getName() {
     return this.name;
   }
@@ -61,10 +64,6 @@ export class Category extends BaseEntity {
 
   getSlug() {
     return this.slug;
-  }
-
-  getImageUrl() {
-    return this.imageUrl;
   }
 
   getParentId() {
@@ -79,54 +78,62 @@ export class Category extends BaseEntity {
     return this.isVisible;
   }
 
+  getImageUrl() {
+    return this.imageUrl;
+  }
+
   // Setters
   setName(name) {
-    this.name = name.trim();
-    this.generateSlug(); // Auto-generate slug when name changes
-    this.updateTimestamp();
-    return this;
+    this.name = name;
+    this.updatedAt = new Date();
   }
 
   setDescription(description) {
-    this.description = description.trim();
-    this.updateTimestamp();
-    return this;
+    this.description = description;
+    this.updatedAt = new Date();
   }
 
   setSlug(slug) {
-    this.slug = slug.toLowerCase().trim();
-    this.updateTimestamp();
-    return this;
-  }
-
-  setImageUrl(imageUrl) {
-    this.imageUrl = imageUrl;
-    this.updateTimestamp();
-    return this;
+    this.slug = slug;
+    this.updatedAt = new Date();
   }
 
   setParentId(parentId) {
     this.parentId = parentId;
-    this.updateTimestamp();
-    return this;
+    this.updatedAt = new Date();
   }
 
   setSortOrder(sortOrder) {
-    this.sortOrder = parseInt(sortOrder) || 0;
-    this.updateTimestamp();
-    return this;
+    this.sortOrder = sortOrder;
+    this.updatedAt = new Date();
   }
 
   setIsVisible(isVisible) {
     this.isVisible = isVisible;
-    this.updateTimestamp();
-    return this;
+    this.updatedAt = new Date();
+  }
+
+  setImage(imageUrl) {
+    this.imageUrl = imageUrl;
+    this.updatedAt = new Date();
+  }
+
+  getImage() {
+    return this.imageUrl;
+  }
+
+  hasImage() {
+    return !!(this.imageUrl && this.imageUrl.trim().length > 0);
+  }
+
+  clearImage() {
+    this.imageUrl = '';
+    this.updatedAt = new Date();
   }
 
   toJSON() {
-    const base = super.toJSON();
     return {
-      ...base,
+      ...super.toJSON(),
       name: this.name,
       description: this.description,
       slug: this.slug,
@@ -139,12 +146,6 @@ export class Category extends BaseEntity {
 
   toPersistence() {
     return this.toJSON();
-  }
-
-  canBeDeleted() {
-    // Business rule: Category can be deleted if it has no active products
-    // For now, allow deletion of all categories
-    return true;
   }
 
   static fromJSON(data) {

@@ -37,7 +37,8 @@ describe('ProductController - HTTP Interface Adapter', () => {
     mockReq = {
       body: {},
       query: {},
-      params: {}
+      params: {},
+      user: { id: 'user1', role: 'store_manager' }
     };
     
     mockRes = {
@@ -64,30 +65,42 @@ describe('ProductController - HTTP Interface Adapter', () => {
       expect(typeof controller.updateProduct).toBe('function');
       expect(typeof controller.deleteProduct).toBe('function');
       expect(typeof controller.updateStock).toBe('function');
+      expect(typeof controller.addImage).toBe('function');
+      expect(typeof controller.removeImage).toBe('function');
       expect(typeof controller.searchProducts).toBe('function');
+      expect(typeof controller.getLowStockProducts).toBe('function');
     });
   });
 
   describe('Get All Products', () => {
-    test('retrieves products successfully', async () => {
+    test('retrieves all products successfully', async () => {
       const mockProducts = [
         { id: 'prod1', name: 'Product 1', price: 10 },
         { id: 'prod2', name: 'Product 2', price: 20 }
       ];
       
-      mockManageProductUseCase.execute.mockResolvedValue(mockProducts);
+      mockReq.query = { page: 1, limit: 20 };
+      mockManageProductUseCase.execute.mockResolvedValue({
+        success: true,
+        message: 'Products retrieved successfully',
+        products: mockProducts
+      });
       
       await controller.getAllProducts(mockReq, mockRes, mockNext);
       
-      expect(mockManageProductUseCase.execute).toHaveBeenCalledWith(
-        'getAllProducts',
-        { page: 1, limit: 20, featured: undefined, inStock: undefined }
-      );
+      expect(mockManageProductUseCase.execute).toHaveBeenCalledWith('getAllProducts', {
+        page: 1,
+        limit: 20
+      });
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: 'Products retrieved successfully',
-        data: mockProducts
+        data: {
+          success: true,
+          message: 'Products retrieved successfully',
+          products: mockProducts
+        }
       });
     });
   });
@@ -98,19 +111,29 @@ describe('ProductController - HTTP Interface Adapter', () => {
       const createdProduct = { id: 'prod1', ...productData };
       
       mockReq.body = productData;
-      mockCreateProductUseCase.execute.mockResolvedValue(createdProduct);
+      mockReq.user = { id: 'user1', role: 'store_manager' };
+      mockCreateProductUseCase.execute.mockResolvedValue({
+        success: true,
+        message: 'Product created successfully',
+        product: createdProduct
+      });
       
       await controller.createProduct(mockReq, mockRes, mockNext);
       
       expect(mockCreateProductUseCase.execute).toHaveBeenCalledWith(
-        'createProduct',
-        productData
+        productData,
+        'store_manager',
+        'user1'
       );
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: 'Product created successfully',
-        data: createdProduct
+        data: {
+          success: true,
+          message: 'Product created successfully',
+          product: createdProduct
+        }
       });
     });
   });
@@ -124,10 +147,7 @@ describe('ProductController - HTTP Interface Adapter', () => {
       
       await controller.getProductById(mockReq, mockRes, mockNext);
       
-      expect(mockManageProductUseCase.execute).toHaveBeenCalledWith(
-        'getProductById',
-        { id: 'prod1' }
-      );
+      expect(mockManageProductUseCase.execute).toHaveBeenCalledWith('getProductById', { id: 'prod1' });
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,

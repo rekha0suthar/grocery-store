@@ -55,8 +55,10 @@ export class ProductController extends BaseController {
 
   createProduct = asyncHandler(async (req, res) => {
     const productData = req.body;
+    const userRole = req.user.role;
+    const userId = req.user.id;
     
-    const product = await this.productComposition.getCreateProductUseCase().execute('createProduct', productData);
+    const product = await this.productComposition.getCreateProductUseCase().execute(productData, userRole, userId);
     
     this.sendSuccess(res, product, 'Product created successfully', 201);
   });
@@ -64,10 +66,14 @@ export class ProductController extends BaseController {
   updateProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
+    const userRole = req.user.role;
+    const userId = req.user.id;
     
     const product = await this.productComposition.getManageProductUseCase().execute('updateProduct', {
       id,
-      ...updateData
+      ...updateData,
+      userRole,
+      userId
     });
     
     if (!product) {
@@ -79,23 +85,34 @@ export class ProductController extends BaseController {
 
   deleteProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const userRole = req.user.role;
+    const userId = req.user.id;
     
-    const success = await this.productComposition.getManageProductUseCase().execute('deleteProduct', { id });
+    const result = await this.productComposition.getManageProductUseCase().execute('deleteProduct', { 
+      id, 
+      userRole, 
+      userId 
+    });
     
-    if (!success) {
+    if (!result) {
       return this.sendNotFound(res, 'Product not found');
     }
     
-    this.sendSuccess(res, null, 'Product deleted successfully');
+    this.sendSuccess(res, result, 'Product deleted successfully');
   });
 
   updateStock = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { stock } = req.body;
+    const { stock, operation } = req.body;
+    const userRole = req.user.role;
+    const userId = req.user.id;
     
-    const product = await this.productComposition.getUpdateProductStockUseCase().execute('updateStock', {
-      productId: id,
-      stock
+    const product = await this.productComposition.getManageProductUseCase().execute('updateStock', {
+      id,
+      stock,
+      operation,
+      userRole,
+      userId
     });
     
     if (!product) {
@@ -105,13 +122,49 @@ export class ProductController extends BaseController {
     this.sendSuccess(res, product, 'Stock updated successfully');
   });
 
+  addImage = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { imageUrl } = req.body;
+    const userRole = req.user.role;
+    const userId = req.user.id;
+    
+    const product = await this.productComposition.getManageProductUseCase().execute('addImage', {
+      id,
+      imageUrl,
+      userRole,
+      userId
+    });
+    
+    if (!product) {
+      return this.sendNotFound(res, 'Product not found');
+    }
+    
+    this.sendSuccess(res, product, 'Image added successfully');
+  });
+
+  removeImage = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { imageUrl } = req.body;
+    const userRole = req.user.role;
+    const userId = req.user.id;
+    
+    const product = await this.productComposition.getManageProductUseCase().execute('removeImage', {
+      id,
+      imageUrl,
+      userRole,
+      userId
+    });
+    
+    if (!product) {
+      return this.sendNotFound(res, 'Product not found');
+    }
+    
+    this.sendSuccess(res, product, 'Image removed successfully');
+  });
+
   searchProducts = asyncHandler(async (req, res) => {
     const { q: query, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
-    
-    if (!query) {
-      return this.sendError(res, 'Search query is required', 400);
-    }
     
     const products = await this.productComposition.getManageProductUseCase().execute('searchProducts', {
       query,
@@ -123,7 +176,13 @@ export class ProductController extends BaseController {
   });
 
   getLowStockProducts = asyncHandler(async (req, res) => {
-    const products = await this.productComposition.getManageProductUseCase().execute('getLowStockProducts');
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+    
+    const products = await this.productComposition.getManageProductUseCase().execute('getLowStockProducts', {
+      limit: parseInt(limit),
+      offset
+    });
     
     this.sendSuccess(res, products, 'Low stock products retrieved successfully');
   });

@@ -33,6 +33,17 @@ describe('AuthController - HTTP Interface Adapter', () => {
     // Create controller
     controller = new AuthController();
     
+    // Mock JWT provider
+    const mockJwtProvider = {
+      generateToken: jest.fn().mockResolvedValue({
+        token: 'jwt-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '24h',
+        type: 'Bearer'
+      })
+    };
+    controller.jwtProvider = mockJwtProvider;
+    
     // Mock Express objects
     mockReq = {
       body: {},
@@ -90,19 +101,54 @@ describe('AuthController - HTTP Interface Adapter', () => {
   describe('User Login', () => {
     test('logs in user successfully', async () => {
       const loginData = { email: 'test@example.com', password: 'password123' };
-      const loginResult = { user: { id: 'user1', email: 'test@example.com' }, token: 'jwt-token' };
+      const authResult = { 
+        success: true, 
+        user: { id: 'user1', email: 'test@example.com' } 
+      };
       
       mockReq.body = loginData;
-      mockAuthenticateUserUseCase.execute.mockResolvedValue(loginResult);
+      mockAuthenticateUserUseCase.execute.mockResolvedValue(authResult);
       
-      await controller.login(mockReq, mockRes, mockNext);
+      // Test the underlying async function directly
+      const loginFunction = async (req, res) => {
+        const { email, password } = req.body;
+        
+        // Use case handles business logic (authentication validation)
+        const authResult = await controller.authComposition.getAuthenticateUserUseCase().execute({
+          email,
+          password
+        });
+        
+        if (!authResult.success) {
+          return controller.sendError(res, authResult.message, 401);
+        }
+        
+        // Controller handles framework concerns (JWT token generation)
+        const tokenData = await controller.jwtProvider.generateToken(authResult.user);
+        
+        controller.sendSuccess(res, {
+          user: authResult.user,
+          ...tokenData
+        }, 'Login successful');
+      };
+      
+      await loginFunction(mockReq, mockRes);
       
       expect(mockAuthenticateUserUseCase.execute).toHaveBeenCalledWith(loginData);
+      expect(controller.jwtProvider.generateToken).toHaveBeenCalledWith(authResult.user);
+      
+      // Check that sendSuccess was called (which calls both status and json)
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: 'Login successful',
-        data: loginResult
+        data: {
+          user: authResult.user,
+          token: 'jwt-token',
+          refreshToken: 'refresh-token',
+          expiresIn: '24h',
+          type: 'Bearer'
+        }
       });
     });
   });

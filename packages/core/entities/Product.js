@@ -36,7 +36,6 @@ export class Product extends BaseEntity {
 
   validateName() {
     return !!(this.name && this.name.trim().length > 0);
-    return this.name && this.name.trim().length > 0;
   }
 
   validatePrice() {
@@ -45,7 +44,6 @@ export class Product extends BaseEntity {
 
   validateSku() {
     return !!(this.sku && this.sku.trim().length > 0);
-    return this.sku && this.sku.trim().length > 0;
   }
 
   validateStock() {

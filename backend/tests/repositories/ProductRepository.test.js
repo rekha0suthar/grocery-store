@@ -80,7 +80,7 @@ describe('ProductRepository - Data Access Layer', () => {
       const product = new Product(productData);
       const result = await productRepository.create(product);
 
-      expect(mockDatabaseAdapter.create).toHaveBeenCalledWith('products', product.toPersistence());
+      expect(mockDatabaseAdapter.create).toHaveBeenCalledWith('products', expect.objectContaining({ ...product.toPersistence(), createdAt: expect.any(Date), updatedAt: expect.any(Date) }));
       expect(result).toBeInstanceOf(Product);
       expect(result.id).toBe('prod1');
     });
