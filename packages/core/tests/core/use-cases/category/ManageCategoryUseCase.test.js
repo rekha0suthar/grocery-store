@@ -6,7 +6,6 @@ describe('ManageCategoryUseCase - Application Policy', () => {
   let mockCategoryRepository;
 
   beforeEach(() => {
-    // Mock repository
     mockCategoryRepository = {
       create: jest.fn(),
       findById: jest.fn(),
@@ -16,10 +15,8 @@ describe('ManageCategoryUseCase - Application Policy', () => {
       delete: jest.fn(),
       findAll: jest.fn()
     };
-
-    // Create use case with mocked dependencies
+    
     useCase = new ManageCategoryUseCase({ categoryRepo: mockCategoryRepository });
-    // useCase.categoryRepository = mockCategoryRepository;
   });
 
   describe('Authorization', () => {

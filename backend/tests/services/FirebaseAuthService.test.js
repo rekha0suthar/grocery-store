@@ -1,5 +1,3 @@
-import { FirebaseAuthService } from '../../src/services/FirebaseAuthService.js';
-
 describe('FirebaseAuthService - Authentication Service', () => {
   let firebaseAuthService;
 

@@ -2,7 +2,6 @@ import { AuthenticateUserUseCase, CreateUserUseCase } from '@grocery-store/core/
 import { UserRepository } from '../repositories/UserRepository.js';
 import { BcryptPasswordHasher } from '../adapters/BcryptPasswordHasher.js';
 import appConfig from '../config/appConfig.js';
-import { DatabaseFactory } from '../factories/DatabaseFactory.js';
 
 export class AuthenticationComposition {
   constructor() {

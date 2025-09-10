@@ -227,7 +227,6 @@ describe('Product Entity - Core Domain Rules', () => {
 
   describe('Numeric Precision', () => {
     test('handles floating point totals correctly', () => {
-      const product = aProduct({ price: 2.10 });
       
       // Test that lineTotal handles precision correctly
       const item = { productPrice: 2.10, quantity: 3 };

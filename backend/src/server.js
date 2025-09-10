@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger, morganLogger, errorLogger } from './middleware/requestLogger.js';
@@ -70,7 +70,7 @@ app.set('trust proxy', config.security.trustProxy);
 app.use(config.get('api').prefix, routes);
 
 app.use(errorLogger);
-// app.use(notFound);
+
 app.use(errorHandler);
 
 const gracefulShutdown = async (signal) => {

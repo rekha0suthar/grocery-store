@@ -223,13 +223,6 @@ export class Cart extends BaseEntity {
     };
   }
 
-  calculateTotals() {
-    this.totalItems = this.items.reduce((total, item) => total + item.quantity, 0);
-    this.totalAmount = this.items.reduce((total, item) => total + (item.productPrice * item.quantity), 0);
-    this.updateTimestamp();
-    return this;
-  }
-
   static fromJSON(data) {
     return new Cart(data);
   }

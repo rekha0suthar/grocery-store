@@ -1,9 +1,6 @@
 import { Product } from '../../entities/Product.js';
 
 export class ManageProductUseCase {
-  /**
-   * @param {{ productRepo: { findById(id):Promise<Product>, findBySku(sku):Promise<Product>, create(data):Promise<Product>, update(id, data):Promise<Product>, findAll(filters, limit, offset):Promise<Product[]> } }} deps
-   */
   constructor({ productRepo }) {
     this.productRepository = productRepo;
   }
@@ -47,75 +44,6 @@ export class ManageProductUseCase {
       return {
         success: false,
         message: 'Product creation failed',
-        product: null,
-        error: error.message
-      };
-    }
-  }
-
-  async updateProduct(productId, updateData, userId) {
-    try {
-      const existingProduct = await this.productRepository.findById(productId);
-      if (!existingProduct) {
-        return {
-          success: false,
-          message: 'Product not found',
-          product: null
-        };
-      }
-
-      const validation = this.validateUpdateData(updateData);
-      if (!validation.isValid) {
-        return {
-          success: false,
-          message: validation.message,
-          product: null
-        };
-      }
-
-      const updatedProduct = await this.productRepository.update(productId, updateData);
-
-      return {
-        success: true,
-        message: 'Product updated successfully',
-        product: Product.fromJSON(updatedProduct)
-      };
-
-    } catch (error) {
-      console.error('Product update error:', error);
-      return {
-        success: false,
-        message: 'Product update failed',
-        product: null,
-        error: error.message
-      };
-    }
-  }
-
-  async deleteProduct(productId, userId) {
-    try {
-      const existingProduct = await this.productRepository.findById(productId);
-      if (!existingProduct) {
-        return {
-          success: false,
-          message: 'Product not found',
-          product: null
-        };
-      }
-
-      await this.productRepository.update(productId, { isVisible: false });
-
-      return {
-        success: true,
-        message: 'Product deleted successfully',
-        product: null
-      };
-
-    } catch (error) {
-      console.error('Product deletion error:', error);
-      return {
-        success: false,
-        message: 'Product deletion failed',
         product: null,
         error: error.message
       };
@@ -272,7 +200,7 @@ export class ManageProductUseCase {
     }
   }
 
-  async updateProduct(productId, updateData, userId, userRole) {
+  async updateProduct(productId, updateData, _userId, userRole) {
     try {
       if (!this.canManageProducts(userRole)) {
         return {
@@ -293,7 +221,6 @@ export class ManageProductUseCase {
 
       const product = Product.fromJSON(existingProduct);
       
-      // Update product data
       Object.keys(updateData).forEach(key => {
         if (updateData[key] !== undefined && key !== 'id') {
           product[key] = updateData[key];
@@ -371,7 +298,6 @@ export class ManageProductUseCase {
       const { query, page = 1, limit = 10 } = filters;
       const offset = (page - 1) * limit;
       
-      // Use findAll with search filters instead of separate search method
       const searchFilters = { ...filters, search: query };
       const productsData = await this.productRepository.findAll(searchFilters, limit, offset);
       const products = productsData.map(data => Product.fromJSON(data));

@@ -134,7 +134,7 @@ export class AppConfig {
    * @returns {string} Device type (mobile, tablet, desktop)
    */
   detectDeviceType() {
-    const userAgent = navigator.userAgent;
+    // const userAgent = navigator.userAgent;
     const width = window.innerWidth;
     
     if (width < 768) {

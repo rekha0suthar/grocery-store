@@ -1,5 +1,4 @@
 import { CategoryComposition } from '../../src/composition/CategoryComposition.js';
-import { ManageCategoryUseCase } from '@grocery-store/core/use-cases';
 
 describe('CategoryComposition - Dependency Injection Container', () => {
   let categoryComposition;

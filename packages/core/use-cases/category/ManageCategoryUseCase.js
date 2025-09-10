@@ -1,11 +1,7 @@
 import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { Category } from '../../entities/Category.js';
 
-
 export class ManageCategoryUseCase {
-  /**
-   * @param {{ categoryRepo: { findByName(name):Promise<Category>, findById(id):Promise<Category>, create(data):Promise<Category>, update(id, data):Promise<Category>, findAll(filters, limit, offset):Promise<Category[]> } }} deps
-   */
   constructor({ categoryRepo }, clock = null) {
     this.categoryRepository = categoryRepo;
     this.clock = clock || new DefaultClock();
@@ -47,7 +43,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Generate slug if not provided
       const slug = categoryData.slug || this.generateSlug(categoryData.name);
 
       const category = new Category({
@@ -107,7 +102,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Check for name conflicts with other categories
       if (categoryData.name && categoryData.name !== existingCategory.name) {
         const nameConflict = await this.categoryRepository.findByName(categoryData.name);
         if (nameConflict && nameConflict.id !== categoryId) {
@@ -145,7 +139,7 @@ export class ManageCategoryUseCase {
     }
   }
 
-  async deleteCategory(categoryId, userRole, userId) {
+  async deleteCategory(categoryId, userRole) {
     try {
       if (!this.canManageCategories(userRole)) {
         return {
@@ -164,7 +158,6 @@ export class ManageCategoryUseCase {
         };
       }
 
-      // Check if category has products (if method exists)
       if (this.categoryRepository.hasProducts) {
         const hasProducts = await this.categoryRepository.hasProducts(categoryId);
         if (hasProducts) {
@@ -176,7 +169,6 @@ export class ManageCategoryUseCase {
         }
       }
 
-      // Check if category has subcategories (if method exists)
       if (this.categoryRepository.hasSubcategories) {
         const hasSubcategories = await this.categoryRepository.hasSubcategories(categoryId);
         if (hasSubcategories) {
@@ -284,7 +276,6 @@ export class ManageCategoryUseCase {
       const categoriesData = await this.categoryRepository.findAll({}, 1000, 0);
       const categories = categoriesData.map(data => Category.fromJSON(data));
       
-      // Build tree structure
       const categoryMap = new Map();
       const rootCategories = [];
       

@@ -19,36 +19,40 @@ class AppConfig {
         projectId: process.env.FIREBASE_PROJECT_ID,
         databaseURL: process.env.FIREBASE_DATABASE_URL,
         storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-        serviceAccountKey: process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+        serviceAccountKey: process.env.FIREBASE_SERVICE_ACCOUNT_KEY,
       },
 
       jwt: {
         secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h',
       },
 
       cors: {
-        origin: process.env.CORS_ORIGINS 
+        origin: process.env.CORS_ORIGINS
           ? process.env.CORS_ORIGINS.split(',')
-          : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+          : [
+              'http://localhost:3000',
+              'http://localhost:3001',
+              'http://localhost:5173',
+            ],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       },
 
       rateLimit: {
         windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-        max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+        max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
       },
 
       api: {
         version: process.env.API_VERSION || 'v1',
-        prefix: process.env.API_PREFIX || '/api'
+        prefix: process.env.API_PREFIX || '/api',
       },
 
       frontend: {
-        url: process.env.FRONTEND_URL || 'http://localhost:3000'
-      }
+        url: process.env.FRONTEND_URL || 'http://localhost:3000',
+      },
     };
   }
 
@@ -81,71 +85,67 @@ class AppConfig {
     return this.config.frontend.url;
   }
 
-  // Add missing properties
   get upload() {
     return {
-      maxFileSize: process.env.UPLOAD_MAX_FILE_SIZE || '10mb'
+      maxFileSize: process.env.UPLOAD_MAX_FILE_SIZE || '10mb',
     };
   }
 
   get security() {
     return {
-      trustProxy: process.env.TRUST_PROXY === 'true' || false
+      trustProxy: process.env.TRUST_PROXY === 'true' || false,
     };
   }
 
-  // Add missing database properties
   get database() {
     return {
       ...this.config.database,
       host: process.env.DATABASE_HOST || 'localhost',
       port: process.env.DATABASE_PORT || 5432,
-      name: process.env.DATABASE_NAME || 'grocery_store'
+      name: process.env.DATABASE_NAME || 'grocery_store',
     };
   }
 
-    // Environment check methods
-    isDevelopment() {
-      return this.environment === 'development';
-    }
-  
-    isProduction() {
-      return this.environment === 'production';
-    }
-  
-    isStaging() {
-      return this.environment === 'staging';
-    }
-  
-    // Frontend configuration
-    getFrontendConfig() {
-      return {
-        features: {
-          registration: true,
-          socialLogin: false,
-          darkMode: true,
-          notifications: true,
-          search: true,
-          filters: true,
-          wishlist: true,
-          reviews: true
-        },
-        limits: {
-          maxFileSize: '10MB',
-          maxProductsPerPage: 50,
-          maxSearchResults: 100,
-          maxCartItems: 50,
-          maxWishlistItems: 100
-        },
-        ui: {
-          theme: 'light',
-          language: 'en',
-          currency: 'USD',
-          dateFormat: 'MM/DD/YYYY',
-          timeFormat: '12h'
-        }
-      };
-    }
+  isDevelopment() {
+    return this.environment === 'development';
+  }
+
+  isProduction() {
+    return this.environment === 'production';
+  }
+
+  isStaging() {
+    return this.environment === 'staging';
+  }
+
+  getFrontendConfig() {
+    return {
+      features: {
+        registration: true,
+        socialLogin: false,
+        darkMode: true,
+        notifications: true,
+        search: true,
+        filters: true,
+        wishlist: true,
+        reviews: true,
+      },
+      limits: {
+        maxFileSize: '10MB',
+        maxProductsPerPage: 50,
+        maxSearchResults: 100,
+        maxCartItems: 50,
+        maxWishlistItems: 100,
+      },
+      ui: {
+        theme: 'light',
+        language: 'en',
+        currency: 'USD',
+        dateFormat: 'MM/DD/YYYY',
+        timeFormat: '12h',
+      },
+    };
+  }
 }
 
 const appConfig = new AppConfig();

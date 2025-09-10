@@ -1,5 +1,4 @@
 import { ProductComposition } from '../../src/composition/ProductComposition.js';
-import { ManageProductUseCase, CreateProductUseCase, UpdateProductStockUseCase } from '@grocery-store/core/use-cases';
 
 describe('ProductComposition - Dependency Injection Container', () => {
   let productComposition;

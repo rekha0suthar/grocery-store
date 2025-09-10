@@ -1,6 +1,6 @@
 import { AuthenticateUserUseCase } from '../../../../use-cases/auth/AuthenticateUserUseCase.js';
 import { User } from '../../../../entities/User.js';
-import { FakeClock } from '../../../../utils/FakeClock.js';
+import { FakeClock } from '../../../utils/FakeClock.js';
 
 describe('AuthenticateUserUseCase - Application Policy', () => {
   let useCase;
@@ -11,7 +11,6 @@ describe('AuthenticateUserUseCase - Application Policy', () => {
   beforeEach(() => {
     fakeClock = new FakeClock(new Date('2025-01-01T10:00:00Z'));
 
-    // Mock repositories and adapters
     mockUserRepository = {
       findByEmail: jest.fn(),
       update: jest.fn()
@@ -152,7 +151,7 @@ describe('AuthenticateUserUseCase - Application Policy', () => {
       expect(result.message).toBe('Authentication successful');
       expect(result.user).toBeDefined();
       expect(result.user.email).toBe('test@example.com');
-      expect(result.user.password).toBeUndefined(); // Should not include password
+      expect(result.user.password).toBeUndefined();
       expect(mockPasswordHasher.compare).toHaveBeenCalledWith('correctpassword', 'hashedpassword');
       expect(mockUserRepository.update).toHaveBeenCalled();
     });
@@ -209,7 +208,6 @@ describe('AuthenticateUserUseCase - Application Policy', () => {
         lockedUntil: new Date(Date.now() + 30 * 60 * 1000)
       });
 
-      // Spy on the entity method
       const isAccountLockedSpy = jest.spyOn(user, 'isAccountLocked');
 
       mockUserRepository.findByEmail.mockResolvedValue(user);

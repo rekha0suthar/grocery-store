@@ -7,7 +7,6 @@ describe('ManageProductUseCase - Application Policy', () => {
   let mockCategoryRepository;
 
   beforeEach(() => {
-    // Mock repositories
     mockProductRepository = {
       findById: jest.fn(),
       findAll: jest.fn(),
@@ -22,10 +21,7 @@ describe('ManageProductUseCase - Application Policy', () => {
       findById: jest.fn()
     };
 
-    // Create use case with mocked dependencies
     useCase = new ManageProductUseCase({ productRepo: mockProductRepository });
-    // useCase.productRepository = mockProductRepository;
-    // useCase.categoryRepository = mockCategoryRepository;
   });
 
   describe('Get All Products', () => {
@@ -55,13 +51,6 @@ describe('ManageProductUseCase - Application Policy', () => {
         }
       ];
 
-      const pagination = {
-        page: 1,
-        limit: 10,
-        total: 2,
-        totalPages: 1
-      };
-
       mockProductRepository.findAll.mockResolvedValue(productsData);
 
       const result = await useCase.execute('getAllProducts', { page: 1, limit: 10 });
@@ -71,25 +60,16 @@ describe('ManageProductUseCase - Application Policy', () => {
       expect(result.products).toHaveLength(2);
       expect(result.products[0]).toBeInstanceOf(Product);
       expect(result.products[1]).toBeInstanceOf(Product);
-      // expect(result.pagination).toEqual(pagination);
       expect(mockProductRepository.findAll).toHaveBeenCalledWith({}, 10, 0);
     });
 
     test('handles empty product list', async () => {
-      const pagination = {
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-      };
-
       mockProductRepository.findAll.mockResolvedValue([]);
 
       const result = await useCase.execute('getAllProducts', { page: 1, limit: 10 });
 
       expect(result.success).toBe(true);
       expect(result.products).toHaveLength(0);
-      // // expect(result.pagination.total).toBe(0);
     });
   });
 
@@ -265,13 +245,6 @@ describe('ManageProductUseCase - Application Policy', () => {
         }
       ];
 
-      const pagination = {
-        page: 1,
-        limit: 10,
-        total: 1,
-        totalPages: 1
-      };
-
       mockProductRepository.findAll.mockResolvedValue(productsData);
 
       const result = await useCase.execute('searchProducts', {
@@ -284,18 +257,10 @@ describe('ManageProductUseCase - Application Policy', () => {
       expect(result.message).toBe('Products retrieved successfully');
       expect(result.products).toHaveLength(1);
       expect(result.products[0]).toBeInstanceOf(Product);
-      // expect(result.pagination).toEqual(pagination);
       expect(mockProductRepository.findAll).toHaveBeenCalledWith({ page: 1, limit: 10, query: 'apple', search: 'apple' }, 10, 0);
     });
 
     test('handles empty search results', async () => {
-      const pagination = {
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-      };
-
       mockProductRepository.findAll.mockResolvedValue([]);
 
       const result = await useCase.execute('searchProducts', {
@@ -306,7 +271,6 @@ describe('ManageProductUseCase - Application Policy', () => {
 
       expect(result.success).toBe(true);
       expect(result.products).toHaveLength(0);
-      // // expect(result.pagination.total).toBe(0);
     });
   });
 
@@ -346,13 +310,6 @@ describe('ManageProductUseCase - Application Policy', () => {
           updatedAt: new Date()
         }
       ];
-
-      const pagination = {
-        page: 1,
-        limit: 10,
-        total: 1,
-        totalPages: 1
-      };
 
       mockProductRepository.findAll.mockResolvedValue(productsData);
 

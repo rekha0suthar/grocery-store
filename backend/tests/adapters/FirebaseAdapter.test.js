@@ -1,4 +1,6 @@
 // Mock Firebase Admin SDK
+import { FirebaseAdapter } from '../../src/adapters/FirebaseAdapter.js';
+
 jest.mock('firebase-admin', () => {
   const mockFirestore = {
     collection: jest.fn(() => ({
@@ -65,8 +67,6 @@ jest.mock('../../src/config/firebase.js', () => {
     messaging: {}
   };
 });
-
-import { FirebaseAdapter } from '../../src/adapters/FirebaseAdapter.js';
 
 describe('FirebaseAdapter - Database Adapter', () => {
   let adapter;

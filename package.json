@@ -22,13 +22,18 @@
     "arch:check": "npx depcruise --config .dependency-cruiser.cjs --include-only \"^packages/|^backend/src/|^frontend/src/\" \"packages/**\" \"backend/src/**\" \"frontend/src/**\"",
     "arch:test": "npm test -- --runTestsByPath tests/architecture/layering.test.js",
     "arch:lint": "npx eslint . --config .eslintrc.cjs",
-    "arch:all": "npm run arch:check && npm run arch:lint && npm run arch:test"
+    "arch:all": "npm run arch:check && npm run arch:lint && npm run arch:test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:backend": "prettier --write backend/**/*.js",
+    "format:frontend": "prettier --write frontend/**/*.js"
   },
   "devDependencies": {
     "dependency-cruiser": "^16.10.4",
     "eslint": "^8.0.0",
     "eslint-plugin-import": "^2.32.0",
-    "jest": "^29.0.0"
+    "jest": "^29.0.0",
+    "prettier": "^3.6.2"
   },
   "engines": {
     "node": ">=18.0.0",

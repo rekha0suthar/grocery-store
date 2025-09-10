@@ -20,7 +20,8 @@
   },
   "scripts": {
     "test": "jest --config ./jest.config.cjs",
-    "test:clear": "jest --clearCache"
+    "test:clear": "jest --clearCache",
+    "lint": "echo 'No linting configured for core package'"
   },
   "keywords": [
     "grocery-store",
@@ -32,11 +33,9 @@
   "author": "Grocery Store Team",
   "license": "MIT",
   "devDependencies": {
-    "jest": "^29.7.0",
     "@babel/core": "^7.23.7",
     "@babel/preset-env": "^7.23.8",
-    "babel-jest": "^29.7.0"
-  },
-  "peerDependencies": {},
-  "dependencies": {}
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0"
+  }
 }

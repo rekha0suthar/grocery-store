@@ -1,20 +1,17 @@
 import { RequestController } from '../../src/controllers/RequestController.js';
 import { RequestComposition } from '../../src/composition/RequestComposition.js';
 
-// Mock dependencies
 jest.mock('../../src/composition/RequestComposition.js');
 
 describe('RequestController - HTTP Interface Adapter', () => {
   let controller;
   let mockReq;
   let mockRes;
-  let mockNext;
   let mockRequestRepository;
   let mockCreateStoreManagerRequestUseCase;
   let mockApproveRequestUseCase;
 
   beforeEach(() => {
-    // Mock repository
     mockRequestRepository = {
       findAll: jest.fn(),
       findById: jest.fn(),
@@ -24,7 +21,6 @@ describe('RequestController - HTTP Interface Adapter', () => {
       countByType: jest.fn()
     };
 
-    // Mock use cases
     mockCreateStoreManagerRequestUseCase = {
       execute: jest.fn()
     };
@@ -33,7 +29,6 @@ describe('RequestController - HTTP Interface Adapter', () => {
       execute: jest.fn()
     };
     
-    // Mock composition
     const mockRequestComposition = {
       getRequestRepository: jest.fn().mockReturnValue(mockRequestRepository),
       getCreateStoreManagerRequestUseCase: jest.fn().mockReturnValue(mockCreateStoreManagerRequestUseCase),
@@ -42,10 +37,8 @@ describe('RequestController - HTTP Interface Adapter', () => {
     
     RequestComposition.mockImplementation(() => mockRequestComposition);
     
-    // Create controller
     controller = new RequestController();
     
-    // Mock Express objects
     mockReq = {
       body: {},
       query: {},
@@ -58,9 +51,6 @@ describe('RequestController - HTTP Interface Adapter', () => {
       json: jest.fn().mockReturnThis()
     };
     
-    mockNext = jest.fn();
-    
-    // Clear all mocks
     jest.clearAllMocks();
   });
 
@@ -92,7 +82,6 @@ describe('RequestController - HTTP Interface Adapter', () => {
       mockRequestRepository.findAll.mockResolvedValue(mockRequests);
       mockRequestRepository.count.mockResolvedValue(2);
       
-      // Test the underlying async function directly (bypassing asyncHandler)
       const asyncFunction = async (req, res) => {
         const { page = 1, limit = 20, type, status, priority } = req.query;
         const offset = (page - 1) * limit;
@@ -183,7 +172,6 @@ describe('RequestController - HTTP Interface Adapter', () => {
 
   describe('Get Request Statistics', () => {
     test('retrieves request statistics successfully', async () => {
-      // Mock the count methods to return different values
       mockRequestRepository.count.mockResolvedValue(10); // total
       mockRequestRepository.countByStatus
         .mockResolvedValueOnce(3)  // pending

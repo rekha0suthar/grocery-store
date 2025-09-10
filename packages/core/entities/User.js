@@ -87,7 +87,7 @@ export class User extends BaseEntity {
 
   validatePhone() {
     if (!this.phone) return true; 
-    const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
+    const phoneRegex = /^\+?[\d\s\-()]+$/;
     return phoneRegex.test(this.phone);
   }
 

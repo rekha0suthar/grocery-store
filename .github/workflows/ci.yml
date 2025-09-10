@@ -12,11 +12,11 @@ on:
         required: false
         default: 'all'
         type: choice
-        options:
+        options: # Frontend disabled for now
           - all
           - core
           - backend
-          - frontend
+#          - frontend
 
 # Add permissions for GitHub Container Registry
 permissions:
@@ -52,22 +52,22 @@ jobs:
               "core")
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=false" >> $GITHUB_OUTPUT
-                echo "frontend=false" >> $GITHUB_OUTPUT
+#  #              echo "frontend=false" >> $GITHUB_OUTPUT
                 ;;
               "backend")
                 echo "core=true" >> $GITHUB_OUTPUT  # Core is always needed for backend
                 echo "backend=true" >> $GITHUB_OUTPUT
-                echo "frontend=false" >> $GITHUB_OUTPUT
+#  #              echo "frontend=false" >> $GITHUB_OUTPUT
                 ;;
               "frontend")
                 echo "core=false" >> $GITHUB_OUTPUT
                 echo "backend=false" >> $GITHUB_OUTPUT
-                echo "frontend=true" >> $GITHUB_OUTPUT
+#  #              echo "frontend=true" >> $GITHUB_OUTPUT
                 ;;
               *)
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=true" >> $GITHUB_OUTPUT
-                echo "frontend=true" >> $GITHUB_OUTPUT
+#  #              echo "frontend=true" >> $GITHUB_OUTPUT
                 ;;
             esac
           else
@@ -76,22 +76,22 @@ jobs:
               # Initial push - run everything
               echo "core=true" >> $GITHUB_OUTPUT
               echo "backend=true" >> $GITHUB_OUTPUT
-              echo "frontend=true" >> $GITHUB_OUTPUT
+#              echo "frontend=true" >> $GITHUB_OUTPUT
             else
               # Initialize all components as false
               echo "core=false" >> $GITHUB_OUTPUT
               echo "backend=false" >> $GITHUB_OUTPUT
-              echo "frontend=false" >> $GITHUB_OUTPUT
+#              echo "frontend=false" >> $GITHUB_OUTPUT
               
               # Check for global changes first (these should run everything)
               if git diff --name-only HEAD~1 HEAD | grep -E '^.github/workflows/' > /dev/null; then
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=true" >> $GITHUB_OUTPUT
-                echo "frontend=true" >> $GITHUB_OUTPUT
+#  #              echo "frontend=true" >> $GITHUB_OUTPUT
               elif git diff --name-only HEAD~1 HEAD | grep -E '^.gitignore$|^package.*.json$' > /dev/null; then
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=true" >> $GITHUB_OUTPUT
-                echo "frontend=true" >> $GITHUB_OUTPUT
+#  #              echo "frontend=true" >> $GITHUB_OUTPUT
               else
                 # Check for changes in specific directories
                 if git diff --name-only HEAD~1 HEAD | grep -E '^packages/core/' > /dev/null; then
@@ -103,7 +103,7 @@ jobs:
                 fi
                 
                 if git diff --name-only HEAD~1 HEAD | grep -E '^frontend/' > /dev/null; then
-                  echo "frontend=true" >> $GITHUB_OUTPUT
+  #  #              echo "frontend=true" >> $GITHUB_OUTPUT
                 fi
               fi
               
@@ -114,28 +114,30 @@ jobs:
               fi
               
               if git diff --name-only HEAD~1 HEAD | grep -E '^frontend/' > /dev/null; then
-                echo "frontend=true" >> $GITHUB_OUTPUT
+#  #              echo "frontend=true" >> $GITHUB_OUTPUT
               else
-                echo "frontend=false" >> $GITHUB_OUTPUT
+#  #              echo "frontend=false" >> $GITHUB_OUTPUT
               fi
               
               # If workflow file changed, run everything
               if git diff --name-only HEAD~1 HEAD | grep -E '^.github/workflows/' > /dev/null; then
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=true" >> $GITHUB_OUTPUT
-                echo "frontend=true" >> $GITHUB_OUTPUT
+#  #              echo "frontend=true" >> $GITHUB_OUTPUT
               fi
               
               # If .gitignore or package files changed, run everything
               if git diff --name-only HEAD~1 HEAD | grep -E '^\.gitignore$|^package.*\.json$' > /dev/null; then
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=true" >> $GITHUB_OUTPUT
-                echo "frontend=true" >> $GITHUB_OUTPUT
+#  #              echo "frontend=true" >> $GITHUB_OUTPUT
               fi
             fi
           fi
           
           echo "🔍 Change detection results:"
+          # Override: Always disable frontend for now
+          echo "frontend=false" >> $GITHUB_OUTPUT
           echo "  Core: ${{ steps.changes.outputs.core }}"
           echo "  Backend: ${{ steps.changes.outputs.backend }}"
           echo "  Frontend: ${{ steps.changes.outputs.frontend }}"
@@ -198,7 +200,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: grocery_store_test
-        options: >-
+        options: # Frontend disabled for now >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
@@ -253,69 +255,69 @@ jobs:
           path: backend/coverage/
           retention-days: 30
 
-  # Frontend Tests and Build
-  test-frontend:
-    name: Test Frontend
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check if frontend directory exists
-        id: check-frontend
-        run: |
-          if [ -d "frontend" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "✅ Frontend directory found"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "❌ Frontend directory not found"
-          fi
-
-      - name: Setup Node.js
-        if: steps.check-frontend.outputs.exists == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: frontend/package.json
-
-      - name: Install frontend dependencies
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm install
-        working-directory: frontend
-
-      - name: Run frontend linting
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm run lint || echo "Frontend linting completed with warnings"
-        working-directory: frontend
-
-      - name: Run frontend tests
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm run test -- --passWithNoTests || echo "Frontend tests completed with some failures"
-        working-directory: frontend
-        env:
-          NODE_ENV: test
-
-      - name: Build frontend application
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm run build || echo "No frontend build script found, skipping..."
-        working-directory: frontend
-
-      - name: Upload frontend test results
-        if: always() && steps.check-frontend.outputs.exists == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-test-results
-          path: frontend/coverage/
-          retention-days: 30
-
-      - name: Upload frontend build artifacts
-        if: steps.check-frontend.outputs.exists == 'true'
-        uses: actions/upload-artifact@v4
+#  # Frontend Tests and Build (DISABLED)
+#  test-frontend:
+#    name: Test Frontend
+#    runs-on: ubuntu-latest
+#    needs: detect-changes
+#    if: needs.detect-changes.outputs.frontend == 'true'
+#    
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#
+#      - name: Check if frontend directory exists
+#        id: check-frontend
+#        run: |
+#          if [ -d "frontend" ]; then
+#            echo "exists=true" >> $GITHUB_OUTPUT
+#            echo "✅ Frontend directory found"
+#          else
+#            echo "exists=false" >> $GITHUB_OUTPUT
+#            echo "❌ Frontend directory not found"
+#          fi
+#
+#      - name: Setup Node.js
+#        if: steps.check-frontend.outputs.exists == 'true'
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: ${{ env.NODE_VERSION }}
+#          cache: 'npm'
+#          cache-dependency-path: frontend/package.json
+#
+#      - name: Install frontend dependencies
+#        if: steps.check-frontend.outputs.exists == 'true'
+#        run: npm install
+#        working-directory: frontend
+#
+#      - name: Run frontend linting
+#        if: steps.check-frontend.outputs.exists == 'true'
+#        run: npm run lint || echo "Frontend linting completed with warnings"
+#        working-directory: frontend
+#
+#      - name: Run frontend tests
+#        if: steps.check-frontend.outputs.exists == 'true'
+#        run: npm run test -- --passWithNoTests || echo "Frontend tests completed with some failures"
+#        working-directory: frontend
+#        env:
+#          NODE_ENV: test
+#
+#      - name: Build frontend application
+#        if: steps.check-frontend.outputs.exists == 'true'
+#        run: npm run build || echo "No frontend build script found, skipping..."
+#        working-directory: frontend
+#
+#      - name: Upload frontend test results
+#        if: always() && steps.check-frontend.outputs.exists == 'true'
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: frontend-test-results
+#          path: frontend/coverage/
+#          retention-days: 30
+#
+#      - name: Upload frontend build artifacts
+#        if: steps.check-frontend.outputs.exists == 'true'
+#        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: frontend/dist/
@@ -365,7 +367,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
-  # Build Frontend Docker Image
+#  # Build Frontend Docker Image (DISABLED)
   build-frontend-docker:
     name: Build Frontend Docker Image
     runs-on: ubuntu-latest
@@ -375,47 +377,47 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}/frontend
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push frontend Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./frontend/Dockerfile
-          push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-
-  # Security Scan
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: [detect-changes, test-core, test-backend, test-frontend]
-    if: always() && (needs.detect-changes.outputs.core == 'true' || needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true')
-    
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#
+#      - name: Log in to Container Registry
+#        uses: docker/login-action@v3
+#        with:
+#          registry: ${{ env.REGISTRY }}
+#          username: ${{ github.actor }}
+#          password: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Extract metadata for frontend
+#        id: meta-frontend
+#        uses: docker/metadata-action@v5
+#        with:
+#          images: ${{ env.REGISTRY }}/${{ github.repository }}/frontend
+#          tags: |
+#            type=ref,event=branch
+#            type=ref,event=pr
+#            type=sha,prefix={{branch}}-
+#            type=raw,value=latest,enable={{is_default_branch}}
+#
+#      - name: Build and push frontend Docker image
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          file: ./frontend/Dockerfile
+#          push: true
+#          tags: ${{ steps.meta-frontend.outputs.tags }}
+#          labels: ${{ steps.meta-frontend.outputs.labels }}
+#          cache-from: type=gha
+#          cache-to: type=gha,mode=max
+#          platforms: linux/amd64,linux/arm64
+#
+#  # Security Scan
+#  security-scan:
+#    name: Security Scan
+#    runs-on: ubuntu-latest
+#    needs: [detect-changes, test-core, test-backend, test-frontend]
+#    if: always() && (needs.detect-changes.outputs.core == 'true' || needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true')
+#    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

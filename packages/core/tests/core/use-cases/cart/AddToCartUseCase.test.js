@@ -8,7 +8,6 @@ describe('AddToCartUseCase - Application Policy', () => {
   let mockProductRepository;
 
   beforeEach(() => {
-    // Create mock repositories
     mockCartRepository = {
       findByUserId: jest.fn(),
       create: jest.fn(),
@@ -19,7 +18,6 @@ describe('AddToCartUseCase - Application Policy', () => {
       findById: jest.fn()
     };
 
-    // Create use case with mocked dependencies
     useCase = new AddToCartUseCase({
       cartRepo: mockCartRepository,
       productRepo: mockProductRepository
@@ -257,14 +255,10 @@ describe('AddToCartUseCase - Application Policy', () => {
         isVisible: true
       });
 
-      // Spy on the entity method
-      const isVisibleSpy = jest.spyOn(product, 'getIsVisible');
-
       mockProductRepository.findById.mockResolvedValue(product.toJSON());
 
       await useCase.execute('user1', 'prod1', 1);
 
-      // The use case should check product visibility through entity business rules
       expect(mockProductRepository.findById).toHaveBeenCalledWith('prod1');
     });
 

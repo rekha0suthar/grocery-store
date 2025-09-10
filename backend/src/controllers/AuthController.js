@@ -21,7 +21,6 @@ export class AuthController extends BaseController {
   login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     
-    // Use case handles business logic (authentication validation)
     const authResult = await this.authComposition.getAuthenticateUserUseCase().execute({
       email,
       password
@@ -31,7 +30,6 @@ export class AuthController extends BaseController {
       return this.sendError(res, authResult.message, 401);
     }
     
-    // Controller handles framework concerns (JWT token generation)
     const tokenData = await this.jwtProvider.generateToken(authResult.user);
     
     this.sendSuccess(res, {
@@ -41,12 +39,11 @@ export class AuthController extends BaseController {
   });
 
   logout = asyncHandler(async (req, res) => {
-    // In a real implementation, you might invalidate the token
     this.sendSuccess(res, null, 'Logout successful');
   });
 
   getProfile = asyncHandler(async (req, res) => {
-    const user = req.user; // Set by auth middleware
+    const user = req.user;
     
     this.sendSuccess(res, user, 'Profile retrieved successfully');
   });
@@ -65,10 +62,8 @@ export class AuthController extends BaseController {
 
   changePassword = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { currentPassword, newPassword } = req.body;
+    const { newPassword } = req.body;
     
-    // For now, we'll use the updateUser use case to change password
-    // In a real implementation, you might want a dedicated changePassword use case
     const user = await this.authComposition.getCreateUserUseCase().execute('updateUser', {
       id: userId,
       password: newPassword

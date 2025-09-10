@@ -8,7 +8,6 @@ export class RequestController extends BaseController {
     this.requestComposition = new RequestComposition();
   }
 
-  // Get all requests (admin only)
   getAllRequests = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, type, status, priority } = req.query;
     const offset = (page - 1) * limit;
@@ -32,7 +31,6 @@ export class RequestController extends BaseController {
     }, 'Requests retrieved successfully');
   });
 
-  // Get request by ID
   getRequestById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     
@@ -45,7 +43,6 @@ export class RequestController extends BaseController {
     this.sendSuccess(res, request, 'Request retrieved successfully');
   });
 
-  // Get requests by user (their own requests)
   getMyRequests = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { page = 1, limit = 20, type, status } = req.query;
@@ -69,7 +66,6 @@ export class RequestController extends BaseController {
     }, 'Your requests retrieved successfully');
   });
 
-  // Create store manager request
   createStoreManagerRequest = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const requestData = req.body;
@@ -83,10 +79,9 @@ export class RequestController extends BaseController {
     this.sendSuccess(res, result.request, result.message, 201);
   });
 
-  // Create category request (store managers only)
   createCategoryRequest = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { type, requestData } = req.body; // type: 'category_creation' or 'category_modification'
+    const { type, requestData } = req.body;
     
     if (!['category_creation', 'category_modification'].includes(type)) {
       return this.sendError(res, 'Invalid request type', 400);
@@ -106,12 +101,11 @@ export class RequestController extends BaseController {
     this.sendSuccess(res, createdRequest, 'Category request submitted successfully', 201);
   });
 
-  // Approve request (admin only)
   approveRequest = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const approverId = req.user.id;
     const userRole = req.user.role;
-    const { action, notes } = req.body; // action: 'approve' or 'reject'
+    const { action } = req.body;
     
     if (!['approve', 'reject'].includes(action)) {
       return this.sendError(res, 'Invalid action. Must be "approve" or "reject"', 400);
@@ -126,7 +120,6 @@ export class RequestController extends BaseController {
     this.sendSuccess(res, result.request, result.message);
   });
 
-  // Get pending requests (admin only)
   getPendingRequests = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, type, priority } = req.query;
     const offset = (page - 1) * limit;
@@ -149,7 +142,6 @@ export class RequestController extends BaseController {
     }, 'Pending requests retrieved successfully');
   });
 
-  // Get request statistics (admin only)
   getRequestStats = asyncHandler(async (req, res) => {
     const [
       totalRequests,

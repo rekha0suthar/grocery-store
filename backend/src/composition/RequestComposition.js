@@ -1,8 +1,7 @@
 import { RequestRepository } from '../repositories/RequestRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import { CategoryRepository } from '../repositories/CategoryRepository.js';
-import { CreateStoreManagerRequestUseCase } from '@grocery-store/core/use-cases/request';
-import { ApproveRequestUseCase } from '@grocery-store/core/use-cases/request';
+import { CreateStoreManagerRequestUseCase, ApproveRequestUseCase } from '@grocery-store/core/use-cases/request';
 
 export class RequestComposition {
   constructor(databaseType = 'firebase') {

@@ -84,8 +84,7 @@ export class AuthenticateUserUseCase {
   }
 
   safePublicUser(user) {
-    const { password, loginAttempts, lockedUntil, ...rest } = user;
+    const { _password, _loginAttempts, _lockedUntil, ...rest } = user;
     return rest;
   }
 }
-

@@ -1,13 +1,7 @@
 import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { Request } from '../../entities/Request.js';
-import { User } from '../../entities/User.js';
-import { Category } from '../../entities/Category.js';
-
 
 export class ApproveRequestUseCase {
-  /**
-   * @param {{ requestRepo: { findById(id):Promise<Request>, update(id, data):Promise<Request> }, userRepo: { findById(id):Promise<User>, update(id, data):Promise<User> }, categoryRepo: { findById(id):Promise<Category>, create(data):Promise<Category> } }} deps
-   */
   constructor({ requestRepo, userRepo, categoryRepo }, clock = null) {
     this.requestRepository = requestRepo;
     this.userRepository = userRepo;
@@ -17,7 +11,6 @@ export class ApproveRequestUseCase {
 
   async execute(requestId, approverId, userRole, action) {
     try {
-      // Authorization check
       if (!this.canApproveRequest(userRole)) {
         return {
           success: false,
@@ -26,8 +19,7 @@ export class ApproveRequestUseCase {
         };
       }
 
-      // Get request
-      const request = await this.requestRepository.findById(requestId);
+        const request = await this.requestRepository.findById(requestId);
       if (!request) {
         return {
           success: false,
@@ -36,7 +28,6 @@ export class ApproveRequestUseCase {
         };
       }
 
-      // Validate request can be processed
       if (!request.canBeReviewed()) {
         return {
           success: false,
@@ -45,7 +36,6 @@ export class ApproveRequestUseCase {
         };
       }
 
-      // Process based on action
       if (action === 'approve') {
         return await this.approveRequest(request, approverId);
       } else if (action === 'reject') {
@@ -74,14 +64,11 @@ export class ApproveRequestUseCase {
   }
 
   async approveRequest(request, approverId) {
-    // Use entity business logic - handle both entity and JSON
     const requestEntity = request instanceof Request ? request : Request.fromJSON(request);
     requestEntity.approve(approverId);
     
-    // Update request in repository
     const updatedRequest = await this.requestRepository.update(request.id, requestEntity.toJSON());
 
-    // Execute the approved request
     await this.executeApprovedRequest(request);
 
     return {
@@ -92,7 +79,6 @@ export class ApproveRequestUseCase {
   }
 
   async rejectRequest(request, approverId) {
-    // Update request status
     const updatedRequest = await this.requestRepository.update(request.id, {
       ...request,
       status: 'rejected',

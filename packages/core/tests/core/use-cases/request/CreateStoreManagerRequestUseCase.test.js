@@ -14,7 +14,6 @@ describe('CreateStoreManagerRequestUseCase - Application Policy', () => {
     };
 
     mockUserRepository = {
-      findById: jest.fn(),
       findById: jest.fn()
     };
 
