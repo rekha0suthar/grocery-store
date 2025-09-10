@@ -84,7 +84,7 @@ export class AuthenticateUserUseCase {
   }
 
   safePublicUser(user) {
-    const { _password, _loginAttempts, _lockedUntil, ...rest } = user;
+    const { _password, _loginAttempts, _lockedUntil, ...rest } = user; // eslint-disable-line no-unused-vars
     return rest;
   }
 }

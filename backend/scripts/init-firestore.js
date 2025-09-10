@@ -1,7 +1,6 @@
 import { db } from '../src/config/firebase.js';
 import bcrypt from 'bcryptjs';
 
-
 async function initializeFirestore() {
   try {
     console.log('🔥 Initializing Firestore database...');
@@ -162,7 +161,7 @@ async function initializeFirestore() {
     ];
 
     for (const product of products) {
-      const productRef = await db.collection('products').add(product);
+      // const _productRef = await db.collection('products').add(product);
       console.log('✅ Product created:', product.name);
     }
 

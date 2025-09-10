@@ -1,15 +1,9 @@
-// Shared validation rules for User entity and frontend forms
-// These are pure functions with no side effects
-
-// Regular expressions for validation
 export const EMAIL_RE = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-export const PHONE_RE = /^[\+]?[1-9][\d\s\-()]{7,15}$/;
+export const PHONE_RE = /^[+]?[1-9][\d\s\-()]{7,15}$/;
 export const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
 
-// Valid roles
 const ROLES = ['admin', 'store_manager', 'customer'];
 
-// Individual validation functions
 export function isValidEmail(email) {
   return typeof email === 'string' && 
          email.trim().length > 0 && 
@@ -27,7 +21,7 @@ export function isValidRole(role) {
 }
 
 export function isValidPhone(phone) {
-  if (!phone || phone.trim() === '') return true; // optional field
+  if (!phone || phone.trim() === '') return true;
   return typeof phone === 'string' && PHONE_RE.test(phone.trim());
 }
 
@@ -38,15 +32,13 @@ export function isValidPassword(password) {
 }
 
 export function isValidAddress(address) {
-  if (!address || address.trim() === '') return true; // optional field
+  if (!address || address.trim() === '') return true;
   return typeof address === 'string' && address.trim().length <= 500;
 }
 
-// Comprehensive form validator
 export function validateUserForm(input) {
   const issues = [];
   
-  // Required fields
   if (!isValidEmail(input?.email)) {
     issues.push({ 
       field: 'email', 
@@ -97,7 +89,6 @@ export function validateUserForm(input) {
   };
 }
 
-// Registration form validator (includes password)
 export function validateRegistrationForm(input) {
   const userValidation = validateUserForm(input);
   const issues = [...userValidation.issues];
@@ -128,7 +119,6 @@ export function validateRegistrationForm(input) {
   };
 }
 
-// Login form validator
 export function validateLoginForm(input) {
   const issues = [];
   
@@ -158,5 +148,4 @@ export function validateLoginForm(input) {
   };
 }
 
-// Export all valid roles for frontend use
 export { ROLES };

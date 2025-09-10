@@ -107,7 +107,7 @@ export class StoreManagerApprovalPolicy {
     }
   }
 
-  rejectStoreManager(profile, approver, reason = '') {
+  rejectStoreManager(profile, approver) {
     const canApprove = this.canApproveStoreManagerRequests(approver);
     if (!canApprove.canApprove) {
       return { success: false, message: canApprove.reason };

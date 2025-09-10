@@ -45,7 +45,7 @@ export class ManageStoreManagerRequestsUseCase {
     }
   }
 
-  async approveRequest(requestId, adminUserId, notes = '') {
+  async approveRequest(requestId, adminUserId) {
     try {
       const admin = await this.userRepository.findById(adminUserId);
       if (!admin) {

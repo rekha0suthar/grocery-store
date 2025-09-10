@@ -4,7 +4,7 @@ import { Product } from '../../../../entities/Product';
 describe('ManageProductUseCase - Application Policy', () => {
   let useCase;
   let mockProductRepository;
-  let mockCategoryRepository;
+// let mockCategoryRepository;
 
   beforeEach(() => {
     mockProductRepository = {
@@ -17,9 +17,8 @@ describe('ManageProductUseCase - Application Policy', () => {
       delete: jest.fn()
     };
 
-    mockCategoryRepository = {
-      findById: jest.fn()
-    };
+    // mockCategoryRepository = {
+// findById: jest.fn()
 
     useCase = new ManageProductUseCase({ productRepo: mockProductRepository });
   });

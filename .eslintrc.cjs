@@ -1,5 +1,11 @@
 module.exports = {
   root: true,
+  ignorePatterns: [
+    "frontend/dist/**/*",
+    "**/node_modules/**/*",
+    "**/build/**/*",
+    "**/.next/**/*"
+  ],
   env: { 
     es2022: true, 
     node: true, 

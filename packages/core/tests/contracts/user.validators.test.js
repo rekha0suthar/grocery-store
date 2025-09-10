@@ -4,11 +4,11 @@ import {
   isValidRole,
   isValidPhone,
   isValidPassword,
-  isValidAddress,
+
   validateUserForm,
   validateRegistrationForm,
   validateLoginForm,
-  ROLES
+
 } from '../../contracts/user.validators.js';
 
 describe('User Validators', () => {
