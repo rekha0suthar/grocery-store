@@ -1,0 +1,28 @@
+# Ignore frontend build artifacts
+frontend/dist/
+frontend/node_modules/
+frontend/build/
+
+# Ignore test files
+**/*.test.js
+**/tests/
+**/__tests__/
+
+# Ignore development files
+**/.env.local
+**/.env.development
+**/docker-compose*.yml
+**/Dockerfile
+**/.dockerignore
+
+# Ignore CI/CD files
+.github/
+scripts/
+
+# Ignore documentation
+*.md
+docs/
+
+# Ignore other workspaces
+packages/core/node_modules/
+packages/core/tests/
