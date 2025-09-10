@@ -10,7 +10,7 @@ import { UserRepository } from '../repositories/UserRepository.js';
 import { RequestRepository } from '../repositories/RequestRepository.js';
 import { StoreManagerProfileRepository } from '../repositories/StoreManagerProfileRepository.js';
 import { BcryptPasswordHasher } from '../adapters/BcryptPasswordHasher.js';
-import { DefaultClock } from '@grocery-store/core/adapters/DefaultClock.js';
+import { DefaultClock } from '@grocery-store/core/adapters';
 import { AdminManagementPolicy } from '@grocery-store/core/services/AdminManagementPolicy.js';
 import { StoreManagerApprovalPolicy } from '@grocery-store/core/services/StoreManagerApprovalPolicy.js';
 import appConfig from '../config/appConfig.js';

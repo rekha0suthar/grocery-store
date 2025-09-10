@@ -26,6 +26,9 @@ app.use(helmet({
 
 app.use(cors(config.get('cors')));
 
+// Trust proxy for Vercel deployment
+app.set('trust proxy', 1);
+
 const limiter = rateLimit({
   windowMs: config.get('rateLimit').windowMs,
   max: config.get('rateLimit').max,
