@@ -7,7 +7,6 @@ jest.config.*
 # babel.config.*  # Remove this line to allow babel configs
 .prettierignore
 .prettierrc
-.eslintrc.cjs 
 backend/add-more-data.js
 # Environment variables
 .env
