@@ -1,4 +1,11 @@
 import { BaseEntity } from './BaseEntity.js';
+import { 
+  isValidEmail, 
+  isValidName, 
+  isValidRole, 
+  isValidPhone, 
+  isValidAddress 
+} from '../contracts/user.validators.js';
 
 export class User extends BaseEntity {
   constructor(data = {}, clock = null) {
@@ -48,16 +55,11 @@ export class User extends BaseEntity {
     if (!this.lockedUntil) {
       return false;
     }
-    return this.clock.now() < this.clock.createDate(this.lockedUntil);
+    return this.clock.now() < this.lockedUntil;
   }
 
-  incrementLoginAttempts(maxAttempts = 5, lockDurationMinutes = 30) {
-    this.loginAttempts = (this.loginAttempts || 0) + 1;
-
-    if (this.loginAttempts >= maxAttempts) {
-      this.lockedUntil = this.clock.addTime(this.clock.now(), lockDurationMinutes * 60 * 1000);
-    }
-
+  incrementLoginAttempts() {
+    this.loginAttempts += 1;
     this.updateTimestamp();
   }
 
@@ -67,28 +69,44 @@ export class User extends BaseEntity {
     this.updateTimestamp();
   }
 
+  lockAccount(lockDurationMs = 15 * 60 * 1000) { // 15 minutes default
+    this.lockedUntil = this.clock.now() + lockDurationMs;
+    this.updateTimestamp();
+  }
+
+  recordLogin() {
+    this.lastLoginAt = this.clock.now();
+    this.resetLoginAttempts();
+    this.updateTimestamp();
+  }
+
+  // Validation methods using shared validators
   isValid() {
-    return this.validateEmail() && this.validateName() && this.validateRole();
+    return this.validateEmail() && 
+           this.validateName() && 
+           this.validateRole() && 
+           this.validatePhone() && 
+           this.validateAddress();
   }
 
   validateEmail() {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(this.email);
+    return isValidEmail(this.email);
   }
 
   validateName() {
-    return this.name && this.name.trim().length > 1; 
+    return isValidName(this.name);
   }
 
   validateRole() {
-    const validRoles = ['admin', 'store_manager', 'customer'];
-    return validRoles.includes(this.role);
+    return isValidRole(this.role);
   }
 
   validatePhone() {
-    if (!this.phone) return true; 
-    const phoneRegex = /^\+?[\d\s\-()]+$/;
-    return phoneRegex.test(this.phone);
+    return isValidPhone(this.phone);
+  }
+
+  validateAddress() {
+    return isValidAddress(this.address);
   }
 
   isVerified() {

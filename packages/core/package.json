@@ -4,6 +4,7 @@
   "description": "Shared business logic, entities, and use cases for the grocery store application",
   "main": "index.js",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./index.js",
     "./entities": "./entities/index.js",
@@ -16,7 +17,8 @@
     "./use-cases/request": "./use-cases/request/index.js",
     "./interfaces": "./interfaces/index.js",
     "./errors": "./errors/index.js",
-    "./services": "./services/index.js"
+    "./services": "./services/index.js",
+    "./contracts": "./contracts/index.js"
   },
   "scripts": {
     "build": "echo 'Core package build completed - no compilation needed for ES modules'",
@@ -29,7 +31,8 @@
     "clean-architecture",
     "domain",
     "entities",
-    "use-cases"
+    "use-cases",
+    "validation"
   ],
   "author": "Grocery Store Team",
   "license": "MIT",
