@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
 import { closeCart, removeFromCart, updateQuantity, clearCart } from '../../store/slices/cartSlice.js';
-import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, Package } from 'lucide-react';
 import Button from '../UI/Button.jsx';
 import { clsx } from 'clsx';
 

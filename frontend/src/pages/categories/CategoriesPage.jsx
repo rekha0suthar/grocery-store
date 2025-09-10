@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
 import { fetchCategories, fetchCategoryTree } from '../../store/slices/categorySlice.js';
 import Card from '../../components/UI/Card.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
-import { FolderOpen, ChevronRight } from 'lucide-react';
+import { FolderOpen } from 'lucide-react';
 
 const CategoriesPage = () => {
   const dispatch = useAppDispatch();

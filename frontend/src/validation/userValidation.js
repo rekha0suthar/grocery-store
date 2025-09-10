@@ -1,11 +1,11 @@
 // Frontend validation utilities using shared core validators
 import { 
   validateUserForm, 
-  validateRegistrationForm, 
+   
   validateLoginForm,
   ROLES,
   isValidEmail,
-  isValidName,
+  
   isValidRole,
   isValidPhone,
   isValidPassword

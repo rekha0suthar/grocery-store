@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
-import { setUser, clearAuth } from '../store/slices/authSlice.js';
+import { setCredentials, clearAuth } from '../store/slices/authSlice.js';
 import { authService } from '../services/authService.js';
 
 const AuthContext = createContext();
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
           // Try to get user profile from API
           const response = await authService.getProfile();
           const userData = response.data?.data || response.data;
-          dispatch(setUser(userData));
+          dispatch(setCredentials(userData));
         } catch (error) {
           console.error('Failed to get user profile:', error);
           // If API call fails, try to get user from localStorage
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
           if (storedUser) {
             try {
               const parsedUser = JSON.parse(storedUser);
-              dispatch(setUser(parsedUser));
+              dispatch(setCredentials(parsedUser));
             } catch (parseError) {
               console.error('Failed to parse stored user:', parseError);
               dispatch(clearAuth());
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
-            dispatch(setUser(parsedUser));
+            dispatch(setCredentials(parsedUser));
           } catch (parseError) {
             console.error('Failed to parse stored user:', parseError);
             dispatch(clearAuth());

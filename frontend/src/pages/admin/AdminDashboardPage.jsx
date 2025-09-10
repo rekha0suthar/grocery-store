@@ -5,7 +5,7 @@ import { fetchCategories } from '../../store/slices/categorySlice.js';
 import { fetchRequests } from '../../store/slices/requestSlice.js';
 import Card from '../../components/UI/Card.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
-import { Package, FolderOpen, FileText, Users, TrendingUp, AlertCircle } from 'lucide-react';
+import { Package, FolderOpen, FileText, AlertCircle } from 'lucide-react';
 
 const AdminDashboardPage = () => {
   const dispatch = useAppDispatch();

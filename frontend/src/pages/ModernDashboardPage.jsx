@@ -10,10 +10,10 @@ import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { 
   Package, 
   FolderOpen, 
-  ShoppingCart, 
-  TrendingUp, 
+ 
+ 
   AlertCircle,
-  Users,
+
   FileText,
   Eye,
   Plus,
@@ -21,7 +21,7 @@ import {
   Star,
   Clock,
   CheckCircle,
-  XCircle
+
 } from 'lucide-react';
 
 const ModernDashboardPage = () => {
@@ -39,7 +39,7 @@ const ModernDashboardPage = () => {
 
   const pendingRequests = requests.filter(req => req.status === 'pending');
   const lowStockProducts = products.filter(product => product.stock < 10);
-  const featuredProducts = products.filter(product => product.isFeatured).slice(0, 4);
+  // const _featuredProducts = products.filter(product => product.isFeatured).slice(0, 4);
   const recentProducts = products.slice(0, 6);
 
   const stats = [

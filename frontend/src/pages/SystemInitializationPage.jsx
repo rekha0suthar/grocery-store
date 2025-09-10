@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { Shield, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { checkInitializationStatus, initializeSystem } from '../store/slices/authSlice.js';
-import { validateRegistrationForm } from '../utils/validation.js';
+import { validateRegistration } from '../utils/validation.js';
 import { Button } from '../components/UI/Button.jsx';
 import { LoadingSpinner } from '../components/UI/LoadingSpinner.jsx';
 
@@ -20,7 +20,7 @@ export const SystemInitializationPage = () => {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
+
     setError,
     clearErrors
   } = useForm({
@@ -33,7 +33,7 @@ export const SystemInitializationPage = () => {
     }
   });
 
-  const password = watch('password');
+  // const _password = watch('password');
 
   useEffect(() => {
     // Check if system is already initialized
@@ -57,7 +57,7 @@ export const SystemInitializationPage = () => {
       clearErrors();
 
       // Client-side validation using shared validators
-      const validation = validateRegistrationForm(data);
+      const validation = validateRegistration(data);
       if (!validation.ok) {
         validation.issues.forEach(issue => {
           setError(issue.field, {

@@ -1,13 +1,13 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
-import { toggleSidebar } from '../../store/slices/uiSlice.js';
+import { useAppSelector } from '../../hooks/redux.js';
+// import { toggleSidebar as _toggleSidebar } from '../../store/slices/uiSlice.js';
 import ModernHeader from './ModernHeader.jsx';
-import Sidebar from './Sidebar.jsx';
+// import _Sidebar from './Sidebar.jsx';
 import CartSidebar from './CartSidebar.jsx';
 
 const Layout = () => {
-  const dispatch = useAppDispatch();
+  // const _dispatch = useAppDispatch();
   const { sidebarOpen } = useAppSelector((state) => state.ui);
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 

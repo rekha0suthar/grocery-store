@@ -5,7 +5,7 @@ import Button from '../components/UI/Button.jsx';
 import Card from '../components/UI/Card.jsx';
 import Input from '../components/UI/Input.jsx';
 import { testApiConnection, getApiStatus, testProductsEndpoint } from '../utils/apiTest.js';
-import config from '../config/appConfig.js';
+// import config from '../config/appConfig.js';
 
 const StyleTestPage = () => {
   const [apiStatus, setApiStatus] = useState(null);

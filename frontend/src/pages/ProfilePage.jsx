@@ -5,7 +5,7 @@ import { updateProfile } from '../store/slices/authSlice.js';
 import Card from '../components/UI/Card.jsx';
 import Button from '../components/UI/Button.jsx';
 import Input from '../components/UI/Input.jsx';
-import { User, Mail, Phone, Calendar, Shield } from 'lucide-react';
+import { User, Mail, Phone, Calendar } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ProfilePage = () => {

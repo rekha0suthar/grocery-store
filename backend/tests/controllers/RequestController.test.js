@@ -174,12 +174,12 @@ describe('RequestController - HTTP Interface Adapter', () => {
     test('retrieves request statistics successfully', async () => {
       mockRequestRepository.count.mockResolvedValue(10); // total
       mockRequestRepository.countByStatus
-        .mockResolvedValueOnce(3)  // pending
-        .mockResolvedValueOnce(5)  // approved
+        .mockResolvedValueOnce(3) // pending
+        .mockResolvedValueOnce(5) // approved
         .mockResolvedValueOnce(2); // rejected
       mockRequestRepository.countByType
-        .mockResolvedValueOnce(4)  // store manager requests
-        .mockResolvedValueOnce(3)  // category creation
+        .mockResolvedValueOnce(4) // store manager requests
+        .mockResolvedValueOnce(3) // category creation
         .mockResolvedValueOnce(3); // category modification
       
       const asyncFunction = async (req, res) => {

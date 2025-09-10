@@ -11,7 +11,7 @@ import {
   ShoppingCart, 
   Star, 
   Heart, 
-  Search, 
+ 
   Truck, 
   Shield, 
   Clock,
@@ -36,7 +36,7 @@ const HomePage = () => {
   };
 
   const featuredProducts = products.filter(product => product.isFeatured).slice(0, 4);
-  const recentProducts = products.slice(0, 8);
+  // const _recentProducts = products.slice(0, 8);
 
   return (
     <div className="min-h-screen bg-white">

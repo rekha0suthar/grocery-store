@@ -10,7 +10,7 @@ import {
   Search, 
   ShoppingCart, 
   Package, 
-  Filter, 
+ 
   Grid, 
   List,
   Star,

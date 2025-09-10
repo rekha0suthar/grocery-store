@@ -4,31 +4,31 @@ import { authService } from '../../services/authService.js';
 // System initialization thunks
 export const checkInitializationStatus = createAsyncThunk(
   'auth/checkInitializationStatus',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.checkInitializationStatus();
       const responseData = response.data?.data || response.data;
       return responseData;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to check initialization status');
+      return _rejectWithValue(error.response?.data?.message || 'Failed to check initialization status');
     }
   }
 );
 
 export const initializeSystem = createAsyncThunk(
   'auth/initializeSystem',
-  async (adminData, { rejectWithValue }) => {
+  async (adminData, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.initializeSystem(adminData);
       const responseData = response.data?.data || response.data;
       
       if (responseData.success === false) {
-        return rejectWithValue(responseData.message || 'System initialization failed');
+        return _rejectWithValue(responseData.message || 'System initialization failed');
       }
       
       return responseData;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'System initialization failed');
+      return _rejectWithValue(error.response?.data?.message || 'System initialization failed');
     }
   }
 );
@@ -36,7 +36,7 @@ export const initializeSystem = createAsyncThunk(
 // Authentication thunks
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async (credentials, { rejectWithValue }) => {
+  async (credentials, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
       console.log('Login response:', response.data);
@@ -44,20 +44,20 @@ export const loginUser = createAsyncThunk(
       const responseData = response.data?.data || response.data;
       
       if (responseData.success === false) {
-        return rejectWithValue(responseData.message || 'Login failed');
+        return _rejectWithValue(responseData.message || 'Login failed');
       }
       
       return responseData;
     } catch (error) {
       console.error('Login error:', error);
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      return _rejectWithValue(error.response?.data?.message || 'Login failed');
     }
   }
 );
 
 export const registerUser = createAsyncThunk(
   'auth/registerUser',
-  async (userData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.register(userData);
       console.log('Register response:', response.data);
@@ -65,7 +65,7 @@ export const registerUser = createAsyncThunk(
       const responseData = response.data?.data || response.data;
       
       if (responseData.success === false) {
-        return rejectWithValue(responseData.message || 'Registration failed');
+        return _rejectWithValue(responseData.message || 'Registration failed');
       }
       
       // Handle different registration types
@@ -92,14 +92,14 @@ export const registerUser = createAsyncThunk(
       }
     } catch (error) {
       console.error('Registration error:', error);
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      return _rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }
 );
 
 export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue: _rejectWithValue }) => {
     try {
       await authService.logout();
       return { success: true };
@@ -112,13 +112,13 @@ export const logoutUser = createAsyncThunk(
 
 export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
-  async (profileData, { rejectWithValue }) => {
+  async (profileData, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.updateProfile(profileData);
       const responseData = response.data?.data || response.data;
       return responseData;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Profile update failed');
+      return _rejectWithValue(error.response?.data?.message || 'Profile update failed');
     }
   }
 );
@@ -126,26 +126,26 @@ export const updateProfile = createAsyncThunk(
 // Store manager management thunks (admin-only)
 export const getPendingStoreManagerRequests = createAsyncThunk(
   'auth/getPendingStoreManagerRequests',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.getPendingStoreManagerRequests();
       const responseData = response.data?.data || response.data;
       return responseData;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch pending requests');
+      return _rejectWithValue(error.response?.data?.message || 'Failed to fetch pending requests');
     }
   }
 );
 
 export const approveStoreManagerRequest = createAsyncThunk(
   'auth/approveStoreManagerRequest',
-  async ({ requestId, action, reason }, { rejectWithValue }) => {
+  async ({ requestId, action, reason }, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.approveStoreManagerRequest(requestId, action, reason);
       const responseData = response.data?.data || response.data;
       return responseData;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to process request');
+      return _rejectWithValue(error.response?.data?.message || 'Failed to process request');
     }
   }
 );

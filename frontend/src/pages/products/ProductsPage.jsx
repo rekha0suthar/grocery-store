@@ -6,7 +6,7 @@ import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import Input from '../../components/UI/Input.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
-import { Search, ShoppingCart, Package, Filter } from 'lucide-react';
+import { Search, ShoppingCart, Package } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ProductsPage = () => {
