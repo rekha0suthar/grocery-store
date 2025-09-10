@@ -12,10 +12,18 @@ import {
 const router = express.Router();
 const authController = new AuthController();
 
+router.post('/initialize', registerValidation, handleValidationErrors, authController.initializeSystem);
+router.get('/initialization-status', authController.checkInitialization);
+
 router.post('/register', registerValidation, handleValidationErrors, authController.register);
 router.post('/login', loginValidation, handleValidationErrors, authController.login);
+router.post('/logout', authController.logout);
+
 router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, updateProfileValidation, handleValidationErrors, authController.updateProfile);
 router.put('/change-password', authenticateToken, changePasswordValidation, handleValidationErrors, authController.changePassword);
+
+router.get('/store-manager-requests', authenticateToken, authController.getPendingStoreManagerRequests);
+router.put('/store-manager-requests/:requestId', authenticateToken, authController.approveStoreManagerRequest);
 
 export default router;
