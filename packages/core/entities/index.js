@@ -6,3 +6,4 @@ export { Cart } from './Cart.js';
 export { CartItem } from './CartItem.js';
 export { Order, OrderItem } from './Order.js';
 export { Request } from './Request.js';
+export { StoreManagerProfile } from './StoreManagerProfile.js';

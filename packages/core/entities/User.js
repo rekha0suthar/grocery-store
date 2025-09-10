@@ -70,7 +70,7 @@ export class User extends BaseEntity {
   }
 
   lockAccount(lockDurationMs = 15 * 60 * 1000) { // 15 minutes default
-    this.lockedUntil = this.clock.now() + lockDurationMs;
+    this.lockedUntil = this.clock.now().getTime() + lockDurationMs; // 15 minutes default
     this.updateTimestamp();
   }
 
@@ -80,7 +80,6 @@ export class User extends BaseEntity {
     this.updateTimestamp();
   }
 
-  // Validation methods using shared validators
   isValid() {
     return this.validateEmail() && 
            this.validateName() && 
