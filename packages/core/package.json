@@ -19,6 +19,7 @@
     "./services": "./services/index.js"
   },
   "scripts": {
+    "build": "echo 'Core package build completed - no compilation needed for ES modules'",
     "test": "jest --config ./jest.config.cjs",
     "test:clear": "jest --clearCache",
     "lint": "echo 'No linting configured for core package'"
