@@ -36,8 +36,17 @@ export const registerValidation = [
     .withMessage('Role must be admin, store_manager, or customer'),
   body('phone')
     .optional()
-    .isMobilePhone()
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      // Only validate if phone is provided and not empty
+      if (value && value.trim().length > 0) {
+        // Use a simple phone validation regex
+        const phoneRegex = /^[+]?[1-9][\d\s\-()]{7,15}$/;
+        if (!phoneRegex.test(value.trim())) {
+          throw new Error('Please provide a valid phone number');
+        }
+      }
+      return true;
+    }),
   body('address')
     .optional()
     .trim()
@@ -74,8 +83,17 @@ export const updateProfileValidation = [
     .withMessage('Name must be between 2 and 100 characters'),
   body('phone')
     .optional()
-    .isMobilePhone()
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      // Only validate if phone is provided and not empty
+      if (value && value.trim().length > 0) {
+        // Use a simple phone validation regex
+        const phoneRegex = /^[+]?[1-9][\d\s\-()]{7,15}$/;
+        if (!phoneRegex.test(value.trim())) {
+          throw new Error('Please provide a valid phone number');
+        }
+      }
+      return true;
+    }),
   body('address')
     .optional()
     .trim()

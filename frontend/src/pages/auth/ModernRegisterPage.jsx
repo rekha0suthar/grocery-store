@@ -15,7 +15,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { registerUser } from '../../store/slices/authSlice.js';
-import { validateRegistration } from '../../utils/validation.js';
+import { validateRegistration } from '../../validation/userValidation.js';
 import Button from '../../components/UI/Button.jsx';
 
 export const ModernRegisterPage = () => {
@@ -47,7 +47,6 @@ export const ModernRegisterPage = () => {
   });
 
   const selectedRole = watch('role');
-  // const _password = watch('password');
 
   const hasError = (fieldName) => {
     return errors[fieldName];
@@ -69,14 +68,16 @@ export const ModernRegisterPage = () => {
       };
 
       // Client-side validation using shared validators
-      const validation = validateRegistration(registrationData);
-      if (!validation.ok) {
-        validation.issues.forEach(issue => {
-          setError(issue.field, {
+      const validation = validateRegistration(registrationData);      
+      if (!validation.isValid) {
+        // Handle validation errors correctly
+        Object.keys(validation.errors).forEach(field => {
+          setError(field, {
             type: 'manual',
-            message: issue.message
+            message: validation.errors[field]
           });
         });
+        toast.error('Please fix the validation errors before submitting');
         return;
       }
 

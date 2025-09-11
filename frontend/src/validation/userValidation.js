@@ -1,11 +1,10 @@
 // Frontend validation utilities using shared core validators
 import { 
   validateUserForm, 
-   
   validateLoginForm,
   ROLES,
   isValidEmail,
-  
+  isValidName,
   isValidRole,
   isValidPhone,
   isValidPassword
@@ -24,10 +23,14 @@ export function mapValidationErrors(validationResult) {
 export function validateRegistration(data) {
   const errors = {};
 
-  
+  // Validate firstName (required)
+  if (!isValidName(data.firstName)) {
+    errors.firstName = 'First name must be between 2 and 100 characters';
+  }
+
   // Validate lastName (optional - only validate if provided)
-  if (data.lastName && data.lastName.trim().length > 0 && data.lastName.trim().length < 2) {
-    errors.lastName = 'Last name must be at least 2 characters if provided';
+  if (data.lastName && data.lastName.trim().length > 0 && !isValidName(data.lastName)) {
+    errors.lastName = 'Last name must be between 2 and 100 characters if provided';
   }
 
   // Validate email using shared validator
@@ -35,8 +38,8 @@ export function validateRegistration(data) {
     errors.email = 'Please provide a valid email address';
   }
 
-  // Validate phone using shared validator
-  if (!isValidPhone(data.phone)) {
+  // Validate phone using shared validator (optional)
+  if (data.phone && data.phone.trim().length > 0 && !isValidPhone(data.phone)) {
     errors.phone = 'Please provide a valid phone number';
   }
 
@@ -53,6 +56,17 @@ export function validateRegistration(data) {
   // Validate password confirmation
   if (data.password !== data.confirmPassword) {
     errors.confirmPassword = 'Passwords do not match';
+  }
+
+  // Validate store manager specific fields
+  if (data.role === 'store_manager') {
+    if (!data.storeName || data.storeName.trim().length < 2) {
+      errors.storeName = 'Store name is required and must be at least 2 characters';
+    }
+    
+    if (!data.storeAddress || data.storeAddress.trim().length < 5) {
+      errors.storeAddress = 'Store address is required and must be at least 5 characters';
+    }
   }
 
   return {
