@@ -47,7 +47,7 @@ class MockStoreManagerProfileRepository {
 }
 
 class MockPasswordHasher {
-  async verify(password, hashedPassword) {
+  async compare(password, hashedPassword) {
     return password === hashedPassword;
   }
 }
