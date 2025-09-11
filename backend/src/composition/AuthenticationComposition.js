@@ -47,8 +47,8 @@ export class AuthenticationComposition {
     // New use cases with business rules
     this.authenticateUserWithApprovalUseCase = new AuthenticateUserWithApprovalUseCase(
       this.userRepository,
+      this.storeManagerProfileRepository,
       this.passwordHasher,
-      this.storeManagerApprovalPolicy,
       this.clock
     );
 

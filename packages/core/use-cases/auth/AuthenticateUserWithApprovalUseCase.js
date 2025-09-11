@@ -29,7 +29,7 @@ export class AuthenticateUserWithApprovalUseCase {
         };
       }
 
-      const isPasswordValid = await this.passwordHasher.verify(password, user.password);
+      const isPasswordValid = await this.passwordHasher.compare(password, user.password);
       if (!isPasswordValid) {
         user.incrementLoginAttempts();
         if (user.loginAttempts >= 5) {
