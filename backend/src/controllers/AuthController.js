@@ -12,15 +12,14 @@ export class AuthController extends BaseController {
 
   // System initialization endpoint
   initializeSystem = asyncHandler(async (req, res) => {
-    const userData = req.body;
+    const adminData = req.body;
     
-    const result = await this.authComposition.getInitializeSystemUseCase().execute(userData);
+    const result = await this.authComposition.getInitializeSystemUseCase().execute(adminData);
     
     if (!result.success) {
       return this.sendError(res, result.message, 400);
     }
-
-    // Generate token for the first admin
+    
     const tokenData = await this.jwtProvider.generateToken(result.user);
     
     this.sendSuccess(res, {
@@ -29,10 +28,8 @@ export class AuthController extends BaseController {
     }, result.message, 201);
   });
 
-  // Check if system needs initialization
   checkInitialization = asyncHandler(async (req, res) => {
     const status = await this.authComposition.getInitializeSystemUseCase().checkInitializationStatus();
-    
     this.sendSuccess(res, status, 'System status retrieved successfully');
   });
 
@@ -59,9 +56,12 @@ export class AuthController extends BaseController {
       }, result.message, 201);
       
     } else if (role === 'admin') {
+      // Get existing users first
+      const existingUsers = await this.authComposition.userRepository.findAll();
+      
       // Check if admin already exists
       const adminPolicy = this.authComposition.getAdminManagementPolicy();
-      const canCreate = await adminPolicy.canCreateAdmin(userData);
+      const canCreate = adminPolicy.canCreateAdmin(existingUsers);
       
       if (!canCreate.canCreate) {
         return this.sendError(res, canCreate.reason, 400);
@@ -157,19 +157,16 @@ export class AuthController extends BaseController {
   });
 
   approveStoreManagerRequest = asyncHandler(async (req, res) => {
-    const { requestId } = req.params;
-    const { action, reason } = req.body; // action: 'approve' or 'reject'
     const adminUser = req.user;
+    const { requestId } = req.params;
+    const { action, reason } = req.body;
     
-    let result;
-    
-    if (action === 'approve') {
-      result = await this.authComposition.getManageStoreManagerRequestsUseCase().approveRequest(requestId, adminUser);
-    } else if (action === 'reject') {
-      result = await this.authComposition.getManageStoreManagerRequestsUseCase().rejectRequest(requestId, adminUser, reason);
-    } else {
-      return this.sendError(res, 'Invalid action. Must be "approve" or "reject"', 400);
-    }
+    const result = await this.authComposition.getManageStoreManagerRequestsUseCase().approveRequest(
+      adminUser, 
+      requestId, 
+      action, 
+      reason
+    );
     
     if (!result.success) {
       return this.sendError(res, result.message, 400);
