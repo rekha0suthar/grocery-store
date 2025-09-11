@@ -15,15 +15,21 @@ class MockUserRepository {
     return this.users.find(user => user.email === email) || null;
   }
 
-  async save(user) {
-    const existingIndex = this.users.findIndex(u => u.id === user.id);
-    if (existingIndex >= 0) {
-      this.users[existingIndex] = user;
-    } else {
-      user.id = user.id || `user_${Date.now()}`;
-      this.users.push(user);
-    }
+  async create(userData) {
+    const user = new User(userData);
+    this.users.push(user);
     return user;
+  }
+
+  async update(id, userData) {
+    const existingIndex = this.users.findIndex(u => u.id === id);
+    if (existingIndex >= 0) {
+      const existingUser = this.users[existingIndex];
+      Object.assign(existingUser, userData);
+      existingUser.updatedAt = new Date();
+      return existingUser;
+    }
+    return null;
   }
 }
 
@@ -32,15 +38,32 @@ class MockRequestRepository {
     this.requests = [];
   }
 
-  async save(request) {
-    const existingIndex = this.requests.findIndex(r => r.id === request.id);
-    if (existingIndex >= 0) {
-      this.requests[existingIndex] = request;
-    } else {
-      request.id = request.id || `request_${Date.now()}`;
-      this.requests.push(request);
-    }
+  async create(requestData) {
+    const request = {
+      id: `request_${Date.now()}`,
+      ...requestData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.requests.push(request);
     return request;
+  }
+
+  async update(id, requestData) {
+    const existingIndex = this.requests.findIndex(r => r.id === id);
+    if (existingIndex >= 0) {
+      this.requests[existingIndex] = {
+        ...this.requests[existingIndex],
+        ...requestData,
+        updatedAt: new Date()
+      };
+      return this.requests[existingIndex];
+    }
+    return null;
+  }
+
+  async findById(id) {
+    return this.requests.find(r => r.id === id) || null;
   }
 }
 
@@ -63,7 +86,7 @@ describe('RegisterStoreManagerUseCase with Admin Check', () => {
         email: 'admin@store.com',
         role: 'admin'
       }, clock);
-      await userRepository.save(admin);
+      await userRepository.create(admin.toPersistence());
 
       const userData = {
         email: 'manager@store.com',
@@ -105,8 +128,8 @@ describe('RegisterStoreManagerUseCase with Admin Check', () => {
         email: 'customer2@store.com',
         role: 'customer'
       }, clock);
-      await userRepository.save(customer1);
-      await userRepository.save(customer2);
+      await userRepository.create(customer1.toPersistence());
+      await userRepository.create(customer2.toPersistence());
 
       const userData = {
         email: 'manager@store.com',
@@ -130,8 +153,8 @@ describe('RegisterStoreManagerUseCase with Admin Check', () => {
         email: 'manager2@store.com',
         role: 'store_manager'
       }, clock);
-      await userRepository.save(manager1);
-      await userRepository.save(manager2);
+      await userRepository.create(manager1.toPersistence());
+      await userRepository.create(manager2.toPersistence());
 
       const userData = {
         email: 'manager3@store.com',
@@ -160,9 +183,9 @@ describe('RegisterStoreManagerUseCase with Admin Check', () => {
         role: 'store_manager'
       }, clock);
       
-      await userRepository.save(admin);
-      await userRepository.save(customer);
-      await userRepository.save(existingManager);
+      await userRepository.create(admin.toPersistence());
+      await userRepository.create(customer.toPersistence());
+      await userRepository.create(existingManager.toPersistence());
 
       const userData = {
         email: 'newmanager@store.com',

@@ -17,15 +17,22 @@ class MockUserRepository {
     return this.users.find(user => user.email === email) || null;
   }
 
-  async save(user) {
-    const existingIndex = this.users.findIndex(u => u.id === user.id);
-    if (existingIndex >= 0) {
-      this.users[existingIndex] = user;
-    } else {
-      user.id = user.id || `user_${Date.now()}`;
-      this.users.push(user);
-    }
+  async create(userData) {
+    // userData is persistence data from toPersistence(), so we need to create a User entity
+    const user = new User(userData);
+    this.users.push(user);
     return user;
+  }
+
+  async update(id, userData) {
+    const existingIndex = this.users.findIndex(u => u.id === id);
+    if (existingIndex >= 0) {
+      const existingUser = this.users[existingIndex];
+      Object.assign(existingUser, userData);
+      existingUser.updatedAt = new Date();
+      return existingUser;
+    }
+    return null;
   }
 }
 
@@ -34,15 +41,21 @@ class MockRequestRepository {
     this.requests = [];
   }
 
-  async save(request) {
-    const existingIndex = this.requests.findIndex(r => r.id === request.id);
-    if (existingIndex >= 0) {
-      this.requests[existingIndex] = request;
-    } else {
-      request.id = request.id || `request_${Date.now()}`;
-      this.requests.push(request);
-    }
+  async create(requestData) {
+    const request = new Request(requestData);
+    this.requests.push(request);
     return request;
+  }
+
+  async update(id, requestData) {
+    const existingIndex = this.requests.findIndex(r => r.id === id);
+    if (existingIndex >= 0) {
+      const existingRequest = this.requests[existingIndex];
+      Object.assign(existingRequest, requestData);
+      existingRequest.updatedAt = new Date();
+      return existingRequest;
+    }
+    return null;
   }
 
   async findById(id) {
@@ -69,7 +82,7 @@ describe('RegisterStoreManagerUseCase', () => {
         email: 'admin@store.com',
         role: 'admin'
       }, clock);
-      await userRepository.save(admin);
+      await userRepository.create(admin);
 
       const userData = {
         email: 'manager@store.com',
@@ -99,7 +112,7 @@ describe('RegisterStoreManagerUseCase', () => {
         email: 'admin@store.com',
         role: 'admin'
       }, clock);
-      await userRepository.save(admin);
+      await userRepository.create(admin);
 
       const userData = {
         email: 'invalid-email',
@@ -118,7 +131,7 @@ describe('RegisterStoreManagerUseCase', () => {
         email: 'admin@store.com',
         role: 'admin'
       }, clock);
-      await userRepository.save(admin);
+      await userRepository.create(admin);
 
       const userData1 = {
         email: 'manager@store.com',
@@ -160,7 +173,7 @@ describe('RegisterStoreManagerUseCase', () => {
         email: 'admin@store.com',
         role: 'admin'
       }, clock);
-      await userRepository.save(admin);
+      await userRepository.create(admin);
 
       const userData = {
         email: 'manager@store.com',

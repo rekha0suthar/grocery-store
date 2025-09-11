@@ -12,16 +12,21 @@ class MockUserRepository {
     return this.users.find(user => user.email === email) || null;
   }
 
-  async save(user) {
-    const existingIndex = this.users.findIndex(u => u.id === user.id);
-    if (existingIndex >= 0) {
-      const persistenceData = user.toPersistence();
-      this.users[existingIndex] = new User(persistenceData, user.clock);
-    } else {
-      user.id = user.id || `user_${Date.now()}`;
-      this.users.push(user);
-    }
+  async create(userData) {
+    const user = new User(userData);
+    this.users.push(user);
     return user;
+  }
+
+  async update(id, userData) {
+    const existingIndex = this.users.findIndex(u => u.id === id);
+    if (existingIndex >= 0) {
+      const existingUser = this.users[existingIndex];
+      Object.assign(existingUser, userData);
+      existingUser.updatedAt = new Date();
+      return existingUser;
+    }
+    return null;
   }
 }
 
@@ -34,15 +39,21 @@ class MockStoreManagerProfileRepository {
     return this.profiles.find(profile => profile.userId === userId) || null;
   }
 
-  async save(profile) {
-    const existingIndex = this.profiles.findIndex(p => p.id === profile.id);
-    if (existingIndex >= 0) {
-      this.profiles[existingIndex] = profile;
-    } else {
-      profile.id = profile.id || `profile_${Date.now()}`;
-      this.profiles.push(profile);
-    }
+  async create(profileData) {
+    const profile = new StoreManagerProfile(profileData);
+    this.profiles.push(profile);
     return profile;
+  }
+
+  async update(id, profileData) {
+    const existingIndex = this.profiles.findIndex(p => p.id === id);
+    if (existingIndex >= 0) {
+      const existingProfile = this.profiles[existingIndex];
+      Object.assign(existingProfile, profileData);
+      existingProfile.updatedAt = new Date();
+      return existingProfile;
+    }
+    return null;
   }
 }
 
@@ -79,7 +90,7 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
         password: 'admin123',
         role: 'admin'
       }, clock);
-      await userRepository.save(admin);
+      await userRepository.create(admin);
 
       const result = await useCase.execute('admin@store.com', 'admin123');
 
@@ -94,7 +105,7 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
         password: 'customer123',
         role: 'customer'
       }, clock);
-      await userRepository.save(customer);
+      await userRepository.create(customer);
 
       const result = await useCase.execute('customer@store.com', 'customer123');
 
@@ -109,13 +120,13 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
         password: 'manager123',
         role: 'store_manager'
       }, clock);
-      await userRepository.save(storeManager);
+      await userRepository.create(storeManager);
 
       const profile = new StoreManagerProfile({
         userId: storeManager.id,
         isApproved: true
       }, clock);
-      await profileRepository.save(profile);
+      await profileRepository.create(profile);
 
       const result = await useCase.execute('manager@store.com', 'manager123');
 
@@ -130,13 +141,13 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
         password: 'manager123',
         role: 'store_manager'
       }, clock);
-      await userRepository.save(storeManager);
+      await userRepository.create(storeManager);
 
       const profile = new StoreManagerProfile({
         userId: storeManager.id,
         isApproved: false
       }, clock);
-      await profileRepository.save(profile);
+      await profileRepository.create(profile);
 
       const result = await useCase.execute('manager@store.com', 'manager123');
 
@@ -150,7 +161,7 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
         password: 'manager123',
         role: 'store_manager'
       }, clock);
-      await userRepository.save(storeManager);
+      await userRepository.create(storeManager);
 
       const result = await useCase.execute('manager@store.com', 'manager123');
 
@@ -164,7 +175,7 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
         password: 'correct123',
         role: 'customer'
       }, clock);
-      await userRepository.save(user);
+      await userRepository.create(user);
 
       const result = await useCase.execute('user@store.com', 'wrongpassword');
 
@@ -185,7 +196,7 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
         password: 'correct123',
         role: 'customer'
       }, clock);
-      await userRepository.save(user);
+      await userRepository.create(user);
 
       for (let i = 0; i < 5; i++) {
         const result = await useCase.execute('user@store.com', 'wrongpassword');

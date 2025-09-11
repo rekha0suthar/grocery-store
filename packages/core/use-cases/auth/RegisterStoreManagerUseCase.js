@@ -45,7 +45,7 @@ export class RegisterStoreManagerUseCase {
         };
       }
 
-      const savedUser = await this.userRepository.save(user);
+      const savedUser = await this.userRepository.create(user.toPersistence());
       
       const profile = this.policy.createStoreManagerProfile(savedUser.id, {
         storeName: userData.storeName,
@@ -54,7 +54,7 @@ export class RegisterStoreManagerUseCase {
 
       const request = this.policy.createStoreManagerApprovalRequest(userData, savedUser.id);
 
-      const savedRequest = await this.requestRepository.save(request);
+      const savedRequest = await this.requestRepository.create(request.toPersistence());
 
       return {
         success: true,

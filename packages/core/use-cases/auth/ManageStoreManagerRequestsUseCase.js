@@ -82,8 +82,8 @@ export class ManageStoreManagerRequestsUseCase {
       const result = this.policy.approveStoreManagerRequest(request, profile, admin);
       
       if (result.success) {
-        await this.requestRepository.save(request);
-        await this.storeManagerProfileRepository.save(profile);
+        await this.requestRepository.update(request.id, request.toPersistence());
+        await this.storeManagerProfileRepository.update(profile.id, profile.toPersistence());
       }
 
       return result;
@@ -132,7 +132,7 @@ export class ManageStoreManagerRequestsUseCase {
         };
       }
 
-      await this.requestRepository.save(request);
+      await this.requestRepository.update(request.id, request.toPersistence());
 
       return { 
         success: true, 

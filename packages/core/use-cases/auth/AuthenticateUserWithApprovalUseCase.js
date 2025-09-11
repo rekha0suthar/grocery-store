@@ -35,7 +35,7 @@ export class AuthenticateUserWithApprovalUseCase {
         if (user.loginAttempts >= 5) {
           user.lockAccount();
         }
-        await this.userRepository.save(user);
+        await this.userRepository.update(user.id, user.toPersistence());
 
         return {
           success: false,
@@ -63,7 +63,7 @@ export class AuthenticateUserWithApprovalUseCase {
       }
 
       user.recordLogin();
-      await this.userRepository.save(user);
+      await this.userRepository.update(user.id, user.toPersistence());
 
       return {
         success: true,

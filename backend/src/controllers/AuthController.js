@@ -19,7 +19,7 @@ export class AuthController extends BaseController {
     if (!result.success) {
       return this.sendError(res, result.message, 400);
     }
-    
+
     const tokenData = await this.jwtProvider.generateToken(result.user);
     
     this.sendSuccess(res, {

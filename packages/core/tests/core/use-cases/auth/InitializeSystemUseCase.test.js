@@ -20,15 +20,22 @@ class MockUserRepository {
     return this.users.find(user => user.email === email) || null;
   }
 
-  async save(user) {
-    const existingIndex = this.users.findIndex(u => u.id === user.id);
-    if (existingIndex >= 0) {
-      this.users[existingIndex] = user;
-    } else {
-      user.id = user.id || `user_${Date.now()}`;
-      this.users.push(user);
-    }
+  async create(userData) {
+    const user = new User(userData);
+    this.users.push(user);
     return user;
+  }
+
+  async update(id, userData) {
+    const existingIndex = this.users.findIndex(u => u.id === id);
+    if (existingIndex >= 0) {
+      const existingUser = this.users[existingIndex];
+      // Update the existing user with new data
+      Object.assign(existingUser, userData);
+      existingUser.updatedAt = new Date();
+      return existingUser;
+    }
+    return null;
   }
 }
 
@@ -68,7 +75,7 @@ describe('InitializeSystemUseCase', () => {
         email: 'existing@admin.com',
         role: 'admin'
       }, clock);
-      await userRepository.save(existingAdmin);
+      await userRepository.create(existingAdmin);
 
       const adminData = {
         email: 'new@admin.com',
@@ -101,7 +108,7 @@ describe('InitializeSystemUseCase', () => {
         email: 'admin@store.com',
         role: 'customer'
       }, clock);
-      await userRepository.save(existingUser);
+      await userRepository.create(existingUser);
 
       const adminData = {
         email: 'admin@store.com',
@@ -131,7 +138,7 @@ describe('InitializeSystemUseCase', () => {
       const admin = new User({
         role: 'admin'
       }, clock);
-      await userRepository.save(admin);
+      await userRepository.create(admin);
 
       const result = await useCase.checkInitializationStatus();
 
@@ -147,9 +154,9 @@ describe('InitializeSystemUseCase', () => {
       const customer = new User({ role: 'customer' }, clock);
       const storeManager = new User({ role: 'store_manager' }, clock);
       
-      await userRepository.save(admin);
-      await userRepository.save(customer);
-      await userRepository.save(storeManager);
+      await userRepository.create(admin);
+      await userRepository.create(customer);
+      await userRepository.create(storeManager);
 
       const result = await useCase.checkInitializationStatus();
 

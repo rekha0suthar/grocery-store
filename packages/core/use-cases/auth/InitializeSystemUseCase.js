@@ -35,7 +35,7 @@ export class InitializeSystemUseCase {
         };
       }
 
-      const savedAdmin = await this.userRepository.save(admin);
+      const savedAdmin = await this.userRepository.create(admin.toPersistence());
 
       return {
         success: true,
