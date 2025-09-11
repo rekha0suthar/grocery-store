@@ -129,7 +129,7 @@ export const productValidation = [
     .isFloat({ min: PRODUCT_RULES.PRICE_MIN, max: PRODUCT_RULES.PRICE_MAX })
     .withMessage(`Price must be between ${PRODUCT_RULES.PRICE_MIN} and ${PRODUCT_RULES.PRICE_MAX}`),
   body('categoryId')
-    .isLength({ min: 1, max: 100 })
+    .isUUID()
     .withMessage('Category ID must be a valid UUID'),
   body('sku')
     .trim()

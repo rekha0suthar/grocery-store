@@ -4,8 +4,8 @@
 export const PRODUCT_RULES = {
     SKU_PATTERN: /^[A-Z0-9-]{3,20}$/,
     URL_PATTERN: /^https?:\/\/.+/,
-    // More specific data URL pattern
-    IMAGE_URL_PATTERN: /^data:image\/[a-zA-Z0-9]+;base64,.+/,
+    // More flexible data URL pattern to support common image formats
+    IMAGE_URL_PATTERN: /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml|bmp|ico);base64,.+/,
     BARCODE_PATTERN: /^[0-9]{8,14}$/,
 
     UNITS: ['piece', 'kg', 'g', 'lb', 'oz', 'l', 'ml', 'gal', 'qt', 'pt', 'dozen', 'pack', 'box', 'case'],
@@ -210,7 +210,7 @@ export function validateProduct(data) {
     }
 
     if (data.images && !isValidImages(data.images)) {
-        errors.images = 'Each image must be a valid URL';
+        errors.images = 'Each image must be a valid HTTP/HTTPS URL or data URL (data:image/format;base64,...)';
     }
 
     if (data.discountPrice && !isValidDiscountPrice(data.discountPrice, data.price)) {
