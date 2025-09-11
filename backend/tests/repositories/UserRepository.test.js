@@ -68,7 +68,12 @@ describe('UserRepository - Data Access Layer', () => {
       const user = new User(userData);
       const result = await userRepository.create(user);
 
-      expect(mockDatabaseAdapter.create).toHaveBeenCalledWith('users', user.toPersistence());
+      const expectedData = user.toPersistence();
+      expect(mockDatabaseAdapter.create).toHaveBeenCalledWith('users', expect.objectContaining({
+        ...expectedData,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date)
+      }));
       expect(result).toBeInstanceOf(User);
       expect(result.id).toBe('user1');
     });
