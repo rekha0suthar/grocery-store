@@ -4,7 +4,7 @@ import {
   validateProduct,
   USER_RULES,
   PRODUCT_RULES
-} from '@grocery-store/core/contracts/index.js';
+} from '@grocery-store/core/contracts';
 
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
