@@ -1,4 +1,4 @@
-import { body, validationResult } from 'express-validator';
+import { body, param, validationResult } from 'express-validator';
 import { 
   validateUserRegistration,
   validateProduct,
@@ -167,8 +167,13 @@ export const productValidation = [
     .withMessage('Images must be an array'),
   body('images.*')
     .optional()
-    .isURL()
-    .withMessage('Each image must be a valid URL'),
+    .custom((value) => {
+      // Support both regular URLs and data URLs
+      const urlPattern = /^https?:\/\/.+/;
+      const dataUrlPattern = /^data:image\/[a-zA-Z]+;base64,.+/;
+      return urlPattern.test(value) || dataUrlPattern.test(value);
+    })
+    .withMessage('Each image must be a valid URL or data URL'),
   body('tags')
     .optional()
     .isArray()
@@ -237,7 +242,7 @@ export const categoryIdValidation = [
 ];
 
 export const productIdValidation = [
-  body('id')
+  param('id')
     .isLength({ min: 1, max: 100 })
     .withMessage('Product ID must be a valid UUID')
 ];

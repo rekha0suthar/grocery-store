@@ -4,6 +4,8 @@
 export const PRODUCT_RULES = {
     SKU_PATTERN: /^[A-Z0-9-]{3,20}$/,
     URL_PATTERN: /^https?:\/\/.+/,
+    // Add more flexible image URL pattern
+    IMAGE_URL_PATTERN: /^(https?:\/\/|data:|blob:).+/,
     BARCODE_PATTERN: /^[0-9]{8,14}$/,
 
     UNITS: ['piece', 'kg', 'g', 'lb', 'oz', 'l', 'ml', 'gal', 'qt', 'pt', 'dozen', 'pack', 'box', 'case'],
@@ -121,7 +123,9 @@ export function isValidTags(tags) {
 export function isValidImages(images) {
     if (!images || images.length === 0) return true;
     return Array.isArray(images) &&
-        images.every(img => typeof img === 'string' && PRODUCT_RULES.URL_PATTERN.test(img.trim()));
+        images.every(img => typeof img === 'string' && 
+            (PRODUCT_RULES.URL_PATTERN.test(img.trim()) || 
+             PRODUCT_RULES.IMAGE_URL_PATTERN.test(img.trim())));
 }
 
 export function isValidCategoryId(categoryId) {
