@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository.js';
 import { StoreManagerProfile } from '@grocery-store/core/entities/StoreManagerProfile.js';
 import { DatabaseFactory } from '../factories/DatabaseFactory.js';
-import { DefaultClock } from '@grocery-store/core/adapters';
+import { DefaultClock } from '@grocery-store/core/adapters/DefaultClock.js';
 
 export class StoreManagerProfileRepository extends BaseRepository {
   constructor(databaseTypeOrAdapter = 'firebase') {
