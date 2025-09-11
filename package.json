@@ -20,7 +20,7 @@
     "install:all": "npm install",
     "clean": "rm -rf node_modules packages/*/node_modules backend/node_modules frontend/node_modules",
     "arch:check": "npx depcruise --config .dependency-cruiser.cjs --include-only \"^packages/|^backend/src/|^frontend/src/\" \"packages/**\" \"backend/src/**\" \"frontend/src/**\"",
-    "arch:test": "npm test -- --runTestsByPath tests/architecture/layering.test.js",
+    "arch:test": "npx jest tests/architecture/layering.test.js",
     "arch:lint": "npx eslint . --config .eslintrc.cjs",
     "arch:all": "npm run arch:check && npm run arch:lint && npm run arch:test",
     "format": "prettier --write .",
