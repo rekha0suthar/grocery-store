@@ -4,8 +4,8 @@
 export const PRODUCT_RULES = {
     SKU_PATTERN: /^[A-Z0-9-]{3,20}$/,
     URL_PATTERN: /^https?:\/\/.+/,
-    // Add more flexible image URL pattern
-    IMAGE_URL_PATTERN: /^(https?:\/\/|data:|blob:).+/,
+    // More specific data URL pattern
+    IMAGE_URL_PATTERN: /^data:image\/[a-zA-Z0-9]+;base64,.+/,
     BARCODE_PATTERN: /^[0-9]{8,14}$/,
 
     UNITS: ['piece', 'kg', 'g', 'lb', 'oz', 'l', 'ml', 'gal', 'qt', 'pt', 'dozen', 'pack', 'box', 'case'],

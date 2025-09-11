@@ -168,10 +168,16 @@ export const productValidation = [
   body('images.*')
     .optional()
     .custom((value) => {
-      // Support both regular URLs and data URLs
+      // More flexible patterns
       const urlPattern = /^https?:\/\/.+/;
-      const dataUrlPattern = /^data:image\/[a-zA-Z]+;base64,.+/;
-      return urlPattern.test(value) || dataUrlPattern.test(value);
+      const dataUrlPattern = /^data:image\/[a-zA-Z0-9]+;base64,.+/;
+      
+      // Check if it's a valid HTTP/HTTPS URL
+      if (urlPattern.test(value)) return true;
+      // Check if it's a valid data URL
+      if (dataUrlPattern.test(value)) return true;
+      // If neither pattern matches, it's invalid
+      return false;
     })
     .withMessage('Each image must be a valid URL or data URL'),
   body('tags')
@@ -231,19 +237,19 @@ export const categoryValidation = [
     .withMessage('Category description must be less than 500 characters'),
   body('parentId')
     .optional()
-    .isLength({ min: 1, max: 100 })
+    .isUUID()
     .withMessage('Parent category ID must be a valid UUID')
 ];
 
 export const categoryIdValidation = [
-  body('id')
-    .isLength({ min: 1, max: 100 })
+  param('id')
+    .isUUID()
     .withMessage('Category ID must be a valid UUID')
 ];
 
 export const productIdValidation = [
   param('id')
-    .isLength({ min: 1, max: 100 })
+    .isUUID()
     .withMessage('Product ID must be a valid UUID')
 ];
 
