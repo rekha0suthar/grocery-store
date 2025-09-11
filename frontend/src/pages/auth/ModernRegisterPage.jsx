@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { registerUser } from '../../store/slices/authSlice.js';
 import { validateRegistration } from '../../utils/validation.js';
-import { Button } from '../../components/UI/Button.jsx';
+import Button from '../../components/UI/Button.jsx';
 
 export const ModernRegisterPage = () => {
   const dispatch = useDispatch();

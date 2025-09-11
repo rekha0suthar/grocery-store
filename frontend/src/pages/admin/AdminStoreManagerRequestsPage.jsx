@@ -15,8 +15,8 @@ import {
   getPendingStoreManagerRequests, 
   approveStoreManagerRequest 
 } from '../../store/slices/authSlice.js';
-import { Button } from '../../components/UI/Button.jsx';
-import { LoadingSpinner } from '../../components/UI/LoadingSpinner.jsx';
+import Button from '../../components/UI/Button.jsx';
+import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
 
 export const AdminStoreManagerRequestsPage = () => {
   const dispatch = useDispatch();

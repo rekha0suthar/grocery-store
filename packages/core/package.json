@@ -30,7 +30,8 @@
     "./services/AdminManagementPolicy.js": "./services/AdminManagementPolicy.js",
     "./services/StoreManagerApprovalPolicy.js": "./services/StoreManagerApprovalPolicy.js",
     "./contracts": "./contracts/index.js",
-    "./adapters": "./adapters/DefaultClock.js"
+    "./adapters": "./adapters/DefaultClock.js",
+    "./adapters/DefaultClock.js": "./adapters/DefaultClock.js"
   },
   "scripts": {
     "build": "echo 'Core package build completed - no compilation needed for ES modules'",

@@ -6,8 +6,8 @@ import { toast } from 'react-hot-toast';
 import { Shield, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { checkInitializationStatus, initializeSystem } from '../store/slices/authSlice.js';
 import { validateRegistration } from '../utils/validation.js';
-import { Button } from '../components/UI/Button.jsx';
-import { LoadingSpinner } from '../components/UI/LoadingSpinner.jsx';
+import Button from '../components/UI/Button.jsx';
+import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 
 export const SystemInitializationPage = () => {
   const dispatch = useDispatch();
