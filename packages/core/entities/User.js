@@ -5,7 +5,7 @@ import {
   isValidRole, 
   isValidPhone, 
   isValidAddress 
-} from '../contracts/user.validators.js';
+} from '../contracts/user.validation.js';
 
 export class User extends BaseEntity {
   constructor(data = {}, clock = null) {
