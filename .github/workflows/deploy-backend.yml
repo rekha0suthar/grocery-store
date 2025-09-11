@@ -1,0 +1,60 @@
+name: Deploy Backend to Vercel
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Check for backend/core changes
+        id: changes
+        run: |
+          # Get the commit range from the workflow run
+          COMMIT_SHA=${{ github.event.workflow_run.head_sha }}
+          
+          # Get the previous commit (parent of current commit)
+          PREV_COMMIT=$(git rev-parse $COMMIT_SHA^)
+          
+          echo "Checking changes between $PREV_COMMIT and $COMMIT_SHA"
+          
+          # Check if there are changes in backend or core packages
+          CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $COMMIT_SHA)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          if echo "$CHANGED_FILES" | grep -E '^(backend/|packages/core/)'; then
+            echo "backend_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ Backend or core changes detected"
+          else
+            echo "backend_changed=false" >> $GITHUB_OUTPUT
+            echo "❌ No backend or core changes detected"
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.changes.outputs.backend_changed == 'true'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+          vercel-args: '--prod'
+
+      - name: Skip deployment
+        if: steps.changes.outputs.backend_changed == 'false'
+        run: |
+          echo "🚫 Skipping deployment - no backend or core changes detected"
+          echo "This deployment was triggered by changes to:"
+          git diff --name-only ${{ github.event.workflow_run.head_sha }}^ ${{ github.event.workflow_run.head_sha }} | head -10

@@ -4,6 +4,7 @@ module.exports = {
     '^.+\\.js$': 'babel-jest'
   },
   moduleNameMapper: {
+    '^@grocery-store/core/adapters$': '<rootDir>/../packages/core/adapters/DefaultClock.js',
     '^@grocery-store/core/(.*)$': '<rootDir>/../packages/core/$1',
     '^../config/firebase\\.js$': '<rootDir>/tests/__mocks__/firebase.js',
     '^../../config/firebase\\.js$': '<rootDir>/tests/__mocks__/firebase.js',
