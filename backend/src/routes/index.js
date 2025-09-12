@@ -1,32 +1,30 @@
 import express from 'express';
-import authRoutes from './auth.js';
-import productRoutes from './products.js';
-import categoryRoutes from './categories.js';
-import configRoutes from './config.js';
-import requestRoutes from './requests.js';
+import authRouter from './auth.js';
+import productsRouter from './products.js';
+import categoriesRouter from './categories.js';
+import ordersRouter from './orders.js';
+import requestsRouter from './requests.js';
+import configRouter from './config.js';
+import addressesRouter from './addresses.js';
 
 const router = express.Router();
 
+// Health check
 router.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Grocery Store API is running',
+  res.json({ 
+    status: 'OK', 
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      products: '/api/products',
-      categories: '/api/categories',
-      config: '/api/config',
-      requests: '/api/requests'
-    }
+    service: 'Grocery Store API'
   });
 });
 
-router.use('/auth', authRoutes);
-router.use('/products', productRoutes);
-router.use('/categories', categoryRoutes);
-router.use('/config', configRoutes);
-router.use('/requests', requestRoutes);
+// API routes
+router.use('/auth', authRouter);
+router.use('/products', productsRouter);
+router.use('/categories', categoriesRouter);
+router.use('/orders', ordersRouter);
+router.use('/requests', requestsRouter);
+router.use('/config', configRouter);
+router.use('/addresses', addressesRouter);
 
 export default router;

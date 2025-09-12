@@ -5,20 +5,14 @@ import {
   USER_RULES,
   PRODUCT_RULES
 } from '@grocery-store/core/contracts';
+import { PaymentValidationRules, validatePaymentData, validateOrderData } from '../../../packages/core/contracts/payment.validation.js';
 
-// Firebase document ID validation function
-// Based on Firebase constraints: https://firebase.google.com/docs/firestore/quotas
+
 const isValidFirebaseDocumentId = (value) => {
   if (!value || value.trim() === '') return true;
 
   if (!value || typeof value !== 'string') return false;
   
-  // Firebase document ID constraints:
-  // - Must be valid UTF-8 characters
-  // - Must be no longer than 1,500 bytes
-  // - Cannot contain a forward slash (/)
-  // - Cannot solely consist of a single period (.) or double periods (..)
-  // - Cannot match the regular expression __.*__
   const firebaseIdPattern = /^(?!\.\.?$)(?!.*__.*__)([^/]{1,1500})$/;
   
   return firebaseIdPattern.test(value.trim());
@@ -40,7 +34,6 @@ export const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Express-validator rules using core business rules
 export const registerValidation = [
   body('email')
     .isEmail()
@@ -296,7 +289,110 @@ export const searchValidation = [
     .withMessage('Search query must be between 1 and 100 characters')
 ];
 
-// Core validation middleware (alternative to express-validator)
+// Order validation
+export const orderIdValidation = [
+  param('id')
+    .custom(isValidFirebaseDocumentId)
+    .withMessage('Invalid order ID format')
+];
+
+// Enhanced order validation using core business rules
+export const orderValidation = [
+  body('items')
+    .isArray({ min: 1 })
+    .withMessage('Order must contain at least one item'),
+  body('items.*.productId')
+    .custom(isValidFirebaseDocumentId)
+    .withMessage('Invalid product ID format'),
+  body('items.*.quantity')
+    .isInt({ min: 1 })
+    .withMessage('Quantity must be a positive integer'),
+  body('shippingAddress')
+    .isObject()
+    .withMessage('Shipping address is required'),
+  body('shippingAddress.address')
+    .trim()
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Address is required and must be less than 200 characters'),
+  body('shippingAddress.city')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('City is required and must be less than 100 characters'),
+  body('shippingAddress.state')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('State is required and must be less than 100 characters'),
+  body('shippingAddress.zipCode')
+    .trim()
+    .isLength({ min: 1, max: 20 })
+    .withMessage('ZIP code is required and must be less than 20 characters'),
+  body('billingAddress')
+    .optional()
+    .isObject()
+    .withMessage('Billing address must be an object'),
+  body('billingAddress.address')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Billing address must be less than 200 characters'),
+  body('billingAddress.city')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Billing city must be less than 100 characters'),
+  body('billingAddress.state')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Billing state must be less than 100 characters'),
+  body('billingAddress.zipCode')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 20 })
+    .withMessage('Billing ZIP code must be less than 20 characters'),
+  body('paymentMethod')
+    .custom((value) => {
+      const validation = PaymentValidationRules.validatePaymentMethod(value);
+      if (!validation.isValid) {
+        throw new Error(validation.message);
+      }
+      return true;
+    }),
+  body('paymentStatus')
+    .optional()
+    .custom((value) => {
+      if (value) {
+        const validation = PaymentValidationRules.validatePaymentStatus(value);
+        if (!validation.isValid) {
+          throw new Error(validation.message);
+        }
+      }
+      return true;
+    }),
+  body('notes')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Notes must be less than 500 characters')
+];
+
+export const validateOrderWithCore = (req, res, next) => {
+  const validation = validateOrderData(req.body);
+  
+  if (!validation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: Object.entries(validation.errors).map(([field, message]) => ({
+        field,
+        message
+      }))
+    });
+  }
+  
+  next();
+};
+
 export const validateRegistrationWithCore = (req, res, next) => {
   const validation = validateUserRegistration(req.body);
   if (!validation.isValid) {
