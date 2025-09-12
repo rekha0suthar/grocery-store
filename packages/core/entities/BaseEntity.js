@@ -80,9 +80,9 @@ export class BaseEntity {
     entity.updatedAt = data.updatedAt ? entity.clock.createDate(data.updatedAt) : entity.clock.now();
     entity.isActive = data.isActive ?? true;
     
-    // Assign the rest safely
+    // Assign the rest safely, excluding clock field
     for (const key of Object.keys(data)) {
-      if (!(key in entity)) {
+      if (!(key in entity) && key !== 'clock') { // Exclude clock field
         entity[key] = data[key];
       }
     }

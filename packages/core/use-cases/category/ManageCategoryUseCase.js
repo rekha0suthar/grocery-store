@@ -114,7 +114,7 @@ export class ManageCategoryUseCase {
       }
 
       const updatedData = {
-        ...existingCategory,
+        ...existingCategory.toJSON(), // Use toJSON() to get plain object
         ...categoryData,
         updatedAt: this.clock.now(),
         updatedBy: userId

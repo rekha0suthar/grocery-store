@@ -6,6 +6,24 @@ import {
   PRODUCT_RULES
 } from '@grocery-store/core/contracts';
 
+// Firebase document ID validation function
+// Based on Firebase constraints: https://firebase.google.com/docs/firestore/quotas
+const isValidFirebaseDocumentId = (value) => {
+  if (!value || value.trim() === '') return true;
+
+  if (!value || typeof value !== 'string') return false;
+  
+  // Firebase document ID constraints:
+  // - Must be valid UTF-8 characters
+  // - Must be no longer than 1,500 bytes
+  // - Cannot contain a forward slash (/)
+  // - Cannot solely consist of a single period (.) or double periods (..)
+  // - Cannot match the regular expression __.*__
+  const firebaseIdPattern = /^(?!\.\.?$)(?!.*__.*__)([^/]{1,1500})$/;
+  
+  return firebaseIdPattern.test(value.trim());
+};
+
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -129,8 +147,8 @@ export const productValidation = [
     .isFloat({ min: PRODUCT_RULES.PRICE_MIN, max: PRODUCT_RULES.PRICE_MAX })
     .withMessage(`Price must be between ${PRODUCT_RULES.PRICE_MIN} and ${PRODUCT_RULES.PRICE_MAX}`),
   body('categoryId')
-    .isUUID()
-    .withMessage('Category ID must be a valid UUID'),
+    .custom(isValidFirebaseDocumentId)
+    .withMessage('Category ID must be a valid Firebase document ID'),
   body('sku')
     .trim()
     .isLength({ min: PRODUCT_RULES.SKU_MIN_LENGTH, max: PRODUCT_RULES.SKU_MAX_LENGTH })
@@ -237,20 +255,20 @@ export const categoryValidation = [
     .withMessage('Category description must be less than 500 characters'),
   body('parentId')
     .optional()
-    .isUUID()
-    .withMessage('Parent category ID must be a valid UUID')
+    .custom(isValidFirebaseDocumentId)
+    .withMessage('Parent category ID must be a valid Firebase document ID')
 ];
 
 export const categoryIdValidation = [
   param('id')
-    .isUUID()
-    .withMessage('Category ID must be a valid UUID')
+    .custom(isValidFirebaseDocumentId)
+    .withMessage('Category ID must be a valid Firebase document ID')
 ];
 
 export const productIdValidation = [
   param('id')
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID')
+    .custom(isValidFirebaseDocumentId)
+    .withMessage('Product ID must be a valid Firebase document ID')
 ];
 
 export const stockValidation = [
