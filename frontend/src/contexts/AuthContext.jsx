@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { setCredentials, clearAuth } from '../store/slices/authSlice.js';
 import { authService } from '../services/authService.js';
@@ -15,10 +15,13 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const dispatch = useAppDispatch();
-  const { user, token, isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const { user, token, isAuthenticated } = useAppSelector((state) => state.auth);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const initializeAuth = async () => {
+      setAuthLoading(true);
+      
       // Check if we have a token but no user
       if (token && !user) {
         try {
@@ -58,6 +61,8 @@ export const AuthProvider = ({ children }) => {
           }
         }
       }
+      
+      setAuthLoading(false);
     };
 
     initializeAuth();
@@ -67,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     isAuthenticated,
-    loading,
+    loading: authLoading,
   };
 
   return (

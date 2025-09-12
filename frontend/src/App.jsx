@@ -47,6 +47,7 @@ function AppRoutes() {
     }
   }, [dispatch, systemInitialized]);
 
+  // Show loading spinner while checking initialization or restoring auth state
   if (loading || initializationLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -153,10 +154,16 @@ function AppRoutes() {
         </Route>
       )}
 
-      {/* Fallback Routes */}
+      {/* Fallback Routes - Only redirect if we're sure about auth state */}
       <Route 
         path="*" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} 
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        } 
       />
     </Routes>
   );

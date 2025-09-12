@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Refresh Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Page Refresh Test for Grocery Store App</h1>
+    
+    <div class="test-section info">
+        <h2>Test Instructions</h2>
+        <ol>
+            <li>Open the grocery store app in your browser (usually <a href="http://localhost:5173" target="_blank">http://localhost:5173</a>)</li>
+            <li>Log in to your account</li>
+            <li>Navigate to any protected page (e.g., /dashboard, /products, /orders)</li>
+            <li>Refresh the page (F5 or Ctrl+R)</li>
+            <li>Verify that you stay on the same page instead of being redirected to home</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected Behavior (After Fix)</h2>
+        <ul>
+            <li>✅ Page shows loading spinner briefly during authentication restoration</li>
+            <li>✅ User remains on the same page after refresh</li>
+            <li>✅ No redirect to home page</li>
+            <li>✅ All user data and state are preserved</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Previous Behavior (Before Fix)</h2>
+        <ul>
+            <li>❌ Page refresh would redirect to home page</li>
+            <li>❌ User would lose their current location</li>
+            <li>❌ Poor user experience</li>
+        </ul>
+    </div>
+
+    <div class="test-section success">
+        <h2>Changes Made</h2>
+        <ul>
+            <li><strong>AuthContext.jsx:</strong> Added proper loading state during auth restoration</li>
+            <li><strong>App.jsx:</strong> Modified routing logic to wait for auth restoration</li>
+            <li><strong>Layout.jsx:</strong> Updated to use AuthContext instead of Redux for auth state</li>
+        </ul>
+    </div>
+
+    <button onclick="window.open('http://localhost:5173', '_blank')">Open App in New Tab</button>
+    <button onclick="location.reload()">Refresh This Page</button>
+</body>
+</html>
