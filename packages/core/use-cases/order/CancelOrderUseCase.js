@@ -1,10 +1,8 @@
-import { Order } from '../../entities/Order.js';
-
-
 export class CancelOrderUseCase {
-  constructor({ orderRepo, productRepo }) {
+  constructor({ orderRepo, productRepo, clock }) {
     this.orderRepository = orderRepo;
     this.productRepository = productRepo;
+    this.clock = clock;
   }
 
   async execute(orderId, userId, userRole, cancellationReason = '') {
@@ -57,9 +55,9 @@ export class CancelOrderUseCase {
 
       const updatedOrder = await this.orderRepository.update(orderId, {
         status: 'cancelled',
-        cancelledAt: new Date().toISOString(),
+        cancelledAt: this.clock.now().toISOString(),
         cancellationReason: cancellationReason,
-        updatedAt: new Date().toISOString()
+        updatedAt: this.clock.now().toISOString()
       });
 
       return {

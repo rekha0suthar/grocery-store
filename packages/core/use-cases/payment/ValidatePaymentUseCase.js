@@ -1,7 +1,8 @@
 import { PaymentValidationRules, validatePaymentData, validateOrderData } from '../../contracts/payment.validation.js';
 
 export class ValidatePaymentUseCase {
-  constructor() {
+  constructor({ clock }) {
+    this.clock = clock;
     this.validationRules = PaymentValidationRules;
   }
 
@@ -14,7 +15,7 @@ export class ValidatePaymentUseCase {
   }
 
   validateExpiryDate(expiryDate) {
-    return this.validationRules.validateExpiryDate(expiryDate);
+    return this.validationRules.validateExpiryDate(expiryDate, this.clock);
   }
 
   validateCVV(cvv) {
@@ -34,11 +35,11 @@ export class ValidatePaymentUseCase {
   }
  
   validatePaymentData(paymentData) {
-    return validatePaymentData(paymentData);
+    return validatePaymentData(paymentData, this.clock);
   }
  
   validateOrderData(orderData) {
-    return validateOrderData(orderData);
+    return validateOrderData(orderData, this.clock);
   }
 
   execute(type, data) {

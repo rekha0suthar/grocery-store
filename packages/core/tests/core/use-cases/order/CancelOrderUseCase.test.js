@@ -1,5 +1,5 @@
+import { FakeClock } from "../../../utils/FakeClock.js";
 import { CancelOrderUseCase } from '../../../../use-cases/order/CancelOrderUseCase';
-import { Order, OrderItem } from '../../../../entities/Order';
 
 describe('CancelOrderUseCase', () => {
   let useCase;
@@ -7,6 +7,7 @@ describe('CancelOrderUseCase', () => {
   let mockProductRepository;
 
   beforeEach(() => {
+  let mockClock;
     // Mock repositories
     mockOrderRepository = {
       findById: jest.fn(),
@@ -16,11 +17,13 @@ describe('CancelOrderUseCase', () => {
     mockProductRepository = {
       addStock: jest.fn()
     };
+    mockClock = new FakeClock();
 
     // Create use case with mocked dependencies
     useCase = new CancelOrderUseCase({ 
       orderRepo: mockOrderRepository, 
-      productRepo: mockProductRepository 
+      productRepo: mockProductRepository,
+      clock: mockClock 
     });
   });
 

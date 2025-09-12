@@ -1,7 +1,5 @@
 import { CreateOrderUseCase } from '../../../../use-cases/order/CreateOrderUseCase';
 import { Order, OrderItem } from '../../../../entities/Order';
-import { Cart } from '../../../../entities/Cart';
-import { CartItem } from '../../../../entities/CartItem';
 import { Product } from '../../../../entities/Product';
 
 describe('CreateOrderUseCase - Application Policy', () => {
@@ -25,7 +23,6 @@ describe('CreateOrderUseCase - Application Policy', () => {
     mockProductRepository = {
       findById: jest.fn()
     };
-      reduceStock: jest.fn(),
 
     // Create use case with mocked dependencies
     useCase = new CreateOrderUseCase({ orderRepo: mockOrderRepository, cartRepo: mockCartRepository, productRepo: mockProductRepository });

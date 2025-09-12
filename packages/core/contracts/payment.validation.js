@@ -33,7 +33,7 @@ export const PaymentValidationRules = {
     };
   },
 
-  validateExpiryDate: (expiryDate) => {
+  validateExpiryDate: (expiryDate, clock) => {
     if (!expiryDate) {
       return { isValid: false, message: 'Expiry date is required' };
     }
@@ -51,9 +51,9 @@ export const PaymentValidationRules = {
       return { isValid: false, message: 'Invalid month' };
     }
     
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear() % 100;
-    const currentMonth = currentDate.getMonth() + 1;
+    // Note: This function needs clock injection for proper clean architecture
+    const currentYear = clock.now().getFullYear() % 100;
+    const currentMonth = clock.now().getMonth() + 1;
     
     if (year < currentYear || (year === currentYear && month < currentMonth)) {
       return { isValid: false, message: 'Card has expired' };
@@ -171,7 +171,7 @@ export const PaymentFormatters = {
   }
 };
 
-export const validatePaymentData = (paymentData) => {
+export const validatePaymentData = (paymentData, clock) => {
   const errors = {};
   
   const requiredFields = ['paymentMethod'];
@@ -205,7 +205,7 @@ export const validatePaymentData = (paymentData) => {
     }
 
     if (paymentData.expiryDate) {
-      const expiryValidation = PaymentValidationRules.validateExpiryDate(paymentData.expiryDate);
+      const expiryValidation = PaymentValidationRules.validateExpiryDate(paymentData.expiryDate, clock);
       if (!expiryValidation.isValid) {
         errors.expiryDate = expiryValidation.message;
       }
@@ -225,7 +225,7 @@ export const validatePaymentData = (paymentData) => {
   };
 };
 
-export const validateOrderData = (orderData) => {
+export const validateOrderData = (orderData, clock) => {
   const errors = {};
   
   const requiredOrderFields = ['items', 'totalAmount', 'shippingAddress', 'paymentMethod'];
@@ -281,7 +281,7 @@ export const validateOrderData = (orderData) => {
       cardNumber: orderData.cardNumber,
       expiryDate: orderData.expiryDate,
       cvv: orderData.cvv
-    });
+    }, clock);
     
     if (!paymentValidation.isValid) {
       Object.assign(errors, paymentValidation.errors);

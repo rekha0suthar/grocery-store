@@ -1,5 +1,4 @@
-import { CreateOrderUseCase, ProcessOrderUseCase } from '@grocery-store/core/use-cases/order';
-import { CancelOrderUseCase } from '@grocery-store/core/use-cases/order';
+import { CreateOrderUseCase, ProcessOrderUseCase, CancelOrderUseCase } from '@grocery-store/core/use-cases/order';
 import { OrderRepository } from '../repositories/OrderRepository.js';
 import { CartRepository } from '../repositories/CartRepository.js';
 import { ProductRepository } from '../repositories/ProductRepository.js';
@@ -50,18 +49,22 @@ export class OrderComposition {
     return {
       execute: async (operation, data) => {
         switch (operation) {
-          case 'getAllOrders':
+          case 'getAllOrders': {
             const orders = await this.orderRepository.findAll({}, data.limit, data.offset);
             return { success: true, orders };
-          case 'getOrderById':
+          }
+          case 'getOrderById': {
             const order = await this.orderRepository.findById(data.id);
             return { success: !!order, order };
-          case 'getUserOrders':
+          }
+          case 'getUserOrders': {
             const userOrders = await this.orderRepository.findByUserId(data.userId, data.limit, data.offset);
             return { success: true, orders: userOrders };
-          case 'updateOrderStatus':
+          }
+          case 'updateOrderStatus': {
             const updatedOrder = await this.orderRepository.updateStatus(data.id, data.status, data.processedBy);
             return { success: !!updatedOrder, order: updatedOrder };
+          }
           case 'cancelOrder':
             return await this.cancelOrderUseCase.execute(data.orderId, data.userId, data.userRole, data.reason);
           default:

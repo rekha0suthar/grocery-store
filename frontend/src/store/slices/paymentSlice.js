@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getEnabledPaymentMethods } from '../utils/validation.js';
+import { createSlice } from '@reduxjs/toolkit';
+import { getEnabledPaymentMethods } from '@grocery-store/core/contracts/payment.validation.js';
 
 const initialState = {
   methods: getEnabledPaymentMethods(),

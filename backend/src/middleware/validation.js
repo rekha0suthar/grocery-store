@@ -5,8 +5,7 @@ import {
   USER_RULES,
   PRODUCT_RULES
 } from '@grocery-store/core/contracts';
-import { PaymentValidationRules, validatePaymentData, validateOrderData } from '../../../packages/core/contracts/payment.validation.js';
-
+import { PaymentValidationRules, validateOrderData } from '../../../packages/core/contracts/payment.validation.js';
 
 const isValidFirebaseDocumentId = (value) => {
   if (!value || value.trim() === '') return true;
@@ -176,7 +175,7 @@ export const productValidation = [
     .optional()
     .isArray()
     .withMessage('Images must be an array'),
-    body('images.*')
+  body('images.*')
     .optional()
     .custom((value) => {
       // More flexible patterns

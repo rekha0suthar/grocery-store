@@ -45,16 +45,10 @@ export class AddressController extends BaseController {
   });
 
   deleteAddress = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.id;
-    
     this.sendSuccess(res, null, 'Address deleted successfully');
   });
 
   setDefaultAddress = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.id;
-    
     this.sendSuccess(res, null, 'Default address set successfully');
   });
 

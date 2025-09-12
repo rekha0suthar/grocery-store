@@ -1,10 +1,11 @@
+import { FakeClock } from "../../../utils/FakeClock.js";
 import { ValidatePaymentUseCase } from '../../../../use-cases/payment/ValidatePaymentUseCase';
 
 describe('ValidatePaymentUseCase', () => {
   let useCase;
 
   beforeEach(() => {
-    useCase = new ValidatePaymentUseCase();
+    useCase = new ValidatePaymentUseCase({ clock: new FakeClock() });
   });
 
   describe('Constructor', () => {
@@ -104,24 +105,18 @@ describe('ValidatePaymentUseCase', () => {
       test('should validate complete payment data', () => {
         const paymentData = {
           paymentMethod: 'credit_card',
-        shippingAddress: {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phone: '+1234567890',
-          address: '123 Main St',
-          city: 'Anytown',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'US'
-        },
-        cardNumber: '4111111111111111',
-        expiryDate: '12/25',
-        cvv: '123',
+          shippingAddress: {
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com',
+            phone: '+1234567890',
+            address: '123 Main St',
+            city: 'Anytown',
+            state: 'CA',
+            zipCode: '12345',
+            country: 'US'
+          },
           cardNumber: '4111111111111111',
-          expiryDate: '12/25',
-          cvv: '123',
-          cardNumber: '4532015112830366',
           expiryDate: '12/25',
           cvv: '123',
           cardholderName: 'John Doe',
@@ -142,28 +137,11 @@ describe('ValidatePaymentUseCase', () => {
         const result = useCase.validatePaymentData(paymentData);
         expect(result.isValid).toBe(true);
       });
+      test("should reject incomplete payment data", () => {
 
-      test('should reject incomplete payment data', () => {
         const paymentData = {
-          paymentMethod: 'credit_card',
-        shippingAddress: {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phone: '+1234567890',
-          address: '123 Main St',
-          city: 'Anytown',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'US'
-        },
-        cardNumber: '4111111111111111',
-        expiryDate: '12/25',
-        cvv: '123',
-          cardNumber: '4111111111111111',
-          expiryDate: '12/25',
-          cvv: '123',
-          cardNumber: '1234' // Invalid
+          paymentMethod: "credit_card",
+          // Missing required card fields for credit card payment
         };
 
         const result = useCase.validatePaymentData(paymentData);
@@ -196,20 +174,17 @@ describe('ValidatePaymentUseCase', () => {
             country: 'US'
           },
           paymentMethod: 'credit_card',
-        shippingAddress: {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phone: '+1234567890',
-          address: '123 Main St',
-          city: 'Anytown',
-          state: 'CA',
-          zipCode: '12345',
-          country: 'US'
-        },
-        cardNumber: '4111111111111111',
-        expiryDate: '12/25',
-        cvv: '123',
+          billingAddress: {
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com',
+            phone: '+1234567890',
+            address: '123 Main St',
+            city: 'Anytown',
+            state: 'CA',
+            zipCode: '12345',
+            country: 'US'
+          },
           cardNumber: '4111111111111111',
           expiryDate: '12/25',
           cvv: '123',
@@ -286,12 +261,6 @@ describe('ValidatePaymentUseCase', () => {
         cardNumber: '4111111111111111',
         expiryDate: '12/25',
         cvv: '123',
-          cardNumber: '4111111111111111',
-          expiryDate: '12/25',
-          cvv: '123',
-        cardNumber: '4532015112830366',
-        expiryDate: '12/25',
-        cvv: '123'
       };
 
       const result = useCase.execute('paymentData', paymentData);
@@ -324,9 +293,6 @@ describe('ValidatePaymentUseCase', () => {
         cardNumber: '4111111111111111',
         expiryDate: '12/25',
         cvv: '123',
-          cardNumber: '4111111111111111',
-          expiryDate: '12/25',
-          cvv: '123',
         totalAmount: 21.98,
         userRole: 'customer'
       };
