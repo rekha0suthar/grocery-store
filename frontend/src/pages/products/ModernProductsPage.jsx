@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
 import { fetchProducts, searchProducts } from '../../store/slices/productSlice.js';
 import { addToCart } from '../../store/slices/cartSlice.js';
+import { toggleWishlistItem } from '../../store/slices/wishlistSlice.js';
 import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
@@ -16,11 +17,14 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import WishlistPage from '../WishlistPage.jsx';
 
 const ModernProductsPage = () => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const { products, loading, searchResults, searchLoading } = useAppSelector((state) => state.products);
+  const { items: cartItems } = useAppSelector((state) => state.cart);
+  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [viewMode, setViewMode] = useState('grid');
@@ -40,8 +44,34 @@ const ModernProductsPage = () => {
   }, [dispatch, searchParams]);
 
   const handleAddToCart = (product) => {
+    // Check if product is in stock
+    if (product.stock !== undefined && product.stock <= 0) {
+      toast.error('This product is out of stock!');
+      return;
+    }
+    
+    // Check current cart quantity for this product
+    const currentCartItem = cartItems.find(item => item.productId === product.id);
+    const currentQuantity = currentCartItem ? currentCartItem.quantity : 0;
+    
+    // Check if adding 1 more would exceed stock
+    if (product.stock !== undefined && (currentQuantity + 1) > product.stock) {
+      toast.error(`Only ${product.stock} items available in stock!`);
+      return;
+    }
+    
     dispatch(addToCart({ product, quantity: 1 }));
     toast.success(`${product.name} added to cart!`);
+  };
+
+  const handleToggleWishlist = (product) => {
+    dispatch(toggleWishlistItem(product));
+    const isInWishlist = wishlistItems.some(item => item.id === product.id);
+    if (isInWishlist) {
+      toast.success(`${product.name} removed from wishlist!`);
+    } else {
+      toast.success(`${product.name} added to wishlist!`);
+    }
   };
 
   const displayProducts = searchResults.length > 0 ? searchResults : products;
@@ -164,7 +194,7 @@ const ModernProductsPage = () => {
             ) : (
               <div className={`grid gap-6 ${
                 viewMode === 'grid' 
-                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+                  ? 'grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3' 
                   : 'grid-cols-1'
               }`}>
                 {sortedProducts.map((product) => (
@@ -172,7 +202,7 @@ const ModernProductsPage = () => {
                     <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
                       <img
                         src={product.images?.[0] || '/placeholder-product.jpg'}
-                        alt={product.name}
+                            alt={product.name}
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
                       />
                     </div>
@@ -180,9 +210,16 @@ const ModernProductsPage = () => {
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                          {product.name}
-                        </h3>
-                        <button className="text-gray-400 hover:text-red-500 transition-colors">
+                        {product.name}
+                      </h3>
+                        <button 
+                          className={`transition-colors ${
+                            wishlistItems.some(item => item.id === product.id) 
+                              ? 'text-red-500' 
+                              : 'text-gray-400 hover:text-red-500'
+                          }`}
+                          onClick={() => handleToggleWishlist(product)}
+                        >
                           <Heart className="w-5 h-5" />
                         </button>
                       </div>

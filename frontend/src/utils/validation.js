@@ -1,33 +1,43 @@
-// Frontend validation - Direct usage of core validation functions
-import { 
+
+export { 
+  PaymentValidationRules, 
+  PaymentFormatters, 
+  validatePaymentData, 
+  validateOrderData,
+  PAYMENT_METHODS,
+  getEnabledPaymentMethods,
+  getPaymentMethod
+} from '@grocery-store/core/contracts/payment.validation.js';
+
+export { 
   validateUserRegistration,
   validateUserLogin,
   validateUserProfile,
-  validateProduct,
-  USER_RULES,
-  PRODUCT_RULES
-} from '@grocery-store/core/contracts';
+  USER_RULES
+} from '@grocery-store/core/contracts/user.validation.js';
 
-// Re-export for easy access
-export {
-  validateUserRegistration,
-  validateUserLogin,
-  validateUserProfile,
+export { 
   validateProduct,
-  USER_RULES,
   PRODUCT_RULES
-};
+} from '@grocery-store/core/contracts/product.validation.js';
 
-// Helper function to format validation errors for forms
 export function formatValidationErrors(validationResult) {
-  return Object.entries(validationResult.errors).map(([field, message]) => ({
-    field,
-    message,
-    value: ''
-  }));
+  if (validationResult.isValid) {
+    return { isValid: true, errors: {} };
+  }
+  
+  const formatted = {};
+  Object.entries(validationResult.errors).forEach(([field, message]) => { 
+    const fieldName = field.includes('.') ? field.split('.').pop() : field;
+    formatted[fieldName] = message;
+  });
+  
+  return {
+    isValid: false,
+    errors: formatted
+  };
 }
 
-// Helper function for field-level validation
 export function validateField(fieldName, value, validationType = 'user') {
   const testData = { [fieldName]: value };
   

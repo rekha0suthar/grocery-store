@@ -9,9 +9,8 @@ export class Order extends BaseEntity {
     super(data.id, clock);
     this.orderNumber = data.orderNumber || this.generateOrderNumber();
     this.userId = data.userId || null;
-    this.items = data.items || []; // Array of OrderItem objects
-    this.status = data.status || 'pending'; // pending, confirmed, processing, shipped, delivered, cancelled
-    this.totalAmount = data.totalAmount || 0;
+    this.items = data.items || []; 
+    this.status = data.status || 'pending'; 
     this.discountAmount = data.discountAmount || 0;
     this.shippingAmount = data.shippingAmount || 0;
     this.taxAmount = data.taxAmount || 0;
@@ -19,7 +18,7 @@ export class Order extends BaseEntity {
     this.shippingAddress = data.shippingAddress || null;
     this.billingAddress = data.billingAddress || null;
     this.paymentMethod = data.paymentMethod || null;
-    this.paymentStatus = data.paymentStatus || 'pending'; // pending, paid, failed, refunded
+    this.paymentStatus = data.paymentStatus || 'pending';
     this.paymentId = data.paymentId || null;
     this.notes = data.notes || '';
     this.deliveryDate = data.deliveryDate || null;
@@ -31,7 +30,6 @@ export class Order extends BaseEntity {
     this.processedAt = data.processedAt || null;
   }
 
-  // Domain validation
   isValid() {
     return this.validateUserId() && this.validateItems() && this.validateStatus();
   }
@@ -49,7 +47,6 @@ export class Order extends BaseEntity {
     return validStatuses.includes(this.status);
   }
 
-  // Business rules
   isPending() {
     return this.status === 'pending';
   }
@@ -94,7 +91,6 @@ export class Order extends BaseEntity {
     return this.status === 'shipped';
   }
 
-  // Safe status transitions (no direct setter)
   confirm() {
     if (!this.canBeConfirmed()) {
       throw new InvalidTransitionError(this.status, 'confirmed');
@@ -143,7 +139,6 @@ export class Order extends BaseEntity {
     return true;
   }
 
-  // Payment status transitions
   markAsPaid(paymentId = null) {
     this.paymentStatus = 'paid';
     this.paymentId = paymentId;
@@ -163,21 +158,18 @@ export class Order extends BaseEntity {
     this.updateTimestamp();
   }
 
-  // Generate unique order number (deterministic for testing)
   generateOrderNumber() {
     const timestamp = this.clock.timestamp().toString();
     const random = Math.random().toString(36).substr(2, 5).toUpperCase();
     return `ORD-${timestamp.slice(-6)}-${random}`;
   }
 
-  // Calculate totals
   calculateTotals() {
     this.totalAmount = this.items.reduce((total, item) => total + item.lineTotal(), 0);
     this.finalAmount = Math.max(0, this.totalAmount + this.shippingAmount + this.taxAmount - this.discountAmount);
     this.updateTimestamp();
   }
 
-  // Getters
   getUserId() {
     return this.userId;
   }
@@ -214,7 +206,6 @@ export class Order extends BaseEntity {
     return this.cancellationReason;
   }
 
-  // Convert to plain object
   toJSON() {
     const base = super.toJSON();
     return {
@@ -242,7 +233,6 @@ export class Order extends BaseEntity {
     };
   }
 
-  // Create from plain object
   static fromJSON(data) {
     const order = new Order(data);
     order.items = data.items ? data.items.map(item => OrderItem.fromJSON(item)) : [];
@@ -250,9 +240,7 @@ export class Order extends BaseEntity {
   }
 }
 
-/**
- * OrderItem Entity - Represents individual items in an order
- */
+
 export class OrderItem extends BaseEntity {
   constructor(data = {}, clock = null) {
     super(data.id, clock);
@@ -260,9 +248,8 @@ export class OrderItem extends BaseEntity {
     this.productName = data.productName || null;
     this.productPrice = data.productPrice || 0;
     this.quantity = data.quantity || 0;
+    this.unit = data.unit || 'piece'; 
   }
-
-  // Domain validation
   isValid() {
     return this.validateProductId() && this.validateQuantity() && this.validatePrice();
   }
@@ -278,12 +265,10 @@ export class OrderItem extends BaseEntity {
     return this.productPrice > 0;
   }
 
-  // Business rules
   lineTotal() {
     return this.productPrice * this.quantity;
   }
 
-  // Getters
   getProductId() {
     return this.productId;
   }
@@ -304,7 +289,6 @@ export class OrderItem extends BaseEntity {
     return this.unit;
   }
 
-  // Convert to plain object
   toJSON() {
     const base = super.toJSON();
     return {
@@ -318,7 +302,6 @@ export class OrderItem extends BaseEntity {
     };
   }
 
-  // Create from plain object
   static fromJSON(data) {
     return new OrderItem(data);
   }

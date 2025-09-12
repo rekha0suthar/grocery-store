@@ -1,5 +1,4 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { CartItem } from '@grocery-store/core';
 
 const initialState = {
   items: [],
@@ -16,28 +15,49 @@ const cartSlice = createSlice({
       const { product, quantity = 1 } = action.payload;
       const existingItem = state.items.find(item => item.productId === product.id);
       
+      // Check if product has stock information
+      if (product.stock !== undefined && product.stock <= 0) {
+        // Product is out of stock
+        return;
+      }
+      
       if (existingItem) {
-        existingItem.quantity += quantity;
+        // Check if adding this quantity would exceed stock
+        const newQuantity = existingItem.quantity + quantity;
+        if (product.stock !== undefined && newQuantity > product.stock) {
+          // Limit to available stock
+          existingItem.quantity = product.stock;
+        } else {
+          existingItem.quantity = newQuantity;
+        }
       } else {
-        const cartItem = new CartItem({
+        // Check if requested quantity exceeds stock
+        const requestedQuantity = product.stock !== undefined 
+          ? Math.min(quantity, product.stock) 
+          : quantity;
+          
+        if (requestedQuantity > 0) {
+          const cartItem = {
           productId: product.id,
           productName: product.name,
-          price: product.price,
-          quantity,
-          image: product.image,
-        });
+            productPrice: product.price,
+            quantity: requestedQuantity,
+            imageUrl: product.images?.[0] || product.image || '',
+            stock: product.stock, // Store stock info for reference
+          };
         state.items.push(cartItem);
+        }
       }
       
       state.totalItems = state.items.reduce((total, item) => total + item.quantity, 0);
-      state.totalPrice = state.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+      state.totalPrice = state.items.reduce((total, item) => total + (item.productPrice * item.quantity), 0);
     },
     
     removeFromCart: (state, action) => {
       const productId = action.payload;
       state.items = state.items.filter(item => item.productId !== productId);
       state.totalItems = state.items.reduce((total, item) => total + item.quantity, 0);
-      state.totalPrice = state.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+      state.totalPrice = state.items.reduce((total, item) => total + (item.productPrice * item.quantity), 0);
     },
     
     updateQuantity: (state, action) => {
@@ -48,11 +68,13 @@ const cartSlice = createSlice({
         if (quantity <= 0) {
           state.items = state.items.filter(item => item.productId !== productId);
         } else {
-          item.quantity = quantity;
+          // Check if new quantity exceeds stock
+          const maxQuantity = item.stock !== undefined ? item.stock : quantity;
+          item.quantity = Math.min(quantity, maxQuantity);
         }
         
         state.totalItems = state.items.reduce((total, item) => total + item.quantity, 0);
-        state.totalPrice = state.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+        state.totalPrice = state.items.reduce((total, item) => total + (item.productPrice * item.quantity), 0);
       }
     },
     

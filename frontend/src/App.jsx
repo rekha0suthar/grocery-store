@@ -23,6 +23,10 @@ import ProductDetailPage from './pages/products/ProductDetailPage.jsx';
 import CategoriesPage from './pages/categories/CategoriesPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import RequestsPage from './pages/requests/RequestsPage.jsx';
+import CheckoutPage from './pages/CheckoutPage.jsx';
+import OrdersPage from './pages/OrdersPage.jsx';
+import OrderDetailPage from './pages/OrderDetailPage.jsx';
+import WishlistPage from './pages/WishlistPage.jsx';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
@@ -119,7 +123,10 @@ function AppRoutes() {
           <Route path="products/:id" element={<ProductDetailPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="profile" element={<ProfilePage />} />
-          
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/:id" element={<OrderDetailPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           {/* Customer-only routes */}
           {hasAccess('customer') && (
           <Route path="requests" element={<RequestsPage />} />

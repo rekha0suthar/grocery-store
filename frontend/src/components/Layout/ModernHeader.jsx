@@ -6,6 +6,7 @@ import { openCart } from '../../store/slices/cartSlice.js';
 import { logoutUser } from '../../store/slices/authSlice.js';
 import { searchProducts } from '../../store/slices/productSlice.js';
 import { fetchCategories } from '../../store/slices/categorySlice.js';
+import { toggleWishlistItem } from '../../store/slices/wishlistSlice.js';
 import { toast } from 'react-hot-toast';
 import { 
   Menu, 
@@ -15,17 +16,20 @@ import {
   Search, 
   Heart,
   MapPin,
-  Phone
+  Phone,
+  Package
 } from 'lucide-react';
 import Button from '../UI/Button.jsx';
 
 const ModernHeader = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.auth);
-  const { totalItems } = useAppSelector((state) => state.cart);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { items: cartItems } = useAppSelector((state) => state.cart);
   const { categories } = useAppSelector((state) => state.categories);
+  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     // Fetch categories when component mounts
@@ -49,6 +53,10 @@ const ModernHeader = () => {
       dispatch(searchProducts({ q: searchQuery })); // Changed from 'query' to 'q'
       navigate(`/products?search=${searchQuery}`);
     }
+  };
+
+  const handleWishlistClick = () => {
+    navigate('/wishlist');
   };
 
   return (
@@ -141,11 +149,16 @@ const ModernHeader = () => {
             </button>
 
             {/* Wishlist */}
-            <button className="relative p-2 text-gray-500 hover:text-gray-700">
+            <button 
+              onClick={handleWishlistClick}
+              className="relative p-2 text-gray-500 hover:text-gray-700 transition-colors"
+            >
               <Heart className="w-6 h-6" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                0
-              </span>
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {wishlistItems.length}
+                </span>
+              )}
             </button>
 
             {/* Cart */}
@@ -154,9 +167,9 @@ const ModernHeader = () => {
               className="relative p-2 text-gray-500 hover:text-gray-700"
             >
               <ShoppingCart className="w-6 h-6" />
-              {totalItems > 0 && (
+              {cartItems.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs rounded-full flex items-center justify-center">
-                  {totalItems}
+                  {cartItems.length}
                 </span>
               )}
             </button>
@@ -171,13 +184,22 @@ const ModernHeader = () => {
                   <p className="text-sm font-medium text-gray-900">{user.name || user.email}</p>
                   <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                 </div>
+                <div className="hidden md:flex items-center space-x-1">
+                  <Link
+                    to="/orders"
+                    className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                    title="My Orders"
+                  >
+                    <Package className="w-4 h-4" />
+                  </Link>
                 <button
                   onClick={handleLogout}
-                  className="hidden md:flex items-center p-2 text-gray-500 hover:text-red-600 transition-colors"
+                    className="p-2 text-gray-500 hover:text-red-600 transition-colors"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
+                </div>
               </div>
             ) : (
               <div className="hidden md:flex items-center space-x-2">
@@ -219,7 +241,7 @@ const ModernHeader = () => {
                 className="text-gray-700 hover:text-green-600 font-medium transition-colors whitespace-nowrap"
               >
                 {category.name}
-              </Link>
+            </Link>
             ))}
           </div>
         </div>

@@ -30,6 +30,9 @@
     "./services/AdminManagementPolicy.js": "./services/AdminManagementPolicy.js",
     "./services/StoreManagerApprovalPolicy.js": "./services/StoreManagerApprovalPolicy.js",
     "./contracts": "./contracts/index.js",
+    "./contracts/user.validation.js": "./contracts/user.validation.js",
+    "./contracts/product.validation.js": "./contracts/product.validation.js",
+    "./contracts/payment.validation.js": "./contracts/payment.validation.js",
     "./adapters": "./adapters/DefaultClock.js",
     "./adapters/DefaultClock.js": "./adapters/DefaultClock.js"
   },

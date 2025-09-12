@@ -1,31 +1,15 @@
 import { Order, OrderItem } from '../../entities/Order.js';
 
-/**
- * Create Order Use Case - Business Logic
- * Handles order creation from cart with validation
- */
+
 export class CreateOrderUseCase {
-  /**
-   * @param {{ orderRepo: { create(data):Promise<Order> }, cartRepo: { findByUserId(userId):Promise<Cart>, clearCart(id):Promise<void> }, productRepo: { findById(id):Promise<Product> } }} deps
-   */
   constructor({ orderRepo, cartRepo, productRepo }) {
     this.orderRepository = orderRepo;
     this.cartRepository = cartRepo;
     this.productRepository = productRepo;
   }
 
-  async execute(userId, orderData = {}) {
+  async execute(userId, orderData) {
     try {
-      // Input validation
-      if (!userId) {
-        return {
-          success: false,
-          message: 'Cart not found',
-          order: null
-        };
-      }
-
-      // Authorization check - assume customer role if not specified
       const userRole = orderData.userRole || 'customer';
       if (!this.canCreateOrder(userRole)) {
         return {
@@ -35,18 +19,9 @@ export class CreateOrderUseCase {
         };
       }
 
-      // Get cart by user ID
-      const cart = await this.cartRepository.findByUserId(userId);
-      if (!cart) {
-        return {
-          success: false,
-          message: 'Cart not found',
-          order: null
-        };
-      }
-
-      // Validate cart has items
-      if (!cart.items || cart.items.length === 0) {
+      const cartItems = orderData.items || [];
+      
+      if (!cartItems || cartItems.length === 0) {
         return {
           success: false,
           message: 'Cart is empty',
@@ -54,8 +29,7 @@ export class CreateOrderUseCase {
         };
       }
 
-      // Validate all products exist and have sufficient stock
-      const validationResult = await this.validateCartItems(cart.items);
+      const validationResult = await this.validateCartItems(cartItems);
       if (!validationResult.isValid) {
         return {
           success: false,
@@ -64,10 +38,8 @@ export class CreateOrderUseCase {
         };
       }
 
-      // Create order items
-      const orderItems = await this.createOrderItems(cart.items);
+      const orderItems = await this.createOrderItems(cartItems);
 
-      // Create order with data from cart and orderData
       const finalOrderData = {
         userId: userId,
         items: orderItems,
@@ -77,22 +49,25 @@ export class CreateOrderUseCase {
         shippingAmount: orderData.shippingAmount || 0,
         taxAmount: orderData.taxAmount || 0,
         finalAmount: orderData.finalAmount || this.calculateFinalAmount(orderItems, orderData),
-        shippingAddress: orderData.shippingAddress || cart.shippingAddress || null,
-        billingAddress: orderData.billingAddress || cart.billingAddress || null,
-        paymentMethod: orderData.paymentMethod || cart.paymentMethod || 'cash',
+        shippingAddress: orderData.shippingAddress || null,
+        billingAddress: orderData.billingAddress || null,
+        paymentMethod: orderData.paymentMethod || 'cash',
+        paymentStatus: orderData.paymentStatus || 'pending',
         notes: orderData.notes || ''
       };
 
       const order = new Order(finalOrderData);
       const createdOrder = await this.orderRepository.create(order.toJSON());
 
-      // Clear cart after successful order creation
-      await this.cartRepository.clear(cart.id);
+      const stockReductionResult = await this.reduceStockQuantities(cartItems);
+      if (!stockReductionResult.success) {
+        console.error('Stock reduction failed:', stockReductionResult.message);
+      }
 
       return {
         success: true,
         message: 'Order created successfully',
-        order: Order.fromJSON(createdOrder)
+        order: createdOrder
       };
 
     } catch (error) {
@@ -100,8 +75,7 @@ export class CreateOrderUseCase {
       return {
         success: false,
         message: 'Failed to create order',
-        order: null,
-        error: error.message
+        order: null
       };
     }
   }
@@ -130,7 +104,7 @@ export class CreateOrderUseCase {
       if (product.stock < item.quantity) {
         return {
           isValid: false,
-          message: `Insufficient stock for ${product.name}`
+          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
         };
       }
     }
@@ -148,14 +122,48 @@ export class CreateOrderUseCase {
         productId: item.productId,
         productName: product.name,
         quantity: item.quantity,
-        unitPrice: product.price,
-        totalPrice: product.price * item.quantity
+        productPrice: product.price,
+        unit: product.unit || 'piece' // Add unit from product or default
       });
 
       orderItems.push(orderItem.toJSON());
     }
 
     return orderItems;
+  }
+
+  async reduceStockQuantities(cartItems) {
+    try {
+      const stockReductions = [];
+
+      for (const item of cartItems) {
+        const reducedProduct = await this.productRepository.reduceStock(item.productId, item.quantity);
+        if (!reducedProduct) {
+          return {
+            success: false,
+            message: `Failed to reduce stock for product ${item.productId}`
+          };
+        }
+        stockReductions.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          newStock: reducedProduct.stock
+        });
+      }
+
+      return {
+        success: true,
+        message: 'Stock reduced successfully',
+        reductions: stockReductions
+      };
+    } catch (error) {
+      console.error('Stock reduction error:', error);
+      return {
+        success: false,
+        message: 'Failed to reduce stock quantities',
+        error: error.message
+      };
+    }
   }
 
   calculateTotal(orderItems) {

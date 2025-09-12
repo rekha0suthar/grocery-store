@@ -14,7 +14,8 @@ describe('ManageProductUseCase - Application Policy', () => {
       findByCategory: jest.fn(),
       search: jest.fn(),
       update: jest.fn(),
-      delete: jest.fn()
+      delete: jest.fn(),
+      searchProducts: jest.fn(),
     };
 
     // mockCategoryRepository = {
@@ -244,7 +245,7 @@ describe('ManageProductUseCase - Application Policy', () => {
         }
       ];
 
-      mockProductRepository.findAll.mockResolvedValue(productsData);
+      mockProductRepository.searchProducts.mockResolvedValue(productsData);
 
       const result = await useCase.execute('searchProducts', {
         query: 'apple',
@@ -256,11 +257,11 @@ describe('ManageProductUseCase - Application Policy', () => {
       expect(result.message).toBe('Products retrieved successfully');
       expect(result.products).toHaveLength(1);
       expect(result.products[0]).toBeInstanceOf(Product);
-      expect(mockProductRepository.findAll).toHaveBeenCalledWith({ page: 1, limit: 10, query: 'apple', search: 'apple' }, 10, 0);
+      expect(mockProductRepository.searchProducts).toHaveBeenCalledWith("apple", 10, 0);
     });
 
     test('handles empty search results', async () => {
-      mockProductRepository.findAll.mockResolvedValue([]);
+      mockProductRepository.searchProducts.mockResolvedValue([]);
 
       const result = await useCase.execute('searchProducts', {
         query: 'nonexistent',

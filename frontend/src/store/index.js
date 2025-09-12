@@ -4,7 +4,10 @@ import productSlice from './slices/productSlice.js';
 import categorySlice from './slices/categorySlice.js';
 import cartSlice from './slices/cartSlice.js';
 import requestSlice from './slices/requestSlice.js';
+import orderSlice from './slices/orderSlice.js';
 import uiSlice from './slices/uiSlice.js';
+import wishlistSlice from './slices/wishlistSlice.js';
+import addressSlice from './slices/addressSlice.js';
 
 export const store = configureStore({
   reducer: {
@@ -13,7 +16,10 @@ export const store = configureStore({
     categories: categorySlice,
     cart: cartSlice,
     requests: requestSlice,
+    orders: orderSlice,
     ui: uiSlice,
+    wishlist: wishlistSlice,
+    addresses: addressSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -22,7 +28,3 @@ export const store = configureStore({
       },
     }),
 });
-
-// Export types for TypeScript (if using TypeScript)
-// export type RootState = ReturnType<typeof store.getState>;
-// export type AppDispatch = typeof store.dispatch;
