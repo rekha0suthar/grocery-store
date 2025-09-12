@@ -13,8 +13,11 @@ import ModernRegisterPage from './pages/auth/ModernRegisterPage.jsx';
 import SystemInitializationPage from './pages/SystemInitializationPage.jsx';
 import StyleTestPage from './pages/StyleTestPage.jsx';
 
-// Protected Pages
+// Dashboard Pages
+import CustomerDashboardPage from './pages/CustomerDashboardPage.jsx';
 import ModernDashboardPage from './pages/ModernDashboardPage.jsx';
+
+// Product Pages
 import ModernProductsPage from './pages/products/ModernProductsPage.jsx';
 import ProductDetailPage from './pages/products/ProductDetailPage.jsx';
 import CategoriesPage from './pages/categories/CategoriesPage.jsx';
@@ -58,6 +61,31 @@ function AppRoutes() {
     );
   }
 
+  // Helper function to get the appropriate dashboard component
+  const getDashboardComponent = () => {
+    if (!user) return null;
+    
+    switch (user.role) {
+      case 'customer':
+        return <CustomerDashboardPage />;
+      case 'admin':
+      case 'store_manager':
+        return <ModernDashboardPage />;
+      default:
+        return <CustomerDashboardPage />;
+    }
+  };
+
+  // Helper function to check if user has access to a route
+  const hasAccess = (requiredRole) => {
+    if (!user) return false;
+    if (requiredRole === 'any') return true;
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(user.role);
+    }
+    return user.role === requiredRole;
+  };
+
   return (
     <Routes>
       {/* Public Routes */}
@@ -83,15 +111,22 @@ function AppRoutes() {
       {/* Protected Routes */}
       {user && (
         <Route path="/" element={<Layout />}>
-          <Route path="dashboard" element={<ModernDashboardPage />} />
+          {/* Dashboard - Role-based */}
+          <Route path="dashboard" element={getDashboardComponent()} />
+          
+          {/* Common Routes - All authenticated users */}
           <Route path="products" element={<ModernProductsPage />} />
           <Route path="products/:id" element={<ProductDetailPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          
+          {/* Customer-only routes */}
+          {hasAccess('customer') && (
           <Route path="requests" element={<RequestsPage />} />
+          )}
 
           {/* Admin-only Routes */}
-          {user.role === 'admin' && (
+          {hasAccess('admin') && (
             <>
               <Route path="admin/dashboard" element={<AdminDashboardPage />} />
               <Route path="admin/products" element={<AdminProductsPage />} />
@@ -102,7 +137,7 @@ function AppRoutes() {
           )}
 
           {/* Store Manager Routes */}
-          {user.role === 'store_manager' && (
+          {hasAccess('store_manager') && (
             <>
               <Route path="manager/products" element={<AdminProductsPage />} />
               <Route path="manager/categories" element={<AdminCategoriesPage />} />

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { Shield, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { checkInitializationStatus, initializeSystem } from '../store/slices/authSlice.js';
-import { validateRegistration } from '../utils/validation.js';
+import { validateUserRegistration } from '../utils/validation.js';
 import Button from '../components/UI/Button.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 
@@ -57,12 +57,12 @@ export const SystemInitializationPage = () => {
       clearErrors();
 
       // Client-side validation using shared validators
-      const validation = validateRegistration(data);
-      if (!validation.ok) {
-        validation.issues.forEach(issue => {
-          setError(issue.field, {
+      const validation = validateUserRegistration(data);
+      if (!validation.isValid) {
+        Object.keys(validation.errors).forEach(field => {
+          setError(field, {
             type: 'manual',
-            message: issue.message
+            message: validation.errors[field]
           });
         });
         return;

@@ -7,10 +7,8 @@ import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
 import { 
-  Search, 
   ShoppingCart, 
   Package, 
- 
   Grid, 
   List,
   Star,
@@ -23,8 +21,6 @@ const ModernProductsPage = () => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const { products, loading, searchResults, searchLoading } = useAppSelector((state) => state.products);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [viewMode, setViewMode] = useState('grid');
@@ -35,22 +31,13 @@ const ModernProductsPage = () => {
     const search = searchParams.get('search');
     
     if (search) {
-      setSearchQuery(search);
-      dispatch(searchProducts({ query: search }));
+      dispatch(searchProducts({ q: search }));
     } else if (category) {
-      setSelectedCategory(category);
       dispatch(fetchProducts({ category, limit: 20 }));
     } else {
       dispatch(fetchProducts({ limit: 20 }));
     }
   }, [dispatch, searchParams]);
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      dispatch(searchProducts({ query: searchQuery }));
-    }
-  };
 
   const handleAddToCart = (product) => {
     dispatch(addToCart({ product, quantity: 1 }));
@@ -132,44 +119,6 @@ const ModernProductsPage = () => {
               </div>
               
               <div className={`space-y-6 ${showFilters ? 'block' : 'hidden md:block'}`}>
-                {/* Search */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Search
-                  </label>
-                  <form onSubmit={handleSearch}>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      />
-                    </div>
-                  </form>
-                </div>
-
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">All Categories</option>
-                    <option value="fruits">Fruits</option>
-                    <option value="vegetables">Vegetables</option>
-                    <option value="dairy">Dairy</option>
-                    <option value="bakery">Bakery</option>
-                    <option value="organic">Organic</option>
-                  </select>
-                </div>
-
                 {/* Sort By */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -206,98 +155,77 @@ const ModernProductsPage = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {sortedProducts.length > 0 ? (
+            {sortedProducts.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+              </Card>
+            ) : (
               <div className={`grid gap-6 ${
                 viewMode === 'grid' 
                   ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
                   : 'grid-cols-1'
               }`}>
                 {sortedProducts.map((product) => (
-                  <Card key={product.id} className="group overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="relative">
-                      <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200">
-                        {product.images && product.images.length > 0 ? (
-                          <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className={`object-cover group-hover:scale-105 transition-transform duration-300 ${
-                              viewMode === 'grid' ? 'h-64 w-full' : 'h-32 w-32'
-                            }`}
-                          />
-                        ) : (
-                          <div className={`flex items-center justify-center ${
-                            viewMode === 'grid' ? 'h-64 w-full' : 'h-32 w-32'
-                          }`}>
-                            <Package className="w-16 h-16 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                      <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors">
-                        <Heart className="w-5 h-5 text-gray-400 hover:text-red-500" />
-                      </button>
-                      {product.isFeatured && (
-                        <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                          Featured
-                        </div>
-                      )}
+                  <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200">
+                    <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
+                      <img
+                        src={product.images?.[0] || '/placeholder-product.jpg'}
+                        alt={product.name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
                     </div>
                     
                     <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">
-                        {product.name}
-                      </h3>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                          {product.name}
+                        </h3>
+                        <button className="text-gray-400 hover:text-red-500 transition-colors">
+                          <Heart className="w-5 h-5" />
+                        </button>
+                      </div>
+                      
                       <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                         {product.description}
                       </p>
                       
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center">
-                          <span className="text-2xl font-bold text-green-600">${product.price}</span>
+                        <div className="flex items-center space-x-1">
+                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                          <span className="text-sm text-gray-600">4.5</span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {product.stock} in stock
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-2xl font-bold text-gray-900">
+                            ${product.price}
+                          </span>
                           {product.discountPrice && (
                             <span className="text-sm text-gray-500 line-through ml-2">
                               ${product.discountPrice}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="text-sm text-gray-600 ml-1">4.5</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm px-2 py-1 rounded-full ${
-                          product.stock > 10 
-                            ? 'bg-green-100 text-green-800' 
-                            : product.stock > 0 
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                        </span>
                         
                         <Button
                           onClick={() => handleAddToCart(product)}
-                          disabled={product.stock === 0}
                           size="sm"
-                          className="flex-1 ml-3"
+                          className="flex items-center space-x-1"
                         >
-                          <ShoppingCart className="w-4 h-4 mr-1" />
-                          Add to Cart
+                          <ShoppingCart className="w-4 h-4" />
+                          <span>Add to Cart</span>
                         </Button>
                       </div>
                     </div>
                   </Card>
                 ))}
               </div>
-            ) : (
-              <Card className="p-12 text-center">
-                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                <p className="text-gray-500">
-                  {searchQuery ? 'Try adjusting your search criteria' : 'No products available at the moment'}
-                </p>
-              </Card>
             )}
           </div>
         </div>

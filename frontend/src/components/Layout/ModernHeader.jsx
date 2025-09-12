@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
 import { toggleSidebar } from '../../store/slices/uiSlice.js';
 import { openCart } from '../../store/slices/cartSlice.js';
 import { logoutUser } from '../../store/slices/authSlice.js';
 import { searchProducts } from '../../store/slices/productSlice.js';
+import { fetchCategories } from '../../store/slices/categorySlice.js';
 import { toast } from 'react-hot-toast';
 import { 
   Menu, 
@@ -23,7 +24,13 @@ const ModernHeader = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
   const { totalItems } = useAppSelector((state) => state.cart);
+  const { categories } = useAppSelector((state) => state.categories);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    // Fetch categories when component mounts
+    dispatch(fetchCategories({ limit: 10 }));
+  }, [dispatch]);
 
   const handleLogout = async () => {
     try {
@@ -39,7 +46,7 @@ const ModernHeader = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      dispatch(searchProducts({ query: searchQuery }));
+      dispatch(searchProducts({ q: searchQuery })); // Changed from 'query' to 'q'
       navigate(`/products?search=${searchQuery}`);
     }
   };
@@ -198,28 +205,22 @@ const ModernHeader = () => {
         </div>
       </div>
 
-      {/* Navigation Menu */}
+      {/* Navigation Menu - Replace the hardcoded categories */}
       <nav className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-8 py-3">
-            <Link to="/products" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+          <div className="flex items-center space-x-8 py-3 overflow-x-auto">
+            <Link to="/products" className="text-gray-700 hover:text-green-600 font-medium transition-colors whitespace-nowrap">
               All Products
             </Link>
-            <Link to="/products?category=fruits" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-              Fruits
-            </Link>
-            <Link to="/products?category=vegetables" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-              Vegetables
-            </Link>
-            <Link to="/products?category=dairy" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-              Dairy
-            </Link>
-            <Link to="/products?category=bakery" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-              Bakery
-            </Link>
-            <Link to="/products?category=organic" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-              Organic
-            </Link>
+            {categories.slice(0, 6).map((category) => (
+              <Link
+                key={category.id}
+                to={`/products?category=${category.id}`}
+                className="text-gray-700 hover:text-green-600 font-medium transition-colors whitespace-nowrap"
+              >
+                {category.name}
+              </Link>
+            ))}
           </div>
         </div>
       </nav>

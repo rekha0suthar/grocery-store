@@ -18,14 +18,14 @@ api.interceptors.request.use(
     }
     
     // Log requests in development
-    if (import.meta.env.MODE === 'development') {
-      console.log('🚀 API Request:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        baseURL: config.baseURL,
-        fullURL: `${config.baseURL}${config.url}`,
-      });
-    }
+    // if (import.meta.env.MODE === 'development') {
+    //   console.log('🚀 API Request:', {
+    //     method: config.method?.toUpperCase(),
+    //     url: config.url,
+    //     baseURL: config.baseURL,
+    //     fullURL: `${config.baseURL}${config.url}`,
+    //   });
+    // }
     
     return config;
   },
@@ -39,13 +39,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Log successful responses in development
-    if (import.meta.env.MODE === 'development') {
-      console.log('✅ API Response:', {
-        status: response.status,
-        url: response.config.url,
-        data: response.data,
-      });
-    }
+    // if (import.meta.env.MODE === 'development') {
+    //   console.log('✅ API Response:', {
+    //     status: response.status,
+    //     url: response.config.url,
+    //     data: response.data,
+    //   });
+    // }
     
     return response;
   },

@@ -15,7 +15,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { registerUser } from '../../store/slices/authSlice.js';
-import { validateRegistration } from '../../validation/userValidation.js';
+import { validateUserRegistration } from '../../utils/validation.js';
 import Button from '../../components/UI/Button.jsx';
 
 export const ModernRegisterPage = () => {
@@ -68,7 +68,9 @@ export const ModernRegisterPage = () => {
       };
 
       // Client-side validation using shared validators
-      const validation = validateRegistration(registrationData);      
+      const validation = validateUserRegistration(registrationData);
+      console.log('validation', validation);
+      
       if (!validation.isValid) {
         // Handle validation errors correctly
         Object.keys(validation.errors).forEach(field => {
@@ -93,14 +95,14 @@ export const ModernRegisterPage = () => {
               message: 'Your store manager registration is pending approval. You will be able to login once an administrator approves your request.' 
             }
           });
-        } else if (registrationData.role === 'customer') {
-          // Customer registration - redirect to dashboard
-          toast.success('Registration successful! Welcome!');
-          navigate('/dashboard');
         } else {
-          // Admin registration - redirect to dashboard
-          toast.success('Admin registration successful! Welcome!');
-          navigate('/dashboard');
+          // All registrations (customer, admin) - redirect to login
+          toast.success('Registration successful! Please login to continue.');
+          navigate('/login', { 
+            state: { 
+              message: 'Registration successful! Please login with your credentials.' 
+            }
+          });
         }
       } else {
         toast.error(result.payload || 'Registration failed. Please try again.');

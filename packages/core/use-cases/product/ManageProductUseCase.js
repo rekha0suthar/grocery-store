@@ -123,6 +123,8 @@ export class ManageProductUseCase {
           return await this.getAllProducts(data);
         case 'getProductById':
           return await this.getProductById(data.id);
+        case 'findByCategory':
+          return await this.findByCategory(data);
         case 'updateProduct':
           return await this.updateProduct(data.id, data, data.userId, data.userRole);
         case 'deleteProduct':
@@ -137,7 +139,6 @@ export class ManageProductUseCase {
           };
       }
     } catch (error) {
-      console.error('ManageProductUseCase execute error:', error);
       return {
         success: false,
         message: 'Failed to execute operation',
@@ -298,8 +299,15 @@ export class ManageProductUseCase {
       const { query, page = 1, limit = 10 } = filters;
       const offset = (page - 1) * limit;
       
-      const searchFilters = { ...filters, search: query };
-      const productsData = await this.productRepository.findAll(searchFilters, limit, offset);
+      if (!query) {
+        return {
+          success: false,
+          message: 'Search query is required',
+          products: []
+        };
+      }
+      
+      const productsData = await this.productRepository.searchProducts(query, limit, offset);
       const products = productsData.map(data => Product.fromJSON(data));
 
       return {
@@ -313,6 +321,39 @@ export class ManageProductUseCase {
       return {
         success: false,
         message: 'Failed to search products',
+        products: [],
+        error: error.message
+      };
+    }
+  }
+
+  async findByCategory(filters = {}) {
+    try {
+      const { categoryId, page = 1, limit = 10 } = filters;
+      const offset = (page - 1) * limit;
+      
+      if (!categoryId) {
+        return {
+          success: false,
+          message: 'Category ID is required',
+          products: []
+        };
+      }
+      
+      const productsData = await this.productRepository.findByCategory(categoryId, limit, offset);
+      const products = productsData.map(data => Product.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Products retrieved successfully',
+        products: products
+      };
+
+    } catch (error) {
+      console.error('Find products by category error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve products by category',
         products: [],
         error: error.message
       };

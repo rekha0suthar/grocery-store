@@ -183,12 +183,12 @@ export const productValidation = [
     .optional()
     .isArray()
     .withMessage('Images must be an array'),
-  body('images.*')
+    body('images.*')
     .optional()
     .custom((value) => {
       // More flexible patterns
       const urlPattern = /^https?:\/\/.+/;
-      const dataUrlPattern = /^data:image\/[a-zA-Z0-9]+;base64,.+/;
+      const dataUrlPattern = /^data:image\/[a-zA-Z0-9+]+;base64,.+/;
       
       // Check if it's a valid HTTP/HTTPS URL
       if (urlPattern.test(value)) return true;

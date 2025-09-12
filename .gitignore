@@ -8,6 +8,7 @@ jest.config.*
 .prettierignore
 .prettierrc
 backend/add-more-data.js
+*.mdc
 # Environment variables
 .env
 .env.local
@@ -257,3 +258,4 @@ package.json.temp
 .env.development.local
 .env.test.local
 .env.production.local
+.vercel

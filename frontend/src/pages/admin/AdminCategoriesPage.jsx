@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
 import { Plus, Edit, Trash2, FolderOpen } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
+import Select from '../../components/UI/Select.jsx';
 
 const AdminCategoriesPage = () => {
   const dispatch = useAppDispatch();
@@ -34,6 +35,7 @@ const AdminCategoriesPage = () => {
         await dispatch(updateCategory({ id: editingCategory.id, categoryData: data })).unwrap();
         toast.success('Category updated successfully!');
         setEditingCategory(null);
+        setShowCreateForm(false); // Close the form after successful update
       } else {
         await dispatch(createCategory(data)).unwrap();
         toast.success('Category created successfully!');
@@ -76,6 +78,16 @@ const AdminCategoriesPage = () => {
     reset();
   };
 
+  // Get root categories for parent selection (exclude the current category being edited)
+  const getParentCategoryOptions = () => {
+    return categories
+      .filter(cat => cat.id !== editingCategory?.id) // Don't allow self as parent
+      .map(cat => ({
+        value: cat.id,
+        label: cat.name
+      }));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -85,7 +97,7 @@ const AdminCategoriesPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="pt-6 pl-6 pr-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -94,7 +106,11 @@ const AdminCategoriesPage = () => {
         </div>
         
         <Button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => {
+            setEditingCategory(null); // Reset editing state
+            setShowCreateForm(true);
+            reset(); // Clear form data
+          }}
           className="flex items-center"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -107,7 +123,7 @@ const AdminCategoriesPage = () => {
         <Card>
           <Card.Header>
             <h3 className="text-lg font-semibold text-gray-900">
-              {editingCategory ? 'Edit Category' : 'Add New Category'}
+              {editingCategory ? 'Edit Category' : 'Create New Category'}
             </h3>
           </Card.Header>
           <Card.Content>
@@ -132,11 +148,14 @@ const AdminCategoriesPage = () => {
                 })}
               />
 
-              <Input
-                label="Parent Category ID (optional)"
-                type="text"
-                placeholder="Enter parent category ID"
+              <Select
+                label="Parent Category (optional)"
+                placeholder="Select a parent category"
                 error={errors.parentId?.message}
+                options={[
+                  { value: '', label: 'No parent (root category)' },
+                  ...getParentCategoryOptions()
+                ]}
                 {...register('parentId')}
               />
 

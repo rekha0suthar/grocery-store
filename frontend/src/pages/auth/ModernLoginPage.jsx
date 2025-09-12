@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAppDispatch } from '../../hooks/redux.js';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux.js';
 import { loginUser } from '../../store/slices/authSlice.js';
-import { validateLogin } from '../../validation/userValidation.js';
+import { validateUserLogin } from '../../utils/validation.js';
 import { toast } from 'react-hot-toast';
 import Button from '../../components/UI/Button.jsx';
 import { Eye, EyeOff, ShoppingCart, Mail, Lock } from 'lucide-react';
@@ -11,6 +11,7 @@ import { Eye, EyeOff, ShoppingCart, Mail, Lock } from 'lucide-react';
 const ModernLoginPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
@@ -21,13 +22,43 @@ const ModernLoginPage = () => {
     formState: { errors },
   } = useForm();
 
-  const onSubmit = async (data) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      redirectBasedOnRole(user.role);
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Helper function to redirect based on user role
+  const redirectBasedOnRole = (role) => {
+    switch (role) {
+      case 'customer':
+        navigate('/dashboard', { replace: true });
+        break;
+      case 'admin':
+        navigate('/admin/dashboard', { replace: true });
+        break;
+      case 'store_manager':
+        navigate('/manager/products', { replace: true });
+        break;
+      default:
+        navigate('/dashboard', { replace: true });
+    }
+  };
+
+  const onSubmit = async (data, e) => {
+    // Prevent default form submission
+    e?.preventDefault();
+    
     setLoading(true);
     setValidationErrors({});
     
     try {
+      console.log('Form submitted with data:', data);
+      
       // Validate using shared validation rules FIRST
-      const validation = validateLogin(data);
+      const validation = validateUserLogin(data);
+      console.log('Validation result:', validation);
 
       if (!validation.isValid) {
         setValidationErrors(validation.errors);
@@ -42,8 +73,23 @@ const ModernLoginPage = () => {
       const result = await dispatch(loginUser(data)).unwrap();
       console.log('Login successful:', result);
       
-      toast.success('Login successful! Welcome back!');
-      navigate('/dashboard');
+      // Get user role from the result
+      const userRole = result.user?.role || 'customer';
+      
+      // Show success message with role-specific greeting
+      const roleGreetings = {
+        customer: 'Welcome back! Start shopping now.',
+        admin: 'Welcome back, Administrator!',
+        store_manager: 'Welcome back, Store Manager!'
+      };
+      
+      toast.success(roleGreetings[userRole] || 'Login successful! Welcome back!');
+      
+      // Small delay to ensure state is updated, then redirect based on role
+      setTimeout(() => {
+        redirectBasedOnRole(userRole);
+      }, 100);
+      
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error || 'Login failed. Please check your credentials.');
@@ -90,7 +136,11 @@ const ModernLoginPage = () => {
 
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <form 
+            className="space-y-6" 
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -181,6 +231,7 @@ const ModernLoginPage = () => {
               className="w-full"
               size="lg"
               loading={loading}
+              disabled={loading}
             >
               Sign In
             </Button>
@@ -197,7 +248,10 @@ const ModernLoginPage = () => {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <button 
+                type="button"
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -207,7 +261,10 @@ const ModernLoginPage = () => {
                 <span className="ml-2">Google</span>
               </button>
 
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <button 
+                type="button"
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
