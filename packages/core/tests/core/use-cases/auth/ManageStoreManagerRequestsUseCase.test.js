@@ -61,14 +61,14 @@ describe('ManageStoreManagerRequestsUseCase', () => {
     const mockRequests = [
       new Request({
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestedAt: '2023-01-01T00:00:00.000Z'
       }),
       new Request({
         id: 'req2',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'approved',
         requestedBy: 'user2',
         requestedAt: '2023-01-01T00:00:00.000Z'
@@ -143,7 +143,7 @@ describe('ManageStoreManagerRequestsUseCase', () => {
 
     const mockRequest = new Request({
       id: 'req1',
-      type: 'store_manager_approval',
+      type: 'account_register_request',
       status: 'pending',
       requestedBy: 'user1',
       requestedAt: '2023-01-01T00:00:00.000Z'
@@ -235,7 +235,7 @@ describe('ManageStoreManagerRequestsUseCase', () => {
 
     const mockRequest = new Request({
       id: 'req1',
-      type: 'store_manager_approval',
+      type: 'account_register_request',
       status: 'pending',
       requestedBy: 'user1',
       requestedAt: '2023-01-01T00:00:00.000Z'

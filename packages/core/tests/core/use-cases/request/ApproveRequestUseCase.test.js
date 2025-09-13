@@ -54,7 +54,7 @@ describe('ApproveRequestUseCase - Application Policy', () => {
     test('allows admin to approve requests', async () => {
       const request = new Request({
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: {
@@ -102,7 +102,7 @@ describe('ApproveRequestUseCase - Application Policy', () => {
     test('approves pending request successfully', async () => {
       const request = new Request({
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: {
@@ -138,7 +138,7 @@ describe('ApproveRequestUseCase - Application Policy', () => {
     test('rejects already approved request', async () => {
       const request = new Request({
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'approved',
         requestedBy: 'user1',
         reviewedBy: 'admin1',
@@ -161,7 +161,7 @@ describe('ApproveRequestUseCase - Application Policy', () => {
     test('rejects already rejected request', async () => {
       const request = new Request({
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'rejected',
         requestedBy: 'user1',
         reviewedBy: 'admin1',
@@ -197,7 +197,7 @@ describe('ApproveRequestUseCase - Application Policy', () => {
     test('handles update errors gracefully', async () => {
       const request = new Request({
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: {
@@ -223,7 +223,7 @@ describe('ApproveRequestUseCase - Application Policy', () => {
     test('uses request entity business rules for approval', async () => {
       const request = new Request({
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: {
@@ -257,7 +257,7 @@ describe('ApproveRequestUseCase - Application Policy', () => {
       const request = new Request({
         id: 'req1',
         requestedBy: "user1",
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         requestData: {
           name: "John Doe",
           email: "john@example.com",

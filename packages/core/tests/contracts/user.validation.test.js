@@ -116,7 +116,6 @@ describe('User Validators', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors.email).toBeDefined();
       expect(result.errors.firstName).toBeDefined();
-      expect(result.errors.lastName).toBeDefined();
       expect(result.errors.password).toBeDefined();
       expect(result.errors.role).toBeDefined();
     });

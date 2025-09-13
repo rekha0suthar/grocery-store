@@ -35,7 +35,7 @@ describe('RequestRepository - Data Access Layer', () => {
     test('finds request by ID successfully', async () => {
       const mockRequestData = {
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: {
@@ -53,12 +53,12 @@ describe('RequestRepository - Data Access Layer', () => {
       expect(mockDatabaseAdapter.findById).toHaveBeenCalledWith('requests', 'req1');
       expect(result).toBeInstanceOf(Request);
       expect(result.id).toBe('req1');
-      expect(result.type).toBe('store_manager_approval');
+      expect(result.type).toBe('account_register_request');
     });
 
     test('creates request successfully', async () => {
       const requestData = {
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: {
@@ -74,7 +74,7 @@ describe('RequestRepository - Data Access Layer', () => {
 
       expect(mockDatabaseAdapter.create).toHaveBeenCalledWith('requests', expect.any(Object));
       expect(result).toBeInstanceOf(Request);
-      expect(result.type).toBe('store_manager_approval');
+      expect(result.type).toBe('account_register_request');
     });
 
     test('updates request successfully', async () => {
@@ -95,31 +95,31 @@ describe('RequestRepository - Data Access Layer', () => {
     test('finds requests by user and type', async () => {
       const mockRequestData = {
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1'
       };
 
       mockDatabaseAdapter.findByField.mockResolvedValue(mockRequestData);
 
-      const result = await requestRepository.findByUserAndType('user1', 'store_manager_approval');
+      const result = await requestRepository.findByUserAndType('user1', 'account_register_request');
 
       expect(mockDatabaseAdapter.findByField).toHaveBeenCalledWith('requests', 'requestedBy', 'user1');
       expect(result).toBeInstanceOf(Request);
-      expect(result.type).toBe('store_manager_approval');
+      expect(result.type).toBe('account_register_request');
     });
 
     test('finds requests by type', async () => {
       const mockRequests = [
-        { id: 'req1', type: 'store_manager_approval' },
-        { id: 'req2', type: 'store_manager_approval' }
+        { id: 'req1', type: 'account_register_request' },
+        { id: 'req2', type: 'account_register_request' }
       ];
 
       mockDatabaseAdapter.findAll.mockResolvedValue(mockRequests);
 
-      const result = await requestRepository.findByType('store_manager_approval');
+      const result = await requestRepository.findByType('account_register_request');
 
-      expect(mockDatabaseAdapter.findAll).toHaveBeenCalledWith('requests', { type: 'store_manager_approval' }, 100, 0);
+      expect(mockDatabaseAdapter.findAll).toHaveBeenCalledWith('requests', { type: 'account_register_request' }, 100, 0);
       expect(result).toHaveLength(2);
       expect(result[0]).toBeInstanceOf(Request);
     });
@@ -157,9 +157,9 @@ describe('RequestRepository - Data Access Layer', () => {
     test('counts requests by type', async () => {
       mockDatabaseAdapter.count.mockResolvedValue(5);
 
-      const result = await requestRepository.countByType('store_manager_approval');
+      const result = await requestRepository.countByType('account_register_request');
 
-      expect(mockDatabaseAdapter.count).toHaveBeenCalledWith('requests', { type: 'store_manager_approval' });
+      expect(mockDatabaseAdapter.count).toHaveBeenCalledWith('requests', { type: 'account_register_request' });
       expect(result).toBe(5);
     });
 

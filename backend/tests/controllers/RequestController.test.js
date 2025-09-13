@@ -75,8 +75,8 @@ describe('RequestController - HTTP Interface Adapter', () => {
   describe('Get All Requests (Admin)', () => {
     test('retrieves all requests successfully', async () => {
       const mockRequests = [
-        { id: 'req1', type: 'store_manager_approval', status: 'pending' },
-        { id: 'req2', type: 'category_creation', status: 'approved' }
+        { id: 'req1', type: 'account_register_request', status: 'pending' },
+        { id: 'req2', type: 'category_add_request', status: 'approved' }
       ];
       
       mockRequestRepository.findAll.mockResolvedValue(mockRequests);
@@ -140,7 +140,7 @@ describe('RequestController - HTTP Interface Adapter', () => {
       const mockResult = {
         success: true,
         message: 'Store manager request submitted successfully',
-        request: { id: 'req1', type: 'store_manager_approval' }
+        request: { id: 'req1', type: 'account_register_request' }
       };
       
       mockCreateStoreManagerRequestUseCase.execute.mockResolvedValue(mockResult);
@@ -196,9 +196,9 @@ describe('RequestController - HTTP Interface Adapter', () => {
           controller.requestComposition.getRequestRepository().countByStatus('pending'),
           controller.requestComposition.getRequestRepository().countByStatus('approved'),
           controller.requestComposition.getRequestRepository().countByStatus('rejected'),
-          controller.requestComposition.getRequestRepository().countByType('store_manager_approval'),
-          controller.requestComposition.getRequestRepository().countByType('category_creation'),
-          controller.requestComposition.getRequestRepository().countByType('category_modification')
+          controller.requestComposition.getRequestRepository().countByType('account_register_request'),
+          controller.requestComposition.getRequestRepository().countByType('category_add_request'),
+          controller.requestComposition.getRequestRepository().countByType('category_update_request')
         ]);
 
         const categoryRequests = categoryCreationRequests + categoryModificationRequests;

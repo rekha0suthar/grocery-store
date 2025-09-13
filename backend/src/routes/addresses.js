@@ -13,9 +13,10 @@ const addressValidation = [
     .isLength({ min: 2, max: 100 })
     .withMessage('First name must be between 2 and 100 characters'),
   body('lastName')
+    .optional()
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Last name must be between 2 and 100 characters'),
+    .isLength({ max: 100 })
+    .withMessage('Last name must be less than 100 characters'),
   body('email')
     .isEmail()
     .withMessage('Please provide a valid email address'),

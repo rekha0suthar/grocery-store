@@ -70,7 +70,7 @@ const AdminRequestsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Manage Requests</h1>
@@ -79,72 +79,122 @@ const AdminRequestsPage = () => {
 
       {/* Requests List */}
       {requests.length > 0 ? (
-        <div className="space-y-4">
-          {requests.map((request) => (
-            <Card key={request.id}>
-              <Card.Content>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <FileText className="w-8 h-8 text-gray-400" />
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        Store Manager Request
-                      </h3>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">
-                          {request.user?.name || request.user?.email}
-                        </span>
+        <div className="space-y-6">
+          {requests.map((request) => {
+            const getRequestTypeLabel = (type) => {
+              switch (type) {
+                case 'account_register_request':
+                  return 'Store Manager Registration';
+                case 'category_add_request':
+                  return 'Category Addition';
+                case 'category_update_request':
+                  return 'Category Update';
+                case 'category_delete_request':
+                  return 'Category Deletion';
+                default:
+                  return 'Request';
+              }
+            };
+
+            const getRequestTypeColor = (type) => {
+              switch (type) {
+                case 'account_register_request':
+                  return 'bg-blue-100 text-blue-800';
+                case 'category_add_request':
+                  return 'bg-green-100 text-green-800';
+                case 'category_update_request':
+                  return 'bg-yellow-100 text-yellow-800';
+                case 'category_delete_request':
+                  return 'bg-red-100 text-red-800';
+                default:
+                  return 'bg-gray-100 text-gray-800';
+              }
+            };
+
+            return (
+              <Card key={request.id}>
+                <Card.Content>
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-gray-600" />
                       </div>
-                      <p className="text-sm text-gray-500">
-                        Submitted on {new Date(request.createdAt).toLocaleDateString()}
-                      </p>
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {request.type === 'account_register_request' 
+                            ? `${request.requestData?.name || 'Store Manager'}`
+                            : getRequestTypeLabel(request.type)
+                          }
+                        </h3>
+                        {request.type === 'account_register_request' && request.requestData?.email && (
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className="text-sm text-gray-500">{request.requestData.email}</span>
+                          </div>
+                        )}
+                        <p className="text-sm text-gray-500">
+                          Submitted on {new Date(request.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRequestTypeColor(request.type)}`}>
+                        {request.type.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                      {getStatusIcon(request.status)}
+                      <span className={`px-5 py-2 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                        {request.status.toUpperCase()}
+                      </span>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    {getStatusIcon(request.status)}
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
-                      {request.status.toUpperCase()}
-                    </span>
+                  {/* Request Details */}
+                  <div className="space-y-3 mb-6">
+                    <h4 className="text-sm font-medium text-gray-900">Request Information</h4>
+                    
+                    {request.requestData && (
+                      <>
+                        {request.requestData.storeName && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-medium text-gray-600">Store Name:</span>
+                            <span className="text-xs text-gray-900">{request.requestData.storeName}</span>
+                          </div>
+                        )}
+                        
+                        {request.requestData.storeAddress && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-medium text-gray-600">Store Address:</span>
+                            <span className="text-xs text-gray-900">{request.requestData.storeAddress}</span>
+                          </div>
+                        )}                                  
+                      </>
+                    )}
                   </div>
-                </div>
-                
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Reason:</h4>
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{request.reason}</p>
-                </div>
-                
-                {request.adminNotes && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Admin Notes:</h4>
-                    <p className="text-gray-700 bg-blue-50 p-3 rounded-md">{request.adminNotes}</p>
-                  </div>
-                )}
-                
-                {request.status === 'pending' && (
-                  <div className="flex space-x-4">
-                    <Button
-                      onClick={() => handleApprove(request.id)}
-                      variant="success"
-                      size="sm"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button
-                      onClick={() => handleReject(request.id)}
-                      variant="danger"
-                      size="sm"
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Reject
-                    </Button>
-                  </div>
-                )}
-              </Card.Content>
-            </Card>
-          ))}
+                  
+                  {request.status === 'pending' && (
+                    <div className="flex space-x-4">
+                      <Button
+                        onClick={() => handleApprove(request.id)}
+                        variant="success"
+                        size="sm"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Approve
+                      </Button>
+                      <Button
+                        onClick={() => handleReject(request.id)}
+                        variant="danger"
+                        size="sm"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                </Card.Content>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <Card className="p-12 text-center">

@@ -32,7 +32,7 @@ export class StoreManagerApprovalPolicy {
     };
 
     return new Request({
-      type: 'store_manager_approval',
+      type: 'account_register_request',
       status: 'pending',
       requestedBy: requestedBy,
       requestData: requestData,

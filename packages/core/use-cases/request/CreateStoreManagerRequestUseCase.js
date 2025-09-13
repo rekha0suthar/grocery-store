@@ -74,7 +74,7 @@ export class CreateStoreManagerRequestUseCase {
       // Check for existing pending request
       const existingRequest = await this.requestRepository.findByUserAndType(
         userId, 
-        'store_manager_approval', 
+        'account_register_request', 
         'pending'
       );
 
@@ -88,7 +88,7 @@ export class CreateStoreManagerRequestUseCase {
 
       // Create request
       const request = new Request({
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: userId,
         requestData: {

@@ -93,7 +93,7 @@ describe('CreateStoreManagerRequestUseCase - Application Policy', () => {
 
       const createdRequestData = {
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: requestData,
@@ -112,7 +112,7 @@ describe('CreateStoreManagerRequestUseCase - Application Policy', () => {
       expect(result.success).toBe(true);
       expect(result.message).toBe('Store manager request submitted successfully');
       expect(result.request).toBeInstanceOf(Request);
-      expect(result.request.type).toBe('store_manager_approval');
+      expect(result.request.type).toBe('account_register_request');
       expect(result.request.status).toBe('pending');
       expect(result.request.requestedBy).toBe('user1');
       expect(result.request.requestData).toEqual(requestData);
@@ -155,7 +155,7 @@ describe('CreateStoreManagerRequestUseCase - Application Policy', () => {
 
       const createdRequestData = {
         id: 'req1',
-        type: 'store_manager_approval',
+        type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1',
         requestData: requestData,

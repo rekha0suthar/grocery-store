@@ -2,7 +2,7 @@ import { Request } from '../../../entities/Request.js';
 
 // Test builders
 const aRequest = (overrides = {}) => new Request({
-  type: 'store_manager_approval',
+  type: 'account_register_request',
   requestedBy: 'user-123',
   status: 'pending',
   requestData: { 
@@ -21,7 +21,7 @@ describe('Request Entity - Core Domain Rules', () => {
       const request = aRequest();
       
       expect(request.isValid()).toBe(true);
-      expect(request.type).toBe('store_manager_approval');
+      expect(request.type).toBe('account_register_request');
       expect(request.requestedBy).toBe('user-123');
       expect(request.status).toBe('pending');
     });
@@ -44,14 +44,14 @@ describe('Request Entity - Core Domain Rules', () => {
 
   describe('Request Types', () => {
     test('identifies store manager request', () => {
-      const request = aRequest({ type: 'store_manager_approval' });
+      const request = aRequest({ type: 'account_register_request' });
       expect(request.isStoreManagerApprovalRequest()).toBe(true);
       expect(request.isCategoryRequest()).toBe(false);
     });
 
     test('identifies category creation request', () => {
       const request = aRequest({ 
-        type: 'category_creation',
+        type: 'category_add_request',
         requestData: { name: 'New Category', description: 'A new category' }
       });
       expect(request.isCategoryRequest()).toBe(true);
@@ -60,7 +60,7 @@ describe('Request Entity - Core Domain Rules', () => {
 
     test('identifies category modification request', () => {
       const request = aRequest({ 
-        type: 'category_modification',
+        type: 'category_update_request',
         requestData: { name: 'Updated Category', description: 'An updated category' }
       });
       expect(request.isCategoryRequest()).toBe(true);
@@ -183,7 +183,7 @@ describe('Request Entity - Core Domain Rules', () => {
       const request = aRequest();
       
       const json = request.toJSON();
-      expect(json.type).toBe('store_manager_approval');
+      expect(json.type).toBe('account_register_request');
       expect(json.requestedBy).toBe('user-123');
       expect(json.status).toBe('pending');
       expect(json.requestData).toEqual({ 
@@ -197,14 +197,14 @@ describe('Request Entity - Core Domain Rules', () => {
 
     test('deserializes request correctly', () => {
       const requestData = {
-        type: 'category_creation',
+        type: 'category_add_request',
         requestedBy: 'user-456',
         status: 'approved',
         requestData: { name: 'New Category', description: 'A new category' }
       };
       
       const request = Request.fromJSON(requestData);
-      expect(request.type).toBe('category_creation');
+      expect(request.type).toBe('category_add_request');
       expect(request.requestedBy).toBe('user-456');
       expect(request.status).toBe('approved');
       expect(request.requestData).toEqual({ name: 'New Category', description: 'A new category' });
@@ -213,7 +213,7 @@ describe('Request Entity - Core Domain Rules', () => {
 
   describe('Static Factory Methods', () => {
     test('creates store manager approval request', () => {
-      const request = Request.createStoreManagerApprovalRequest('user-123', {
+      const request = Request.createAccountRegisterRequest('user-123', {
         name: 'John Doe',
         email: 'john@example.com',
         phone: '123-456-7890',
@@ -221,18 +221,18 @@ describe('Request Entity - Core Domain Rules', () => {
         storeAddress: '123 Main St'
       });
       
-      expect(request.type).toBe('store_manager_approval');
+      expect(request.type).toBe('account_register_request');
       expect(request.requestedBy).toBe('user-123');
       expect(request.isStoreManagerApprovalRequest()).toBe(true);
     });
 
     test('creates category creation request', () => {
-      const request = Request.createCategoryCreationRequest('user-456', {
+      const request = Request.createCategoryAddRequest('user-456', {
         name: 'New Category',
         description: 'A new category'
       });
       
-      expect(request.type).toBe('category_creation');
+      expect(request.type).toBe('category_add_request');
       expect(request.requestedBy).toBe('user-456');
       expect(request.isCategoryRequest()).toBe(true);
     });

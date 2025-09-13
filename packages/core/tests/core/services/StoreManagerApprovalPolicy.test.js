@@ -70,7 +70,7 @@ describe('StoreManagerApprovalPolicy', () => {
 
       const request = policy.createStoreManagerApprovalRequest(userData, 'user123');
       
-      expect(request.type).toBe('store_manager_approval');
+      expect(request.type).toBe('account_register_request');
       expect(request.status).toBe('pending');
       expect(request.requestedBy).toBe('user123');
       expect(request.requestData.name).toBe('John Manager');

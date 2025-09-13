@@ -102,7 +102,7 @@ describe('RegisterStoreManagerUseCase', () => {
       expect(result.profile).toBeInstanceOf(StoreManagerProfile);
       expect(result.profile.isApproved).toBe(false);
       expect(result.request).toBeInstanceOf(Request);
-      expect(result.request.type).toBe('store_manager_approval');
+      expect(result.request.type).toBe('account_register_request');
       expect(result.request.status).toBe('pending');
       expect(result.message).toContain('pending approval');
     });

@@ -95,14 +95,15 @@ export class ApproveRequestUseCase {
 
   async executeApprovedRequest(request) {
     switch (request.type) {
-      case 'store_manager_approval':
+      case 'account_register_request':
         await this.promoteToStoreManager(request);
         break;
-      case 'category_creation':
+      case 'category_add_request':
         await this.createCategory(request);
         break;
-      case 'category_modification':
-        await this.modifyCategory(request);
+      case 'category_update_request':
+      case 'category_delete_request':
+        await this.deleteCategory(request);
         break;
       default:
         console.warn(`Unknown request type: ${request.type}`);
@@ -127,5 +128,10 @@ export class ApproveRequestUseCase {
   async modifyCategory(request) {
     const categoryData = request.requestData;
     await this.categoryRepository.update(categoryData.id, categoryData);
+  }
+
+  async deleteCategory(request) {
+    const categoryData = request.requestData;
+    await this.categoryRepository.delete(categoryData.id);
   }
 }

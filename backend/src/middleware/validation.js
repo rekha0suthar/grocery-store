@@ -43,9 +43,10 @@ export const registerValidation = [
     .isLength({ min: USER_RULES.NAME_MIN_LENGTH, max: USER_RULES.NAME_MAX_LENGTH })
     .withMessage(`First name must be between ${USER_RULES.NAME_MIN_LENGTH} and ${USER_RULES.NAME_MAX_LENGTH} characters`),
   body('lastName')
+    .optional()
     .trim()
-    .isLength({ min: USER_RULES.NAME_MIN_LENGTH, max: USER_RULES.NAME_MAX_LENGTH })
-    .withMessage(`Last name must be between ${USER_RULES.NAME_MIN_LENGTH} and ${USER_RULES.NAME_MAX_LENGTH} characters`),
+    .isLength({ max: USER_RULES.NAME_MAX_LENGTH })
+    .withMessage(`Last name must be less than ${USER_RULES.NAME_MAX_LENGTH} characters`),
   body('password')
     .isLength({ min: USER_RULES.PASSWORD_MIN_LENGTH })
     .withMessage(`Password must be at least ${USER_RULES.PASSWORD_MIN_LENGTH} characters long`)

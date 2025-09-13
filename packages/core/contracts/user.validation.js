@@ -84,10 +84,6 @@ export function validateUserRegistration(data) {
     errors.firstName = `First name must be between ${USER_RULES.NAME_MIN_LENGTH} and ${USER_RULES.NAME_MAX_LENGTH} characters`;
   }
 
-  if (!isValidName(data.lastName)) {
-    errors.lastName = `Last name must be between ${USER_RULES.NAME_MIN_LENGTH} and ${USER_RULES.NAME_MAX_LENGTH} characters`;
-  }
-
   if (!isValidPassword(data.password)) {
     errors.password = 'Password must contain at least one lowercase letter, one uppercase letter, and one number';
   }

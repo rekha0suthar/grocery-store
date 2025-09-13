@@ -83,7 +83,7 @@ export class RequestController extends BaseController {
     const userId = req.user.id;
     const { type, requestData } = req.body;
     
-    if (!['category_creation', 'category_modification'].includes(type)) {
+    if (!['category_add_request', 'category_update_request', 'category_delete_request'].includes(type)) {
       return this.sendError(res, 'Invalid request type', 400);
     }
 
@@ -148,27 +148,28 @@ export class RequestController extends BaseController {
       pendingRequests,
       approvedRequests,
       rejectedRequests,
-      storeManagerRequests,
-      categoryCreationRequests,
-      categoryModificationRequests
+      categoryAddRequests,
+      categoryUpdateRequests,
+      categoryDeleteRequests
     ] = await Promise.all([
       this.requestComposition.getRequestRepository().count(),
       this.requestComposition.getRequestRepository().countByStatus('pending'),
       this.requestComposition.getRequestRepository().countByStatus('approved'),
       this.requestComposition.getRequestRepository().countByStatus('rejected'),
-      this.requestComposition.getRequestRepository().countByType('store_manager_approval'),
-      this.requestComposition.getRequestRepository().countByType('category_creation'),
-      this.requestComposition.getRequestRepository().countByType('category_modification')
+      this.requestComposition.getRequestRepository().countByType('account_register_request'),
+      this.requestComposition.getRequestRepository().countByType('category_add_request'),
+      this.requestComposition.getRequestRepository().countByType('category_update_request'),
+      this.requestComposition.getRequestRepository().countByType('category_delete_request')
     ]);
 
-    const categoryRequests = categoryCreationRequests + categoryModificationRequests;
+    const categoryRequests = categoryAddRequests + categoryUpdateRequests + categoryDeleteRequests;
 
     this.sendSuccess(res, {
       total: totalRequests,
       pending: pendingRequests,
       approved: approvedRequests,
       rejected: rejectedRequests,
-      storeManagerRequests,
+      accountRegisterRequests: categoryAddRequests,
       categoryRequests
     }, 'Request statistics retrieved successfully');
   });

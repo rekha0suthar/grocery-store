@@ -42,7 +42,7 @@ describe('Store Manager Approval Workflow', () => {
     // Create approval request
     request = new Request({
       id: 'request_1',
-      type: 'store_manager_approval',
+      type: 'account_register_request',
       status: 'pending',
       requestedBy: 'manager_1',
       requestData: {
@@ -142,7 +142,7 @@ describe('Store Manager Approval Workflow', () => {
 
     it('should reject invalid request types', () => {
       const invalidRequest = new Request({
-        type: 'category_creation',
+        type: 'category_add_request',
         status: 'pending'
       }, clock);
 

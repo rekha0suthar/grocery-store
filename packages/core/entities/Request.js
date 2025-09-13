@@ -22,7 +22,7 @@ export class Request extends BaseEntity {
   }
 
   validateType() {
-    const validTypes = ['store_manager_approval', 'category_creation', 'category_modification'];
+    const validTypes = ['account_register_request', 'category_add_request', 'category_update_request', 'category_delete_request'];
     return validTypes.includes(this.type);
   }
 
@@ -37,10 +37,11 @@ export class Request extends BaseEntity {
 
   validateRequestData() {
     switch (this.type) {
-      case 'store_manager_approval':
+      case 'account_register_request':
         return this.validateStoreManagerRequestData();
-      case 'category_creation':
-      case 'category_modification':
+      case 'category_add_request':
+      case 'category_update_request':
+      case 'category_delete_request':
         return this.validateCategoryRequestData();
       default:
         return true;
@@ -74,11 +75,11 @@ export class Request extends BaseEntity {
   }
 
   isStoreManagerApprovalRequest() {
-    return this.type === 'store_manager_approval';
+    return this.type === 'account_register_request';
   }
 
   isCategoryRequest() {
-    return this.type === 'category_creation' || this.type === 'category_modification';
+    return this.type === 'category_add_request' || this.type === 'category_update_request' || this.type === 'category_delete_request';
   }
 
   isHighPriority() {
@@ -166,7 +167,7 @@ export class Request extends BaseEntity {
 
   // Setters
   setType(type) {
-    const validTypes = ['store_manager_approval', 'category_creation', 'category_modification'];
+    const validTypes = ['account_register_request', 'category_add_request', 'category_update_request', 'category_delete_request'];
     if (validTypes.includes(type)) {
       this.type = type;
       this.updateTimestamp();
@@ -216,27 +217,36 @@ export class Request extends BaseEntity {
     return new Request(data);
   }
 
-  static createStoreManagerApprovalRequest(userId, requestData) {
+  static createAccountRegisterRequest(userId, requestData) {
     const request = new Request({
-      type: 'store_manager_approval',
+      type: 'account_register_request',
       requestedBy: userId,
       requestData: requestData
     });
     return request;
   }
 
-  static createCategoryCreationRequest(userId, requestData) {
+  static createCategoryAddRequest(userId, requestData) {
     const request = new Request({
-      type: 'category_creation',
+      type: 'category_add_request',
       requestedBy: userId,
       requestData: requestData
     });
     return request;
   }
 
-  static createCategoryModificationRequest(userId, requestData) {
+  static createCategoryUpdateRequest(userId, requestData) {
     const request = new Request({
-      type: 'category_modification',
+      type: 'category_update_request',
+      requestedBy: userId,
+      requestData: requestData
+    });
+    return request;
+  }
+
+  static createCategoryDeleteRequest(userId, requestData) {
+    const request = new Request({
+      type: 'category_delete_request',
       requestedBy: userId,
       requestData: requestData
     });

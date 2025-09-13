@@ -23,6 +23,21 @@ const AdminDashboardPage = () => {
   const pendingRequests = requests.filter(req => req.status === 'pending');
   const lowStockProducts = products.filter(product => product.stock < 10);
 
+  const getRequestTypeLabel = (type) => {
+    switch (type) {
+      case 'account_register_request':
+        return 'Store Manager Registration';
+      case 'category_add_request':
+        return 'Category Addition';
+      case 'category_update_request':
+        return 'Category Update';
+      case 'category_delete_request':
+        return 'Category Deletion';
+      default:
+        return 'Request';
+    }
+  };
+
   const stats = [
     {
       name: 'Total Products',
@@ -103,11 +118,16 @@ const AdminDashboardPage = () => {
                     <FileText className="w-8 h-8 text-gray-400" />
                     <div className="flex-1">
                       <h4 className="text-sm font-medium text-gray-900">
-                        Store Manager Request
+                        {request.type === 'account_register_request' 
+                          ? 'Store Manager Registration'
+                          : getRequestTypeLabel(request.type)
+                        }
                       </h4>
-                      <p className="text-sm text-gray-500">
-                        From: {request.user?.name || request.user?.email}
-                      </p>
+                      {request.type === 'account_register_request' && request.requestData?.email && (
+                        <p className="text-sm text-gray-500">
+                          {request.type.replace(/_/g, ' ').toUpperCase()}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-400">
                         {new Date(request.createdAt).toLocaleDateString()}
                       </p>

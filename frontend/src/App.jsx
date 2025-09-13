@@ -33,7 +33,6 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminProductsPage from './pages/admin/AdminProductsPage.jsx';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage.jsx';
 import AdminRequestsPage from './pages/admin/AdminRequestsPage.jsx';
-import AdminStoreManagerRequestsPage from './pages/admin/AdminStoreManagerRequestsPage.jsx';
 
 function AppRoutes() {
   const dispatch = useDispatch();
@@ -140,7 +139,6 @@ function AppRoutes() {
               <Route path="admin/products" element={<AdminProductsPage />} />
               <Route path="admin/categories" element={<AdminCategoriesPage />} />
               <Route path="admin/requests" element={<AdminRequestsPage />} />
-              <Route path="admin/store-manager-requests" element={<AdminStoreManagerRequestsPage />} />
             </>
           )}
 

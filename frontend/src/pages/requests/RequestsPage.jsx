@@ -77,7 +77,7 @@ const RequestsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -100,7 +100,7 @@ const RequestsPage = () => {
       {showCreateForm && (
         <Card>
           <Card.Header>
-            <h3 className="text-lg font-semibold text-gray-900">Create Store Manager Request</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Create Store Manager Registration Request</h3>
           </Card.Header>
           <Card.Content>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -151,7 +151,7 @@ const RequestsPage = () => {
                     <FileText className="w-8 h-8 text-gray-400" />
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">
-                        Store Manager Request
+                        Store Manager Registration Request
                       </h3>
                       <p className="text-sm text-gray-500">
                         Submitted on {new Date(request.createdAt).toLocaleDateString()}

@@ -102,7 +102,7 @@ describe('RegisterStoreManagerUseCase with Admin Check', () => {
       expect(result.success).toBe(true);
       expect(result.user.role).toBe('store_manager');
       expect(result.profile.isApproved).toBe(false);
-      expect(result.request.type).toBe('store_manager_approval');
+      expect(result.request.type).toBe('account_register_request');
     });
 
     it('should reject store manager registration when no admin exists', async () => {
