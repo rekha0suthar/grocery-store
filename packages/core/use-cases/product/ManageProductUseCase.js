@@ -125,6 +125,8 @@ export class ManageProductUseCase {
           return await this.getProductById(data.id);
         case 'findByCategory':
           return await this.findByCategory(data);
+        case 'getFeaturedProducts':
+          return await this.getFeaturedProducts(data);
         case 'updateProduct':
           return await this.updateProduct(data.id, data, data.userId, data.userRole);
         case 'deleteProduct':
@@ -354,6 +356,31 @@ export class ManageProductUseCase {
       return {
         success: false,
         message: 'Failed to retrieve products by category',
+        products: [],
+        error: error.message
+      };
+    }
+  }
+
+  async getFeaturedProducts(filters = {}) {
+    try {
+      const { page = 1, limit = 20 } = filters;
+      const offset = (page - 1) * limit;
+      
+      const productsData = await this.productRepository.findFeatured(limit);
+      const products = productsData.map(data => Product.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Featured products retrieved successfully',
+        products: products
+      };
+
+    } catch (error) {
+      console.error('Get featured products error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve featured products',
         products: [],
         error: error.message
       };

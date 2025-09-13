@@ -20,6 +20,11 @@ export class ProductController extends BaseController {
         limit: parseInt(limit),
         offset
       });
+    } else if (featured === 'true') {
+      products = await this.productComposition.getManageProductUseCase().execute('getFeaturedProducts', {
+        page: parseInt(page),
+        limit: parseInt(limit)
+      });
     } else if (category) {
       products = await this.productComposition.getManageProductUseCase().execute('findByCategory', {
         categoryId: category,
@@ -28,7 +33,6 @@ export class ProductController extends BaseController {
       });
     } else {
       const filters = {};
-      if (featured !== undefined) filters.featured = featured;
       if (inStock !== undefined) filters.inStock = inStock;
       
       products = await this.productComposition.getManageProductUseCase().execute('getAllProducts', {
@@ -185,5 +189,16 @@ export class ProductController extends BaseController {
     });
     
     this.sendSuccess(res, products, 'Low stock products retrieved successfully');
+  });
+
+  getFeaturedProducts = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+    
+    const products = await this.productComposition.getManageProductUseCase().execute('getFeaturedProducts', {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    
+    this.sendSuccess(res, products, 'Featured products retrieved successfully');
   });
 }

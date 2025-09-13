@@ -51,9 +51,10 @@ export const PaymentValidationRules = {
       return { isValid: false, message: 'Invalid month' };
     }
     
-    // Note: This function needs clock injection for proper clean architecture
-    const currentYear = clock.now().getFullYear() % 100;
-    const currentMonth = clock.now().getMonth() + 1;
+    // Use provided clock or fallback to Date
+    const now = clock ? clock.now() : new Date();
+    const currentYear = now.getFullYear() % 100;
+    const currentMonth = now.getMonth() + 1;
     
     if (year < currentYear || (year === currentYear && month < currentMonth)) {
       return { isValid: false, message: 'Card has expired' };
@@ -171,7 +172,7 @@ export const PaymentFormatters = {
   }
 };
 
-export const validatePaymentData = (paymentData, clock) => {
+export const validatePaymentData = (paymentData, clock = null) => {
   const errors = {};
   
   const requiredFields = ['paymentMethod'];

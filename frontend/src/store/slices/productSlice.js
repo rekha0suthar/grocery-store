@@ -22,8 +22,8 @@ export const fetchProductById = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await productService.getProductById(id);
-      // Handle nested response structure
-      return response.data?.data || response.data;
+      const product = response.data?.data?.product || response.data?.product || response.data;
+      return product;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch product');
     }
@@ -49,8 +49,8 @@ export const createProduct = createAsyncThunk(
   async (productData, { rejectWithValue }) => {
     try {
       const response = await productService.createProduct(productData);
-      // Handle nested response structure
-      return response.data?.data || response.data;
+      const product = response.data?.data?.product || response.data?.product || response.data;
+      return product;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create product');
     }
@@ -62,23 +62,10 @@ export const updateProduct = createAsyncThunk(
   async ({ id, productData }, { rejectWithValue }) => {
     try {
       const response = await productService.updateProduct(id, productData);
-      // Handle nested response structure
-      return response.data?.data || response.data;
+      const product = response.data?.data?.product || response.data?.product || response.data;
+      return product;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update product');
-    }
-  }
-);
-
-export const updateProductStock = createAsyncThunk(
-  'products/updateProductStock',
-  async ({ id, stockData }, { rejectWithValue }) => {
-    try {
-      const response = await productService.updateStock(id, stockData);
-      // Handle nested response structure
-      return response.data?.data || response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update stock');
     }
   }
 );
@@ -87,67 +74,53 @@ export const deleteProduct = createAsyncThunk(
   'products/deleteProduct',
   async (id, { rejectWithValue }) => {
     try {
-      await productService.deleteProduct(id);
-      return id;
+      const response = await productService.deleteProduct(id);
+      return id; 
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete product');
     }
   }
 );
 
-const initialState = {
-  products: [],
-  currentProduct: null,
-  searchResults: [],
-  pagination: {
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  },
-  loading: false,
-  error: null,
-  searchLoading: false,
-  searchError: null,
-};
-
+// Product slice
 const productSlice = createSlice({
   name: 'products',
-  initialState,
+  initialState: {
+    products: [],
+    currentProduct: null,
+    searchResults: [],
+    loading: false,
+    error: null,
+    pagination: {}
+  },
   reducers: {
-    clearError: (state) => {
-      state.error = null;
-      state.searchError = null;
+    clearProducts: (state) => {
+      state.products = [];
+      state.searchResults = [];
     },
     clearCurrentProduct: (state) => {
       state.currentProduct = null;
     },
-    clearSearchResults: (state) => {
-      state.searchResults = [];
-      state.searchError = null;
-    },
-    setPagination: (state, action) => {
-      state.pagination = { ...state.pagination, ...action.payload };
-    },
+    clearError: (state) => {
+      state.error = null;
+    }
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Products
       .addCase(fetchProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = action.payload.products || [];
-        state.pagination = action.payload.pagination || state.pagination;
+        state.products = action.payload.products;
+        state.pagination = action.payload.pagination;
         state.error = null;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch Product by ID
       .addCase(fetchProductById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -161,63 +134,69 @@ const productSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Search Products
       .addCase(searchProducts.pending, (state) => {
-        state.searchLoading = true;
-        state.searchError = null;
+        state.loading = true;
+        state.error = null;
       })
       .addCase(searchProducts.fulfilled, (state, action) => {
-        state.searchLoading = false;
-        state.searchResults = action.payload.products || [];
-        state.searchError = null;
+        state.loading = false;
+        state.searchResults = action.payload.products;
+        state.error = null;
       })
       .addCase(searchProducts.rejected, (state, action) => {
-        state.searchLoading = false;
-        state.searchError = action.payload;
+        state.loading = false;
+        state.error = action.payload;
       })
-      // Create Product
       .addCase(createProduct.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createProduct.fulfilled, (state, action) => {
         state.loading = false;
-        state.products.unshift(action.payload);
+        state.products.push(action.payload);
         state.error = null;
       })
       .addCase(createProduct.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Update Product
+      .addCase(updateProduct.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateProduct.fulfilled, (state, action) => {
+        state.loading = false;
         const index = state.products.findIndex(p => p.id === action.payload.id);
         if (index !== -1) {
           state.products[index] = action.payload;
         }
-        if (state.currentProduct?.id === action.payload.id) {
+        if (state.currentProduct && state.currentProduct.id === action.payload.id) {
           state.currentProduct = action.payload;
         }
+        state.error = null;
       })
-      // Update Stock
-      .addCase(updateProductStock.fulfilled, (state, action) => {
-        const index = state.products.findIndex(p => p.id === action.payload.id);
-        if (index !== -1) {
-          state.products[index] = action.payload;
-        }
-        if (state.currentProduct?.id === action.payload.id) {
-          state.currentProduct = action.payload;
-        }
+      .addCase(updateProduct.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
-      // Delete Product
+      .addCase(deleteProduct.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(deleteProduct.fulfilled, (state, action) => {
+        state.loading = false;
         state.products = state.products.filter(p => p.id !== action.payload);
-        if (state.currentProduct?.id === action.payload) {
+        if (state.currentProduct && state.currentProduct.id === action.payload) {
           state.currentProduct = null;
         }
+        state.error = null;
+      })
+      .addCase(deleteProduct.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
-  },
+  }
 });
 
-export const { clearError, clearCurrentProduct, clearSearchResults, setPagination } = productSlice.actions;
+export const { clearProducts, clearCurrentProduct, clearError } = productSlice.actions;
 export default productSlice.reducer;

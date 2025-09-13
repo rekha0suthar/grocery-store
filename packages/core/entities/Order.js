@@ -11,6 +11,7 @@ export class Order extends BaseEntity {
     this.userId = data.userId || null;
     this.items = data.items || []; 
     this.status = data.status || 'pending'; 
+    this.totalAmount = data.totalAmount || 0;
     this.discountAmount = data.discountAmount || 0;
     this.shippingAmount = data.shippingAmount || 0;
     this.taxAmount = data.taxAmount || 0;
@@ -28,6 +29,10 @@ export class Order extends BaseEntity {
     this.cancellationReason = data.cancellationReason || null;
     this.processedBy = data.processedBy || null;
     this.processedAt = data.processedAt || null;
+    
+    if (this.items && this.items.length > 0) {
+      this.calculateTotals();
+    }
   }
 
   isValid() {
@@ -165,7 +170,15 @@ export class Order extends BaseEntity {
   }
 
   calculateTotals() {
-    this.totalAmount = this.items.reduce((total, item) => total + item.lineTotal(), 0);
+    this.totalAmount = this.items.reduce((total, item) => {
+      // Handle both OrderItem instances and plain objects
+      if (typeof item.lineTotal === 'function') {
+        return total + item.lineTotal();
+      } else {
+        // For plain objects, calculate line total manually
+        return total + (item.productPrice * item.quantity);
+      }
+    }, 0);
     this.finalAmount = Math.max(0, this.totalAmount + this.shippingAmount + this.taxAmount - this.discountAmount);
     this.updateTimestamp();
   }

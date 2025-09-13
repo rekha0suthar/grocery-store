@@ -14,6 +14,7 @@ const router = express.Router();
 const productController = new ProductController();
 
 router.get('/', paginationValidation, handleValidationErrors, productController.getAllProducts);
+router.get('/featured', paginationValidation, handleValidationErrors, productController.getFeaturedProducts);
 router.get('/search', searchValidation, handleValidationErrors, productController.searchProducts);
 router.get('/:id', productIdValidation, handleValidationErrors, productController.getProductById);
 
