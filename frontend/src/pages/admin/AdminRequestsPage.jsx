@@ -71,13 +71,11 @@ const AdminRequestsPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Manage Requests</h1>
         <p className="text-gray-600">Review and manage store manager requests</p>
       </div>
 
-      {/* Requests List */}
       {requests.length > 0 ? (
         <div className="space-y-6">
           {requests.map((request) => {
@@ -148,7 +146,6 @@ const AdminRequestsPage = () => {
                     </div>
                   </div>
                   
-                  {/* Request Details */}
                   <div className="space-y-3 mb-6">
                     <h4 className="text-sm font-medium text-gray-900">Request Information</h4>
                     

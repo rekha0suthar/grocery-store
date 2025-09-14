@@ -43,14 +43,12 @@ const CategoriesPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
         <p className="text-gray-600">Browse products by category</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Tree */}
         <Card>
           <Card.Header>
             <h3 className="text-lg font-semibold text-gray-900">Category Tree</h3>
@@ -65,8 +63,7 @@ const CategoriesPage = () => {
             )}
           </Card.Content>
         </Card>
-
-        {/* Categories List */}
+            
         <Card>
           <Card.Header>
             <h3 className="text-lg font-semibold text-gray-900">All Categories</h3>

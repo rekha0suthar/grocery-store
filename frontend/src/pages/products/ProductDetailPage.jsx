@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
 import { fetchProductById } from '../../store/slices/productSlice.js';
 import { addToCart } from '../../store/slices/cartSlice.js';
-import { addToWishlist, removeFromWishlist } from '../../store/slices/wishlistSlice.js'; // Add this
+import { addToWishlist, removeFromWishlist } from '../../store/slices/wishlistSlice.js';
 import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
@@ -16,9 +16,9 @@ const ProductDetailPage = () => {
   const dispatch = useAppDispatch();
   const { currentProduct, loading } = useAppSelector((state) => state.products);
   const { categories } = useAppSelector((state) => state.categories);
-  const { items: wishlistItems } = useAppSelector((state) => state.wishlist); // Add this
+  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
   const [quantity, setQuantity] = useState(1);
-  const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false); // Add this state
+  const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -130,10 +130,33 @@ const ProductDetailPage = () => {
            currentProduct.nutritionInfo;
   };
 
+  const renderNutritionInfo = () => {
+    if (!currentProduct.nutritionInfo) return null;
+
+    const nutritionEntries = Object.entries(currentProduct.nutritionInfo);
+    
+    if (nutritionEntries.length === 0) return null;
+
+    return (
+      <div className="py-2">
+        <dt className="text-sm font-medium text-gray-500 mb-2">Nutrition Information</dt>
+        <dd className="text-sm text-gray-900">
+          <div className="grid grid-cols-2 gap-2">
+            {nutritionEntries.map(([key, value]) => (
+              <div key={key} className="flex justify-between">
+                <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                <span className="font-medium">{value}</span>
+              </div>
+            ))}
+          </div>
+        </dd>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
         <Button
           variant="ghost"
           onClick={() => navigate('/products')}
@@ -171,8 +194,8 @@ const ProductDetailPage = () => {
                     <span className="text-lg text-red-600 line-through">
                       ${discountInfo.originalPrice}
                     </span>
-                    <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded-full">
-                      -{discountInfo.discountPercent}% OFF
+                    <span className="bg-green-100 text-green-800 text-sm font-bold px-2 py-1 rounded-full">
+                      {discountInfo.discountPercent}% OFF
                     </span>
                   </>
                 )}
@@ -189,7 +212,6 @@ const ProductDetailPage = () => {
               </p>
             </div>
 
-            {/* Stock Status */}
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-gray-700">Availability:</span>
               <span className={`text-sm px-3 py-1 rounded-full font-medium ${
@@ -347,39 +369,7 @@ const ProductDetailPage = () => {
                     </div>
                   )}
                   
-                  {currentProduct.nutritionInfo && (
-                    <div className="py-2">
-                      <dt className="text-sm font-medium text-gray-500 mb-2">Nutrition Information</dt>
-                      <dd className="text-sm text-gray-900">
-                        <div className="grid grid-cols-2 gap-2">
-                          {currentProduct.nutritionInfo.calories && (
-                            <div className="flex justify-between">
-                              <span>Calories:</span>
-                              <span className="font-medium">{currentProduct.nutritionInfo.calories}</span>
-                            </div>
-                          )}
-                          {currentProduct.nutritionInfo.protein && (
-                            <div className="flex justify-between">
-                              <span>Protein:</span>
-                              <span className="font-medium">{currentProduct.nutritionInfo.protein}</span>
-                            </div>
-                          )}
-                          {currentProduct.nutritionInfo.carbs && (
-                            <div className="flex justify-between">
-                              <span>Carbs:</span>
-                              <span className="font-medium">{currentProduct.nutritionInfo.carbs}</span>
-                            </div>
-                          )}
-                          {currentProduct.nutritionInfo.fiber && (
-                            <div className="flex justify-between">
-                              <span>Fiber:</span>
-                              <span className="font-medium">{currentProduct.nutritionInfo.fiber}</span>
-                            </div>
-                          )}
-                        </div>
-                      </dd>
-                    </div>
-                  )}
+                  {renderNutritionInfo()}
                 </dl>
               </div>
             </div>

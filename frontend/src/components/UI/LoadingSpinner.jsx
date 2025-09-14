@@ -11,7 +11,9 @@ const LoadingSpinner = ({ size = 'md', className = '' }) => {
 
   return (
     <Loader2 
-      className={`animate-spin ${sizeClasses[size]} ${className}`} 
+      className={`animate-spin ${sizeClasses[size]} ${className}`}
+      role="status"
+      aria-label="Loading"
     />
   );
 };

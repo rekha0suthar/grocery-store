@@ -22,8 +22,11 @@ import { toast } from 'react-hot-toast';
 
 const HomePage = () => {
   const dispatch = useAppDispatch();
-  const { products, loading: productsLoading } = useAppSelector((state) => state.products);
-  const { categories, loading: categoriesLoading } = useAppSelector((state) => state.categories);
+  const productsState = useAppSelector((state) => state.products) || { products: [], loading: false };
+  const categoriesState = useAppSelector((state) => state.categories) || { categories: [], loading: false };
+  
+  const { products = [], loading: productsLoading = false } = productsState;
+  const { categories = [], loading: categoriesLoading = false } = categoriesState;
 
   useEffect(() => {
     dispatch(fetchProducts({ limit: 8 }));

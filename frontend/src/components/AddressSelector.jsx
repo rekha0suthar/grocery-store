@@ -18,9 +18,6 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
   const { addresses, loading } = useAppSelector((state) => state.addresses);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
-  console.log('AddressSelector - addresses:', addresses);
-  console.log('AddressSelector - loading:', loading);
-
   const handleSelectAddress = (address) => {
     dispatch(selectAddress(address.id));
     onAddressSelect(address);
@@ -157,7 +154,6 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-md w-full mx-4 p-6">
@@ -187,4 +183,5 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
   );
 };
 
-export default AddressSelector; 
+export default AddressSelector;
+ 

@@ -32,7 +32,6 @@ const ModernHeader = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch categories when component mounts
     dispatch(fetchCategories({ limit: 10 }));
   }, [dispatch]);
 
@@ -50,7 +49,7 @@ const ModernHeader = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      dispatch(searchProducts({ q: searchQuery })); // Changed from 'query' to 'q'
+      dispatch(searchProducts({ q: searchQuery }));
       navigate(`/products?search=${searchQuery}`);
     }
   };
@@ -61,7 +60,6 @@ const ModernHeader = () => {
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      {/* Top Bar */}
       <div className="bg-green-600 text-white py-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between text-sm">
@@ -102,10 +100,8 @@ const ModernHeader = () => {
         </div>
       </div>
 
-      {/* Main Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
@@ -118,7 +114,6 @@ const ModernHeader = () => {
             </div>
           </Link>
 
-          {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
             <form onSubmit={handleSearch} className="relative">
               <div className="relative">
@@ -141,14 +136,11 @@ const ModernHeader = () => {
             </form>
           </div>
 
-          {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Mobile Search */}
             <button className="md:hidden p-2 text-gray-500 hover:text-gray-700">
               <Search className="w-6 h-6" />
             </button>
 
-            {/* Wishlist */}
             <button 
               onClick={handleWishlistClick}
               className="relative p-2 text-gray-500 hover:text-gray-700 transition-colors"
@@ -161,7 +153,6 @@ const ModernHeader = () => {
               )}
             </button>
 
-            {/* Cart */}
             <button
               onClick={() => dispatch(openCart())}
               className="relative p-2 text-gray-500 hover:text-gray-700"
@@ -174,7 +165,6 @@ const ModernHeader = () => {
               )}
             </button>
 
-            {/* User Menu */}
             {user ? (
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -216,7 +206,6 @@ const ModernHeader = () => {
               </div>
             )}
 
-            {/* Mobile Menu */}
             <button
               onClick={() => dispatch(toggleSidebar())}
               className="md:hidden p-2 text-gray-500 hover:text-gray-700"
@@ -227,7 +216,6 @@ const ModernHeader = () => {
         </div>
       </div>
 
-      {/* Navigation Menu - Replace the hardcoded categories */}
       <nav className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center space-x-8 py-3 overflow-x-auto">

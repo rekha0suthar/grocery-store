@@ -1,4 +1,3 @@
-
 export { 
   PaymentValidationRules, 
   PaymentFormatters, 
@@ -41,9 +40,11 @@ export function formatValidationErrors(validationResult) {
 export function validateField(fieldName, value, validationType = 'user') {  
   let validation;
   if (validationType === 'user') {
-    validation = { isValid: true, message: "Valid" }; // TODO: Add proper validation
+    validation = { isValid: true, errors: {} }; // TODO: Add proper validation
   } else if (validationType === 'product') {
-    validation = { isValid: true, message: "Valid" }; // TODO: Add proper validation
+    validation = { isValid: true, errors: {} }; // TODO: Add proper validation
+  } else {
+    validation = { isValid: true, errors: {} };
   }
   
   return validation.errors[fieldName] || null;

@@ -121,7 +121,7 @@ export const PaymentValidationRules = {
   },
 
   validatePaymentMethod: (paymentMethod) => {
-    const validMethods = ['credit_card', 'debit_card', 'paypal', 'cash_on_delivery', 'cod'];
+    const validMethods = ['credit_card', 'debit_card', 'paypal', 'cash_on_delivery'];
     
     return {
       isValid: validMethods.includes(paymentMethod),

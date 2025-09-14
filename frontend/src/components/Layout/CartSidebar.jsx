@@ -18,7 +18,6 @@ const CartSidebar = () => {
     if (newQuantity <= 0) {
       dispatch(removeFromCart(productId));
     } else {
-      // Check if new quantity exceeds stock
       const maxQuantity = item?.stock !== undefined ? item.stock : newQuantity;
       const finalQuantity = Math.min(newQuantity, maxQuantity);
       
@@ -31,24 +30,18 @@ const CartSidebar = () => {
   };
 
   const handleCheckout = () => {
-    console.log('Checkout button clicked!'); // Debug log
-    console.log('Items in cart:', items.length); // Debug log
     
     if (items.length === 0) {
       toast.error('Your cart is empty!');
       return;
     }
     
-    console.log('Navigating to checkout...'); // Debug log
-    // Close cart and navigate to checkout
     dispatch(closeCart());
     navigate('/checkout');
-    console.log('Navigation called'); // Debug log
   };
 
   return (
     <>
-      {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-50"
@@ -56,7 +49,6 @@ const CartSidebar = () => {
         />
       )}
 
-      {/* Cart Sidebar */}
       <div
         className={clsx(
           'fixed top-0 right-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50',
@@ -64,7 +56,6 @@ const CartSidebar = () => {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
               Shopping Cart ({totalItems})
@@ -77,7 +68,6 @@ const CartSidebar = () => {
             </button>
           </div>
 
-          {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-6">
             {items.length === 0 ? (
               <div className="text-center py-12">
@@ -136,7 +126,6 @@ const CartSidebar = () => {
             )}
           </div>
 
-          {/* Footer */}
           {items.length > 0 && (
             <div className="border-t border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">

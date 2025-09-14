@@ -58,21 +58,16 @@ export const ModernRegisterPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Clear previous errors
       clearErrors();
 
-      // Combine first and last name for backend compatibility
       const registrationData = {
         ...data,
         name: `${data.firstName} ${data.lastName || ''}`.trim()
       };
 
-      // Client-side validation using shared validators
       const validation = validateUserRegistration(registrationData);
-      console.log('validation', validation);
       
       if (!validation.isValid) {
-        // Handle validation errors correctly
         Object.keys(validation.errors).forEach(field => {
           setError(field, {
             type: 'manual',
@@ -83,12 +78,10 @@ export const ModernRegisterPage = () => {
         return;
       }
 
-      // If validation passes, proceed with API call
       const result = await dispatch(registerUser(registrationData));
       
       if (result.type.endsWith('/fulfilled')) {
         if (result.payload.requiresApproval) {
-          // Store manager registration - show approval message
           toast.success('Registration submitted! Your request has been sent to an administrator for approval.');
           navigate('/login', { 
             state: { 
@@ -96,7 +89,6 @@ export const ModernRegisterPage = () => {
             }
           });
         } else {
-          // All registrations (customer, admin) - redirect to login
           toast.success('Registration successful! Please login to continue.');
           navigate('/login', { 
             state: { 
@@ -115,7 +107,6 @@ export const ModernRegisterPage = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div>
@@ -133,7 +124,6 @@ export const ModernRegisterPage = () => {
 
           <div className="mt-8">
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {/* Role Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Account Type *
@@ -155,7 +145,6 @@ export const ModernRegisterPage = () => {
                 )}
               </div>
 
-              {/* Name Fields */}
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -202,7 +191,6 @@ export const ModernRegisterPage = () => {
                 </div>
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address *
@@ -226,7 +214,6 @@ export const ModernRegisterPage = () => {
                 )}
               </div>
 
-              {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number
@@ -248,7 +235,6 @@ export const ModernRegisterPage = () => {
                 )}
               </div>
 
-              {/* Store Manager specific fields */}
               {selectedRole === 'store_manager' && (
                 <>
                   <div>
@@ -314,7 +300,6 @@ export const ModernRegisterPage = () => {
                 </>
               )}
 
-              {/* Password Fields */}
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -404,7 +389,6 @@ export const ModernRegisterPage = () => {
         </div>
       </div>
 
-      {/* Right side - Image */}
       <div className="hidden lg:block relative w-0 flex-1">
         <img
           className="absolute inset-0 h-full w-full object-cover"

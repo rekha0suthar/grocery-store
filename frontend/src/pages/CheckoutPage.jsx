@@ -32,11 +32,6 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { items, totalItems, totalPrice } = useAppSelector((state) => state.cart);
   const { selectedAddressId, addresses, loading: addressesLoading, error: addressesError } = useAppSelector((state) => state.addresses);
-  
-  // Add debugging
-  console.log('Addresses state:', { addresses, addressesLoading, addressesError, selectedAddressId });
-  console.log('Addresses length:', addresses?.length);
-  console.log('Addresses data:', addresses);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -59,7 +54,6 @@ const CheckoutPage = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [useSavedAddress, setUseSavedAddress] = useState(false);
 
-  // Load selected address data when address is selected
   useEffect(() => {
     if (selectedAddressId && useSavedAddress) {
       const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
@@ -79,7 +73,6 @@ const CheckoutPage = () => {
     }
   }, [selectedAddressId, addresses, useSavedAddress]);
 
-  // Add this useEffect to fetch addresses when component mounts
   useEffect(() => {
     console.log('Fetching addresses...');
     dispatch(fetchUserAddresses()).then((result) => {
@@ -124,7 +117,6 @@ const CheckoutPage = () => {
         }
         break;
       default:
-        // For required fields, check if empty
         if (!value.trim()) {
           error = `${name.charAt(0).toUpperCase() + name.slice(1)} is required`;
         }
@@ -137,7 +129,6 @@ const CheckoutPage = () => {
     const { name, value } = e.target;
     let formattedValue = value;
     
-    // Use core formatters
     if (name === 'cardNumber') {
       formattedValue = PaymentFormatters.formatCardNumber(value);
     } else if (name === 'expiryDate') {
@@ -153,7 +144,6 @@ const CheckoutPage = () => {
       [name]: formattedValue
     }));
     
-    // Real-time validation
     const error = validateField(name, formattedValue);
     setValidationErrors(prev => ({
       ...prev,
@@ -164,28 +154,23 @@ const CheckoutPage = () => {
   const validateForm = () => {
     const errors = {};
     
-    // If using saved address, only validate payment fields
     if (useSavedAddress) {
-      // Check if there are any saved addresses
       if (!Array.isArray(addresses) || addresses.length === 0) {
         errors.savedAddress = 'No saved addresses available';
         return false;
       }
       
-      // Check if an address is selected
       if (!selectedAddressId) {
         errors.savedAddress = 'Please select a saved address';
         return false;
       }
       
-      // Only validate payment method and card fields if applicable
       if (formData.paymentMethod === 'card') {
         const cardFields = ['cardNumber', 'expiryDate', 'cvv'];
         cardFields.forEach(field => {
           if (!formData[field].trim()) {
             errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required for card payments`;
           } else {
-            // Validate the field format
             const error = validateField(field, formData[field]);
             if (error) {
               errors[field] = error;
@@ -194,13 +179,11 @@ const CheckoutPage = () => {
         });
       }
     } else {
-      // If not using saved address, validate all fields
       const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
       requiredFields.forEach(field => {
         if (!formData[field].trim()) {
           errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
         } else {
-          // Validate the field format
           const error = validateField(field, formData[field]);
           if (error) {
             errors[field] = error;
@@ -208,7 +191,6 @@ const CheckoutPage = () => {
         }
       });
 
-      // Validate card fields if payment method is card
       if (formData.paymentMethod === 'card') {
         const cardFields = ['cardNumber', 'expiryDate', 'cvv'];
         cardFields.forEach(field => {
@@ -241,7 +223,6 @@ const CheckoutPage = () => {
       zipCode: address.zipCode,
     }));
 
-    // Clear validation errors for address fields when using saved address
     setValidationErrors(prev => {
       const newErrors = { ...prev };
       const addressFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
@@ -273,7 +254,6 @@ const CheckoutPage = () => {
       return;
     }
 
-    // Validate form
     if (!validateForm()) {
       const errorCount = Object.keys(validationErrors).length;
       if (useSavedAddress) {
@@ -288,7 +268,6 @@ const CheckoutPage = () => {
       return;
     }
 
-    // Additional check for saved address
     if (useSavedAddress && !selectedAddressId) {
       toast.error('Please select a saved address');
       return;
@@ -297,20 +276,17 @@ const CheckoutPage = () => {
     setIsProcessing(true);
 
     try {
-      // Map frontend payment method to backend expected values
       const paymentMethodMap = {
         'card': 'credit_card',
         'cod': 'cash_on_delivery'
       };
 
-      // Calculate amounts
       const subtotal = totalPrice;
-      const shippingAmount = 0; // Free shipping for now
-      const taxAmount = 0; // No tax for now
-      const discountAmount = 0; // No discount for now
+      const shippingAmount = 0;
+      const taxAmount = 0;
+      const discountAmount = 0;
       const finalAmount = subtotal + shippingAmount + taxAmount - discountAmount;
 
-      // Prepare order data
       const orderData = {
         items: items.map(item => ({
           productId: item.productId,
@@ -349,10 +325,8 @@ const CheckoutPage = () => {
         notes: ''
       };
 
-      // Create order
       const result = await dispatch(createOrder(orderData)).unwrap();
       
-      // Clear cart and selected address
       dispatch(clearCart());
       dispatch(clearSelectedAddress());
       setIsOrderPlaced(true);
@@ -787,7 +761,6 @@ const CheckoutPage = () => {
                 </div>
               </Card>
 
-              {/* Place Order Button */}
               <div className="flex justify-end">
                 <Button
                   type="submit"
@@ -802,7 +775,6 @@ const CheckoutPage = () => {
         </div>
       </div>
 
-      {/* Address Form Modal */}
       {showAddressForm && (
         <AddressForm
           onSave={handleAddressFormSave}

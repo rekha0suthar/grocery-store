@@ -35,7 +35,7 @@ const AdminCategoriesPage = () => {
         await dispatch(updateCategory({ id: editingCategory.id, categoryData: data })).unwrap();
         toast.success('Category updated successfully!');
         setEditingCategory(null);
-        setShowCreateForm(false); // Close the form after successful update
+        setShowCreateForm(false);
       } else {
         await dispatch(createCategory(data)).unwrap();
         toast.success('Category created successfully!');
@@ -78,10 +78,9 @@ const AdminCategoriesPage = () => {
     reset();
   };
 
-  // Get root categories for parent selection (exclude the current category being edited)
   const getParentCategoryOptions = () => {
     return categories
-      .filter(cat => cat.id !== editingCategory?.id) // Don't allow self as parent
+      .filter(cat => cat.id !== editingCategory?.id)
       .map(cat => ({
         value: cat.id,
         label: cat.name
@@ -98,7 +97,6 @@ const AdminCategoriesPage = () => {
 
   return (
     <div className="pt-6 pl-6 pr-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Manage Categories</h1>
@@ -107,9 +105,9 @@ const AdminCategoriesPage = () => {
         
         <Button
           onClick={() => {
-            setEditingCategory(null); // Reset editing state
+            setEditingCategory(null);
             setShowCreateForm(true);
-            reset(); // Clear form data
+            reset();
           }}
           className="flex items-center"
         >
@@ -118,7 +116,6 @@ const AdminCategoriesPage = () => {
         </Button>
       </div>
 
-      {/* Create/Edit Form */}
       {showCreateForm && (
         <Card>
           <Card.Header>
@@ -181,7 +178,6 @@ const AdminCategoriesPage = () => {
         </Card>
       )}
 
-      {/* Categories List */}
       {categories.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category) => (

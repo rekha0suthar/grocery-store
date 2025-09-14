@@ -35,7 +35,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -43,7 +42,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         />
       )}
 
-      {/* Sidebar */}
       <div
         className={clsx(
           'fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
@@ -85,7 +83,6 @@ const Sidebar = ({ isOpen, onClose }) => {
             })}
           </div>
 
-          {/* Admin/Store Manager Navigation */}
           {(isAdmin || isStoreManager) && (
             <div className="mt-8">
               <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -94,7 +91,6 @@ const Sidebar = ({ isOpen, onClose }) => {
               <div className="mt-2 space-y-1">
                 {adminNavigation
                   .filter(item => {
-                    // Store managers can't manage categories
                     if (isStoreManager && item.href === '/admin/categories') {
                       return false;
                     }

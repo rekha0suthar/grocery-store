@@ -51,7 +51,6 @@ const AddressForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
     const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
     const missingFields = requiredFields.filter(field => !formData[field].trim());
     

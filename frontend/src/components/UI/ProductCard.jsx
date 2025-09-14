@@ -35,7 +35,6 @@ const ProductCard = ({
     }
   };
 
-  // Handle add to cart
   const handleAddToCart = (e) => {
     e.stopPropagation(); 
     

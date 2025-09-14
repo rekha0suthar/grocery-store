@@ -75,7 +75,6 @@ const AdminDashboardPage = () => {
 
   return (
     <div className="pt-6 pl-6 pr-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600">
@@ -83,7 +82,6 @@ const AdminDashboardPage = () => {
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -103,9 +101,7 @@ const AdminDashboardPage = () => {
         })}
       </div>
 
-      {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Requests */}
         <Card>
           <Card.Header>
             <h3 className="text-lg font-semibold text-gray-900">Pending Requests</h3>
@@ -144,7 +140,6 @@ const AdminDashboardPage = () => {
           </Card.Content>
         </Card>
 
-        {/* Low Stock Products */}
         <Card>
           <Card.Header>
             <h3 className="text-lg font-semibold text-gray-900">Low Stock Alert</h3>
@@ -182,7 +177,6 @@ const AdminDashboardPage = () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
       <Card>
         <Card.Header>
           <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
