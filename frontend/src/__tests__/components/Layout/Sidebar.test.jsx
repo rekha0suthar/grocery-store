@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import Sidebar from '../../../components/Layout/Sidebar.jsx';
-import { renderWithProviders } from '../../utils/test-utils.jsx';
+import { renderWithProviders } from '../../utils/test-utils.js';
 
 // Mock react-router-dom
 const mockNavigate = jest.fn();

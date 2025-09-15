@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import CheckoutPage from '../../pages/CheckoutPage.jsx';
-import { renderWithProviders, createMockState } from '../utils/test-utils.jsx';
+import { renderWithProviders, createMockState } from '../utils/test-utils.js';
 
 // Mock react-hot-toast
 jest.mock('react-hot-toast', () => ({

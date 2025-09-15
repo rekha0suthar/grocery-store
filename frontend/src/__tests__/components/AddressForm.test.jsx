@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import AddressForm from '../../components/AddressForm.jsx';
-import { renderWithProviders } from '../utils/test-utils.jsx';
+import { renderWithProviders } from '../utils/test-utils.js';
 import { saveAddress, updateAddress } from '../../store/slices/addressSlice.js';
 
 // Mock window.alert

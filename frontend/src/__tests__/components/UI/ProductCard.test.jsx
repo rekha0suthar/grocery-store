@@ -2,7 +2,7 @@ import React from 'react';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import GridProductCard from '../../../components/UI/GridProductCard.jsx';
 import ListProductCard from '../../../components/UI/ListProductCard.jsx';
-import { renderWithProviders, createMockState } from '../../utils/test-utils.jsx';
+import { renderWithProviders, createMockState } from '../../utils/test-utils.js';
 
 // Mock react-router-dom
 const mockNavigate = jest.fn();

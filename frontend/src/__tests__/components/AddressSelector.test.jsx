@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import AddressSelector from '../../components/AddressSelector.jsx';
-import { renderWithProviders } from '../utils/test-utils.jsx';
+import { renderWithProviders } from '../utils/test-utils.js';
 
 const mockAddress = {
   id: 'address-1',

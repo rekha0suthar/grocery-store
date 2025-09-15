@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import ProductDetailPage from '../../../pages/products/ProductDetailPage.jsx';
-import { renderWithProviders, mockProduct } from '../../utils/test-utils.jsx';
+import { renderWithProviders, mockProduct } from '../../utils/test-utils.js';
 
 // Mock react-router-dom
 const mockNavigate = jest.fn();
@@ -122,7 +122,7 @@ describe('ProductDetailPage', () => {
     renderWithProviders(<ProductDetailPage />, { preloadedState: initialState });
     
     expect(screen.getByText('Test Product')).toBeInTheDocument();
-    expect(screen.getByText('A test product for testing')).toBeInTheDocument();
+    expect(screen.getByText('A test product')).toBeInTheDocument();
     expect(screen.getByText('$10.99')).toBeInTheDocument();
   });
 
