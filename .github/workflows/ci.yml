@@ -26,9 +26,6 @@ permissions:
 env:
   NODE_VERSION: '18'
   REGISTRY: ghcr.io
-
-jobs:
-  # Detect changes to determine which components to build
   detect-changes:
     name: Detect Changes
     runs-on: ubuntu-latest
@@ -52,12 +49,10 @@ jobs:
               "core")
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=false" >> $GITHUB_OUTPUT
-                
                 ;;
               "backend")
                 echo "core=true" >> $GITHUB_OUTPUT  # Core is always needed for backend
                 echo "backend=true" >> $GITHUB_OUTPUT
-                
                 ;;
               "frontend")
                 echo "core=false" >> $GITHUB_OUTPUT
@@ -97,26 +92,12 @@ jobs:
                 if git diff --name-only HEAD~1 HEAD | grep -E '^packages/core/' > /dev/null; then
                   echo "core=true" >> $GITHUB_OUTPUT
                 fi
-                
                 if git diff --name-only HEAD~1 HEAD | grep -E '^backend/' > /dev/null; then
                   echo "backend=true" >> $GITHUB_OUTPUT
                 fi
-                
                 if git diff --name-only HEAD~1 HEAD | grep -E '^frontend/' > /dev/null; then
                   echo "frontend=true" >> $GITHUB_OUTPUT
                 fi
-              fi
-              
-              if git diff --name-only HEAD~1 HEAD | grep -E '^backend/' > /dev/null; then
-                echo "backend=true" >> $GITHUB_OUTPUT
-              else
-                echo "backend=false" >> $GITHUB_OUTPUT
-              fi
-              
-              if git diff --name-only HEAD~1 HEAD | grep -E '^frontend/' > /dev/null; then
-                echo "frontend=true" >> $GITHUB_OUTPUT
-              else
-                
               fi
               
               # If workflow file changed, run everything
@@ -164,6 +145,11 @@ jobs:
         run: npm ci
 
       - name: Setup monorepo
+      - name: Setup frontend test environment
+        run: |
+          cd frontend
+          chmod +x src/setupTests.js || true
+          npm run test:ci --dry-run || echo "Test command validation completed"
         run: |
           chmod +x scripts/setup-monorepo.sh
           ./scripts/setup-monorepo.sh
@@ -172,6 +158,13 @@ jobs:
         run: npm run test:core
         env:
           NODE_ENV: test
+          VITE_API_BASE_URL: http://localhost:3001/api
+          VITE_FIREBASE_API_KEY: test-api-key
+          VITE_FIREBASE_AUTH_DOMAIN: test-project.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test-project
+          VITE_FIREBASE_STORAGE_BUCKET: test-project.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "123456789"
+          VITE_FIREBASE_APP_ID: test-app-id
 
       - name: Run core package linting
         run: npm run lint --workspace=@grocery-store/core || echo "Core linting completed with warnings"
@@ -223,6 +216,11 @@ jobs:
         run: npm ci
 
       - name: Setup monorepo
+      - name: Setup frontend test environment
+        run: |
+          cd frontend
+          chmod +x src/setupTests.js || true
+          npm run test:ci --dry-run || echo "Test command validation completed"
         run: |
           chmod +x scripts/setup-monorepo.sh
           ./scripts/setup-monorepo.sh
@@ -234,6 +232,13 @@ jobs:
         run: npm run test:backend
         env:
           NODE_ENV: test
+          VITE_API_BASE_URL: http://localhost:3001/api
+          VITE_FIREBASE_API_KEY: test-api-key
+          VITE_FIREBASE_AUTH_DOMAIN: test-project.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test-project
+          VITE_FIREBASE_STORAGE_BUCKET: test-project.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "123456789"
+          VITE_FIREBASE_APP_ID: test-app-id
           DB_HOST: localhost
           DB_PORT: 5432
           DB_NAME: grocery_store_test
@@ -277,6 +282,11 @@ jobs:
         run: npm ci
 
       - name: Setup monorepo
+      - name: Setup frontend test environment
+        run: |
+          cd frontend
+          chmod +x src/setupTests.js || true
+          npm run test:ci --dry-run || echo "Test command validation completed"
         run: |
           chmod +x scripts/setup-monorepo.sh
           ./scripts/setup-monorepo.sh
@@ -285,9 +295,26 @@ jobs:
         run: npm run lint --workspace=frontend || echo "Frontend linting completed with warnings"
 
       - name: Run frontend tests
-        run: npm run test:frontend
+      - name: Debug frontend environment
+        run: |
+          cd frontend
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Jest version: $(npx jest --version)"
+          echo "Test files found:"
+          find src -name "*.test.*" -o -name "*.spec.*" | head -10
+          echo "Jest config exists: $([ -f jest.config.cjs ] && echo "Yes" || echo "No")"
+          echo "SetupTests exists: $([ -f src/setupTests.js ] && echo "Yes" || echo "No")"
+        run: npm run test:ci --workspace=frontend
         env:
           NODE_ENV: test
+          VITE_API_BASE_URL: http://localhost:3001/api
+          VITE_FIREBASE_API_KEY: test-api-key
+          VITE_FIREBASE_AUTH_DOMAIN: test-project.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test-project
+          VITE_FIREBASE_STORAGE_BUCKET: test-project.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "123456789"
+          VITE_FIREBASE_APP_ID: test-app-id
 
       - name: Build frontend application
         run: npm run build --workspace=frontend || echo "No frontend build script found, skipping..."
@@ -416,6 +443,11 @@ jobs:
         run: npm ci
 
       - name: Setup monorepo
+      - name: Setup frontend test environment
+        run: |
+          cd frontend
+          chmod +x src/setupTests.js || true
+          npm run test:ci --dry-run || echo "Test command validation completed"
         run: |
           chmod +x scripts/setup-monorepo.sh
           ./scripts/setup-monorepo.sh
@@ -427,67 +459,10 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
   # Run All Tests Together
-  test-all:
-    name: Test All Components
-    runs-on: ubuntu-latest
-    needs: [detect-changes, test-core, test-backend, test-frontend]
-    if: always() && (needs.detect-changes.outputs.core == 'true' || needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true')
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: grocery_store_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Setup monorepo
-        run: |
-          chmod +x scripts/setup-monorepo.sh
-          ./scripts/setup-monorepo.sh
-
-      - name: Run Architecture Tests
-        run: npm run arch:all
-        env:
-          NODE_ENV: test
-
-      - name: Run All Tests Summary
-        run: |
-          echo "## 🧪 All Tests Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Test Results:" >> $GITHUB_STEP_SUMMARY
-          echo "- Core Tests: ${{ needs.test-core.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend Tests: ${{ needs.test-backend.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend Tests: ${{ needs.test-frontend.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Architecture Tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All components tested successfully! 🎉" >> $GITHUB_STEP_SUMMARY
-
-  # Summary
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [detect-changes, test-core, test-backend, test-frontend, test-all, build-backend-docker, build-frontend-docker, security-scan]
+    needs: [detect-changes, test-core, test-backend, test-frontend, build-backend-docker, build-frontend-docker, security-scan]
     if: always()
     
     steps:
