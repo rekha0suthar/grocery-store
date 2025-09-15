@@ -96,7 +96,7 @@ describe('GridProductCard', () => {
       { preloadedState: createMockState() }
     );
 
-    const addToCartButton = screen.getByText('Add to Cart');
+    const addToCartButton = screen.getByText('Add');
     fireEvent.click(addToCartButton);
     expect(mockOnAddToCart).toHaveBeenCalledWith(mockProduct);
   });
@@ -113,7 +113,7 @@ describe('GridProductCard', () => {
       preloadedState: createMockState()
     });
 
-    expect(screen.queryByText('Add to Cart')).not.toBeInTheDocument();
+    expect(screen.queryByText('Add')).not.toBeInTheDocument();
   });
 
   it('renders placeholder image when no image is provided', () => {
