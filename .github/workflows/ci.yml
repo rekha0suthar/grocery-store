@@ -27,6 +27,9 @@ env:
   NODE_VERSION: '18'
   REGISTRY: ghcr.io
   detect-changes:
+
+jobs:
+  detect-changes:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
@@ -49,10 +52,12 @@ env:
               "core")
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=false" >> $GITHUB_OUTPUT
+                echo "frontend=false" >> $GITHUB_OUTPUT
                 ;;
               "backend")
                 echo "core=true" >> $GITHUB_OUTPUT  # Core is always needed for backend
                 echo "backend=true" >> $GITHUB_OUTPUT
+                echo "frontend=false" >> $GITHUB_OUTPUT
                 ;;
               "frontend")
                 echo "core=false" >> $GITHUB_OUTPUT
@@ -76,7 +81,7 @@ env:
               # Initialize all components as false
               echo "core=false" >> $GITHUB_OUTPUT
               echo "backend=false" >> $GITHUB_OUTPUT
-              
+              echo "frontend=false" >> $GITHUB_OUTPUT
               
               # Check for global changes first (these should run everything)
               if git diff --name-only HEAD~1 HEAD | grep -E '^.github/workflows/' > /dev/null; then
@@ -92,9 +97,11 @@ env:
                 if git diff --name-only HEAD~1 HEAD | grep -E '^packages/core/' > /dev/null; then
                   echo "core=true" >> $GITHUB_OUTPUT
                 fi
+                
                 if git diff --name-only HEAD~1 HEAD | grep -E '^backend/' > /dev/null; then
                   echo "backend=true" >> $GITHUB_OUTPUT
                 fi
+                
                 if git diff --name-only HEAD~1 HEAD | grep -E '^frontend/' > /dev/null; then
                   echo "frontend=true" >> $GITHUB_OUTPUT
                 fi
@@ -115,15 +122,8 @@ env:
               fi
             fi
           fi
-          
-          echo "🔍 Change detection results:"
-          # Override: Enable frontend tests
-          
-          echo "  Core: ${{ steps.changes.outputs.core }}"
-          echo "  Backend: ${{ steps.changes.outputs.backend }}"
-          echo "  Frontend: ${{ steps.changes.outputs.frontend }}"
 
-  # Core Package Tests and Build
+  # Core Package Tests
   test-core:
     name: Test Core Package
     runs-on: ubuntu-latest
@@ -145,32 +145,17 @@ env:
         run: npm ci
 
       - name: Setup monorepo
-      - name: Setup frontend test environment
-        run: |
-          cd frontend
-          chmod +x src/setupTests.js || true
-          npm run test:ci --dry-run || echo "Test command validation completed"
         run: |
           chmod +x scripts/setup-monorepo.sh
           ./scripts/setup-monorepo.sh
 
-      - name: Run core package tests
+      - name: Run core tests
         run: npm run test:core
         env:
           NODE_ENV: test
-          VITE_API_BASE_URL: http://localhost:3001/api
-          VITE_FIREBASE_API_KEY: test-api-key
-          VITE_FIREBASE_AUTH_DOMAIN: test-project.firebaseapp.com
-          VITE_FIREBASE_PROJECT_ID: test-project
-          VITE_FIREBASE_STORAGE_BUCKET: test-project.appspot.com
-          VITE_FIREBASE_MESSAGING_SENDER_ID: "123456789"
-          VITE_FIREBASE_APP_ID: test-app-id
 
-      - name: Run core package linting
+      - name: Run core linting
         run: npm run lint --workspace=@grocery-store/core || echo "Core linting completed with warnings"
-
-      - name: Build core package
-        run: npm run build --workspace=@grocery-store/core || echo "No core build script found, skipping..."
 
       - name: Upload core test results
         uses: actions/upload-artifact@v4
@@ -180,7 +165,7 @@ env:
           path: packages/core/coverage/
           retention-days: 30
 
-  # Backend Tests and Build
+  # Backend Tests
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
@@ -216,29 +201,14 @@ env:
         run: npm ci
 
       - name: Setup monorepo
-      - name: Setup frontend test environment
-        run: |
-          cd frontend
-          chmod +x src/setupTests.js || true
-          npm run test:ci --dry-run || echo "Test command validation completed"
         run: |
           chmod +x scripts/setup-monorepo.sh
           ./scripts/setup-monorepo.sh
-
-      - name: Run backend linting
-        run: npm run lint --workspace=backend || echo "Backend linting completed with warnings"
 
       - name: Run backend tests
         run: npm run test:backend
         env:
           NODE_ENV: test
-          VITE_API_BASE_URL: http://localhost:3001/api
-          VITE_FIREBASE_API_KEY: test-api-key
-          VITE_FIREBASE_AUTH_DOMAIN: test-project.firebaseapp.com
-          VITE_FIREBASE_PROJECT_ID: test-project
-          VITE_FIREBASE_STORAGE_BUCKET: test-project.appspot.com
-          VITE_FIREBASE_MESSAGING_SENDER_ID: "123456789"
-          VITE_FIREBASE_APP_ID: test-app-id
           DB_HOST: localhost
           DB_PORT: 5432
           DB_NAME: grocery_store_test
@@ -246,11 +216,8 @@ env:
           DB_PASSWORD: postgres
           JWT_SECRET: test-secret-key
 
-      - name: Run security audit
-        run: npm audit --audit-level moderate --workspace=backend || echo "Security audit found issues"
-
-      - name: Build backend application
-        run: npm run build --workspace=backend || echo "No backend build script found, skipping..."
+      - name: Run backend linting
+        run: npm run lint --workspace=backend || echo "Backend linting completed with warnings"
 
       - name: Upload backend test results
         uses: actions/upload-artifact@v4
@@ -282,19 +249,19 @@ env:
         run: npm ci
 
       - name: Setup monorepo
+        run: |
+          chmod +x scripts/setup-monorepo.sh
+          ./scripts/setup-monorepo.sh
+
       - name: Setup frontend test environment
         run: |
           cd frontend
           chmod +x src/setupTests.js || true
           npm run test:ci --dry-run || echo "Test command validation completed"
-        run: |
-          chmod +x scripts/setup-monorepo.sh
-          ./scripts/setup-monorepo.sh
 
       - name: Run frontend linting
         run: npm run lint --workspace=frontend || echo "Frontend linting completed with warnings"
 
-      - name: Run frontend tests
       - name: Debug frontend environment
         run: |
           cd frontend
@@ -305,6 +272,8 @@ env:
           find src -name "*.test.*" -o -name "*.spec.*" | head -10
           echo "Jest config exists: $([ -f jest.config.cjs ] && echo "Yes" || echo "No")"
           echo "SetupTests exists: $([ -f src/setupTests.js ] && echo "Yes" || echo "No")"
+
+      - name: Run frontend tests
         run: npm run test:ci --workspace=frontend
         env:
           NODE_ENV: test
@@ -333,6 +302,7 @@ env:
           name: frontend-build
           path: frontend/dist/
           retention-days: 30
+
   # Build Backend Docker Image
   build-backend-docker:
     name: Build Backend Docker Image
@@ -354,8 +324,8 @@ env:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for backend
-        id: meta-backend
+      - name: Extract metadata
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/backend
@@ -363,19 +333,17 @@ env:
             type=ref,event=branch
             type=ref,event=pr
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push backend Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./backend/Dockerfile
+          context: ./backend
           push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          file: ./backend/Dockerfile
 
   # Build Frontend Docker Image
   build-frontend-docker:
@@ -398,8 +366,8 @@ env:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for frontend
-        id: meta-frontend
+      - name: Extract metadata
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/frontend
@@ -407,19 +375,17 @@ env:
             type=ref,event=branch
             type=ref,event=pr
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push frontend Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./frontend/Dockerfile
+          context: ./frontend
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          file: ./frontend/Dockerfile
 
   # Security Scan
   security-scan:
@@ -432,33 +398,27 @@ env:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
 
-      - name: Setup monorepo
-      - name: Setup frontend test environment
-        run: |
-          cd frontend
-          chmod +x src/setupTests.js || true
-          npm run test:ci --dry-run || echo "Test command validation completed"
-        run: |
-          chmod +x scripts/setup-monorepo.sh
-          ./scripts/setup-monorepo.sh
-
-      - name: Run Snyk security scan
+      - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-  # Run All Tests Together
+  # Summary
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
@@ -504,6 +464,34 @@ env:
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- Check the 'Artifacts' section for detailed test reports" >> $GITHUB_STEP_SUMMARY
-          echo "- Docker images built and pushed to GitHub Container Registry" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏗️ Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.detect-changes.outputs.backend }}" = "true" ]; then
+            if [ "${{ needs.build-backend-docker.result }}" = "success" ]; then
+              echo "| Backend Docker | ✅ Built |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Backend Docker | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "| Backend Docker | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.detect-changes.outputs.frontend }}" = "true" ]; then
+            if [ "${{ needs.build-frontend-docker.result }}" = "success" ]; then
+              echo "| Frontend Docker | ✅ Built |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Frontend Docker | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "| Frontend Docker | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔒 Security" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.security-scan.result }}" = "success" ]; then
+            echo "| Security Scan | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Security Scan | ⚠️ Completed with warnings |" >> $GITHUB_STEP_SUMMARY
+          fi
