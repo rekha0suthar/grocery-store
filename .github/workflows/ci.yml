@@ -274,7 +274,8 @@ jobs:
           echo "SetupTests exists: $([ -f src/setupTests.js ] && echo "Yes" || echo "No")"
 
       - name: Run frontend tests
-        run: npm run test:ci --workspace=frontend
+        working-directory: frontend
+        run: npm run test:ci
         env:
           NODE_ENV: test
           VITE_API_BASE_URL: http://localhost:3001/api
