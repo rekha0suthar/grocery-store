@@ -34,5 +34,20 @@ export const orderService = {
   async cancelOrder(id, reason) {
     const response = await api.put(`/orders/${id}/cancel`, { reason });
     return response;
+  },
+
+  async getOrders() {
+    const response = await api.get('/orders');
+    return response;
+  },
+
+  async updateOrder(id, orderData) {
+    const response = await api.put(`/orders/${id}`, orderData);
+    return response;
+  },
+
+  async getOrderHistory() {
+    const response = await api.get('/orders/history');
+    return response;
   }
-}; 
+};

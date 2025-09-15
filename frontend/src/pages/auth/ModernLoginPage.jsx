@@ -6,15 +6,18 @@ import { loginUser } from '../../store/slices/authSlice.js';
 import { validateUserLogin } from '../../utils/validation.js';
 import { toast } from 'react-hot-toast';
 import Button from '../../components/UI/Button.jsx';
+import StatusAlert from '../../components/UI/StatusAlert.jsx';
 import { Eye, EyeOff, ShoppingCart, Mail, Lock } from 'lucide-react';
 
 const ModernLoginPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, requestStatus, loading, error } = useAppSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [showStatusAlert, setShowStatusAlert] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   const {
     register,
@@ -22,61 +25,74 @@ const ModernLoginPage = () => {
     formState: { errors },
   } = useForm();
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      redirectBasedOnRole(user.role);
+  useEffect(() => {    
+    if (!isAuthenticated || !user) {
+      return;
     }
-  }, [isAuthenticated, user, navigate]);
 
-  // Helper function to redirect based on user role
+    if (user.role === 'store_manager') {
+      if (requestStatus?.status === 'approved') {
+        redirectBasedOnRole('store_manager');
+      }
+      return;
+    }
+
+   
+    redirectBasedOnRole(user.role);
+  }, [isAuthenticated, user, requestStatus, navigate]);
+
   const redirectBasedOnRole = (role) => {
     switch (role) {
       case 'customer':
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard');
         break;
       case 'admin':
-        navigate('/admin/dashboard', { replace: true });
+        navigate('/admin/dashboard');
         break;
       case 'store_manager':
-        navigate('/manager/products', { replace: true });
+        navigate('/manager/products');
         break;
       default:
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard');
     }
   };
 
-  const onSubmit = async (data, e) => {
-    // Prevent default form submission
-    e?.preventDefault();
+
+
+  const handleFormSubmit = async (data) => {
     
-    setLoading(true);
     setValidationErrors({});
+    setShowStatusAlert(false);
+    setStatusMessage('');
+    setIsCheckingStatus(false);
     
     try {
-      console.log('Form submitted with data:', data);
-      
-      // Validate using shared validation rules FIRST
-      const validation = validateUserLogin(data);
-      console.log('Validation result:', validation);
-
-      if (!validation.isValid) {
-        setValidationErrors(validation.errors);
-        toast.error('Please fix the validation errors before submitting');
-        setLoading(false);
+      if (!data.email || !data.password) {
+        setValidationErrors({
+          email: !data.email ? 'Email is required' : '',
+          password: !data.password ? 'Password is required' : ''
+        });
+        toast.error('Please fill in all fields');
         return;
       }
 
-      // Only call API if frontend validation passes
-      console.log('Login data being sent:', data);
+      const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+      if (!emailRegex.test(data.email)) {
+        setValidationErrors({ email: 'Invalid email address' });
+        toast.error('Please enter a valid email address');
+        return;
+      }
+
+      if (data.password.length < 6) {
+        setValidationErrors({ password: 'Password must be at least 6 characters' });
+        toast.error('Password must be at least 6 characters');
+        return;
+      }
       
       const result = await dispatch(loginUser(data)).unwrap();
-      console.log('Login successful:', result);
       
-      // Get user role from the result
       const userRole = result.user?.role || 'customer';
       
-      // Show success message with role-specific greeting
       const roleGreetings = {
         customer: 'Welcome back! Start shopping now.',
         admin: 'Welcome back, Administrator!',
@@ -85,41 +101,58 @@ const ModernLoginPage = () => {
       
       toast.success(roleGreetings[userRole] || 'Login successful! Welcome back!');
       
-      // Small delay to ensure state is updated, then redirect based on role
-      setTimeout(() => {
-        redirectBasedOnRole(userRole);
-      }, 100);
       
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error(error || 'Login failed. Please check your credentials.');
+      
+      setValidationErrors({ general: 'Invalid credentials' });
+      toast.error(error || 'Invalid credentials');
     } finally {
-      setLoading(false);
+      setIsCheckingStatus(false);
     }
   };
 
-  // Helper function to get error message (prioritizes validation errors)
+  
   const getErrorMessage = (fieldName) => {
-    // Check shared validation errors first
     if (validationErrors[fieldName]) {
       return validationErrors[fieldName];
     }
-    // Then check react-hook-form errors
+    
     if (errors[fieldName]?.message) {
       return errors[fieldName].message;
     }
     return null;
   };
-
-  // Helper function to check if field has error
+  
   const hasError = (fieldName) => {
     return !!(validationErrors[fieldName] || errors[fieldName]);
   };
 
+  // Show loading state when Redux loading is true
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center">
+                <ShoppingCart className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <h2 className="mt-6 text-3xl font-bold text-gray-900">
+              Welcome Back
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Signing in...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center">
@@ -134,20 +167,37 @@ const ModernLoginPage = () => {
           </p>
         </div>
 
-        {/* Login Form */}
+        {showStatusAlert && (
+          <div className="mb-4">
+            <StatusAlert
+              status={requestStatus?.status || 'pending'}
+              message={statusMessage || requestStatus?.message || 'Your registration request is pending approval from an administrator.'}
+              request={requestStatus?.request || {
+                id: 'test-123',
+                status: 'pending',
+                createdAt: new Date().toISOString()
+              }}
+              profile={requestStatus?.profile || {
+                storeName: 'Test Store',
+                storeAddress: '123 Test Street'
+              }}
+            />
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <form 
             className="space-y-6" 
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
+            onSubmit={handleSubmit(handleFormSubmit)}
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
+                  id="email"
                   type="email"
                   autoComplete="email"
                   placeholder="Enter your email"
@@ -169,12 +219,13 @@ const ModernLoginPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   placeholder="Enter your password"
@@ -191,6 +242,7 @@ const ModernLoginPage = () => {
                 />
                 <button
                   type="button"
+                  aria-label="Toggle password visibility"
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -205,6 +257,12 @@ const ModernLoginPage = () => {
                 <p className="mt-1 text-sm text-red-600">{getErrorMessage('password')}</p>
               )}
             </div>
+
+            {(validationErrors.general || error) && (
+              <div className="text-red-600 text-sm text-center">
+                {validationErrors.general || error}
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -230,10 +288,9 @@ const ModernLoginPage = () => {
               type="submit"
               className="w-full"
               size="lg"
-              loading={loading}
-              disabled={loading}
+              loading={loading || isCheckingStatus}
             >
-              Sign In
+              {isCheckingStatus ? 'Checking Status...' : 'Sign In'}
             </Button>
           </form>
 
@@ -248,10 +305,7 @@ const ModernLoginPage = () => {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <button 
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-              >
+              <button type="button" className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -261,10 +315,7 @@ const ModernLoginPage = () => {
                 <span className="ml-2">Google</span>
               </button>
 
-              <button 
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-              >
+              <button type="button" className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
@@ -274,7 +325,6 @@ const ModernLoginPage = () => {
           </div>
         </div>
 
-        {/* Sign Up Link */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}

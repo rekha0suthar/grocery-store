@@ -32,8 +32,10 @@ const ModernHeader = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchCategories({ limit: 10 }));
-  }, [dispatch]);
+    if (categories.length === 0) {
+      dispatch(fetchCategories({ limit: 10 }));
+    }
+  }, [dispatch, categories.length]);
 
   const handleLogout = async () => {
     try {

@@ -7,15 +7,29 @@ import Button from '../../components/UI/Button.jsx';
 import Input from '../../components/UI/Input.jsx';
 import Select from '../../components/UI/Select.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
-import { Plus, Edit, Trash2, Package, X, Save, Grid, List, Info, ChevronDown, ChevronUp, Star, ShoppingCart, Heart } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, X, Save, Grid, List, Info, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
-import { validateProduct, PRODUCT_RULES } from '../../utils/validation.js';
+import { PRODUCT_RULES } from '../../utils/validation.js';
+
+function parseImagesField(value) {
+  if (!value) return [];
+  if (/^\s*\[/.test(value)) {
+    try {
+      const arr = JSON.parse(value);
+      return Array.isArray(arr)
+        ? arr.map(String).map(s => s.trim()).filter(Boolean)
+        : [];
+    } catch {}
+  }
+  return value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+}
 
 const AdminProductsPage = () => {
   const dispatch = useAppDispatch();
   const { products, loading } = useAppSelector((state) => state.products);
   const { categories, loading: categoriesLoading } = useAppSelector((state) => state.categories);
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [createLoading, setCreateLoading] = useState(false);
@@ -31,21 +45,45 @@ const AdminProductsPage = () => {
     setValue,
   } = useForm({
     defaultValues: {
+      name: '',
+      sku: '',
+      description: '',
+      price: '',
+      stock: '',
+      minStock: '',
+      maxStock: '',
+      unit: '',
+      categoryId: '',
+      weight: '',
+      barcode: '',
+      manufacturer: '',
+      countryOfOrigin: '',
+      tags: '',
+      images: '',
+      discountPrice: '',
+      discountStartDate: '',
+      discountEndDate: '',
+      expiryDate: '',
       isActive: 'true',
       isFeatured: 'false',
       isVisible: 'true',
     }
   });
 
-  const watchedFields = watch();
-
   useEffect(() => {
-    dispatch(fetchProducts());
-    dispatch(fetchCategories());
-  }, [dispatch]);
+    if (products.length === 0) dispatch(fetchProducts());
+    if (categories.length === 0) dispatch(fetchCategories());
+  }, [dispatch, products.length, categories.length]);
 
   const onSubmit = async (data) => {
-    
+    const imagesArray = data.images
+      ? parseImagesField(data.images).filter(
+          (img) =>
+            PRODUCT_RULES.URL_PATTERN.test(img) ||
+            PRODUCT_RULES.IMAGE_URL_PATTERN.test(img)
+        )
+      : [];
+
     const transformedData = {
       name: data.name?.trim() || '',
       sku: data.sku?.trim() || '',
@@ -62,23 +100,11 @@ const AdminProductsPage = () => {
       barcode: data.barcode?.trim() || null,
       manufacturer: data.manufacturer?.trim() || null,
       countryOfOrigin: data.countryOfOrigin?.trim() || null,
-      tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-      images: data.images ? data.images
-        .split(',')
-        .map(img => img.trim())
-        .filter(img => img && img.length > 0)
-        : [],
+      tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+      images: Array.from(new Set(imagesArray.map((u) => u.trim()))),
       discountPrice: data.discountPrice ? parseFloat(data.discountPrice) : null
     };
 
-    const validation = validateProduct(transformedData);
-    if (!validation.isValid) {
-      console.error('Validation failed:', validation.errors);
-      Object.keys(validation.errors).forEach(field => {
-        toast.error(`${field}: ${validation.errors[field]}`);
-      });
-      return;
-    }
     setCreateLoading(true);
     try {
       const productData = {
@@ -109,9 +135,25 @@ const AdminProductsPage = () => {
     }
   };
 
+  const generateSKU = (productName) => {
+    if (!productName) return '';
+    return productName
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .substring(0, 8)
+      .padEnd(8, 'X');
+  };
+
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    const sku = generateSKU(value);
+    setValue('sku', sku, { shouldDirty: true, shouldValidate: true });
+  };
+
   const handleEdit = (product) => {
     setEditingProduct(product);
     setShowCreateForm(true);
+    setShowAdvancedFields(false);
     reset({
       name: product.name || '',
       description: product.description || '',
@@ -127,14 +169,14 @@ const AdminProductsPage = () => {
       minStock: product.minStock || '',
       maxStock: product.maxStock || '',
       discountPrice: product.discountPrice || '',
-      discountStartDate: product.discountStartDate || '',
-      discountEndDate: product.discountEndDate || '',
-      expiryDate: product.expiryDate || '',
+      discountStartDate: product.discountStartDate ? product.discountStartDate.substring(0, 10) : '',
+      discountEndDate: product.discountEndDate ? product.discountEndDate.substring(0, 10) : '',
+      expiryDate: product.expiryDate ? product.expiryDate.substring(0, 10) : '',
       isActive: product.isActive?.toString() || 'true',
       isFeatured: product.isFeatured?.toString() || 'false',
       isVisible: product.isVisible?.toString() || 'true',
-      tags: product.tags?.join(', ') || '',
-      images: product.images?.join(', ') || '',
+      tags: Array.isArray(product.tags) ? product.tags.join(', ') : (product.tags || ''),
+      images: Array.isArray(product.images) ? product.images.join('\n') : (product.images || ''),
     });
   };
 
@@ -158,22 +200,33 @@ const AdminProductsPage = () => {
   };
 
   const handleAddProduct = () => {
+    setEditingProduct(null);
     setShowCreateForm(true);
-  };
-
-  const generateSKU = (productName) => {
-    if (!productName) return '';
-    return productName
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, '')
-      .substring(0, 8)
-      .padEnd(8, 'X');
-  };
-
-  const handleNameChange = (e) => {
-    const value = e.target.value;
-    const sku = generateSKU(value);
-    setValue('sku', sku);
+    setShowAdvancedFields(false);
+    reset({
+      name: '',
+      sku: '',
+      description: '',
+      price: '',
+      stock: '',
+      minStock: '',
+      maxStock: '',
+      unit: '',
+      categoryId: '',
+      weight: '',
+      barcode: '',
+      manufacturer: '',
+      countryOfOrigin: '',
+      tags: '',
+      images: '',
+      discountPrice: '',
+      discountStartDate: '',
+      discountEndDate: '',
+      expiryDate: '',
+      isActive: 'true',
+      isFeatured: 'false',
+      isVisible: 'true',
+    });
   };
 
   const getDiscountInfo = (product) => {
@@ -195,7 +248,6 @@ const AdminProductsPage = () => {
         const discountInfo = getDiscountInfo(product);
         return (
           <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-all duration-200 relative z-10 group">
-            {/* Image Section */}
             <div className="relative">
               <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
                 {product.images && product.images.length > 0 ? (
@@ -203,20 +255,17 @@ const AdminProductsPage = () => {
                     src={product.images[0]}
                     alt={product.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <Package className="w-16 h-16 text-gray-400" />
                 )}
               </div>
-              
-              {/* Discount Badge */}
               {discountInfo.hasDiscount && (
                 <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                   {discountInfo.discountPercent}% OFF
                 </div>
               )}
-              
-              {/* Status Badge */}
               <div className="absolute top-2 right-2">
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                   product.stock > 10 
@@ -228,8 +277,6 @@ const AdminProductsPage = () => {
                   {product.stock} in stock
                 </span>
               </div>
-              
-              {/* Action Buttons Overlay */}
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <div className="flex gap-2">
                   <button
@@ -257,16 +304,12 @@ const AdminProductsPage = () => {
                 </div>
               </div>
             </div>
-            
-            {/* Content Section */}
+
             <Card.Content className="p-4">
               <div className="space-y-3">
-                {/* Product Name */}
                 <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 min-h-[3.5rem]">
                   {product.name || 'Unnamed Product'}
                 </h3>
-                
-                {/* Price Section */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-xl font-bold text-blue-600">
@@ -278,26 +321,18 @@ const AdminProductsPage = () => {
                       </span>
                     )}
                   </div>
-                  
-                  {/* Rating */}
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
                     <span className="text-sm font-medium text-gray-700">4.5</span>
                   </div>
                 </div>
-                
-                {/* Description */}
                 <p className="text-gray-600 text-sm line-clamp-2 min-h-[2.5rem]">
                   {product.description || 'No description available.'}
                 </p>
-                
-                {/* Additional Info */}
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>SKU: {product.sku || 'N/A'}</span>
                   <span className="capitalize">{product.unit || 'unit'}</span>
                 </div>
-                
-                {/* Status Indicators */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     {product.isFeatured && (
@@ -316,7 +351,6 @@ const AdminProductsPage = () => {
                       </span>
                     )}
                   </div>
-                  
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={(e) => {
@@ -363,12 +397,12 @@ const AdminProductsPage = () => {
                     src={product.images[0]}
                     alt={product.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <Package className="w-12 h-12 text-gray-400" />
                 )}
               </div>
-              
               <Card.Content className="p-6 flex-1">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -399,9 +433,7 @@ const AdminProductsPage = () => {
                         </button>
                       </div>
                     </div>
-                    
                     <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
-                    
                     <div className="flex items-center gap-4">
                       <div className="flex items-center space-x-2">
                         <span className="text-xl font-bold text-blue-600">
@@ -413,7 +445,6 @@ const AdminProductsPage = () => {
                           </span>
                         )}
                       </div>
-                      
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                         product.stock > 10 
                           ? 'bg-green-100 text-green-800' 
@@ -423,11 +454,9 @@ const AdminProductsPage = () => {
                       }`}>
                         {product.stock} in stock
                       </span>
-                      
                       {product.sku && (
                         <span className="text-xs text-gray-500">SKU: {product.sku}</span>
                       )}
-                      
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
                         <span className="text-sm font-medium text-gray-700">4.5</span>
@@ -451,6 +480,9 @@ const AdminProductsPage = () => {
     );
   }
 
+  const watchedImages = watch('images') || '';
+  const previewImages = parseImagesField(watchedImages);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-8 py-12 space-y-8 relative z-10" style={{ pointerEvents: 'auto' }}>
@@ -459,7 +491,6 @@ const AdminProductsPage = () => {
             <h1 className="text-4xl font-bold text-gray-900">Manage Products</h1>
             <p className="text-gray-600 mt-2 text-lg">Add, edit, or remove products from your store</p>
           </div>
-          
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <Button
@@ -471,7 +502,7 @@ const AdminProductsPage = () => {
               >
                 <Grid className="w-4 h-4" />
               </Button>
-          <Button
+              <Button
                 variant={viewMode === 'list' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('list')}
@@ -479,9 +510,8 @@ const AdminProductsPage = () => {
                 style={{ pointerEvents: 'auto' }}
               >
                 <List className="w-4 h-4" />
-          </Button>
+              </Button>
             </div>
-            
             <Button
               onClick={handleAddProduct}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 cursor-pointer"
@@ -500,8 +530,8 @@ const AdminProductsPage = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                   <Package className="w-5 h-5 text-blue-600" />
-                {editingProduct ? 'Edit Product' : 'Add New Product'}
-              </h3>
+                  {editingProduct ? 'Edit Product' : 'Add New Product'}
+                </h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -515,17 +545,18 @@ const AdminProductsPage = () => {
             </Card.Header>
             <Card.Content className="p-8">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+                <input type="hidden" {...register('images')} />
+
                 <div className="space-y-8">
                   <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3">Basic Information</h4>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <Input
+                    <Input
                       label="Product Name *"
-                    type="text"
-                    placeholder="Enter product name"
-                    error={errors.name?.message}
-                    {...register('name', {
-                      required: 'Product name is required',
+                      type="text"
+                      placeholder="Enter product name"
+                      error={errors.name?.message}
+                      {...register('name', {
+                        required: 'Product name is required',
                         minLength: { value: 2, message: 'Product name must be at least 2 characters' },
                         maxLength: { value: 255, message: 'Product name must be less than 255 characters' },
                         onChange: handleNameChange
@@ -598,21 +629,20 @@ const AdminProductsPage = () => {
 
                 <div className="space-y-8">
                   <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3">Pricing & Inventory</h4>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <Input
+                    <Input
                       label="Price ($) *"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    error={errors.price?.message}
-                    {...register('price', {
-                      required: 'Price is required',
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      error={errors.price?.message}
+                      {...register('price', {
+                        required: 'Price is required',
                         min: { value: 0.01, message: 'Price must be greater than 0' },
-                    })}
-                  />
+                      })}
+                    />
 
-                <Input
+                    <Input
                       label="Discount Price ($)"
                       type="number"
                       step="0.01"
@@ -620,16 +650,16 @@ const AdminProductsPage = () => {
                       error={errors.discountPrice?.message}
                       {...register('discountPrice', {
                         min: { value: 0, message: 'Discount price cannot be negative' },
-                  })}
-                />
+                      })}
+                    />
 
-                  <Input
+                    <Input
                       label="Current Stock *"
-                    type="number"
-                    placeholder="0"
-                    error={errors.stock?.message}
-                    {...register('stock', {
-                      required: 'Stock quantity is required',
+                      type="number"
+                      placeholder="0"
+                      error={errors.stock?.message}
+                      {...register('stock', {
+                        required: 'Stock quantity is required',
                         min: { value: 0, message: 'Stock cannot be negative' },
                       })}
                     />
@@ -643,7 +673,7 @@ const AdminProductsPage = () => {
                       error={errors.minStock?.message}
                       {...register('minStock', {
                         min: { value: 0, message: 'Minimum stock cannot be negative' },
-                    })}
+                      })}
                     />
 
                     <Input
@@ -660,7 +690,6 @@ const AdminProductsPage = () => {
 
                 <div className="space-y-8">
                   <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3">Product Details</h4>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <Input
                       label="Manufacturer"
@@ -707,7 +736,7 @@ const AdminProductsPage = () => {
                       error={errors.weight?.message}
                       {...register('weight', {
                         min: { value: 0, message: 'Weight cannot be negative' },
-                    })}
+                      })}
                     />
 
                     <Input
@@ -766,63 +795,88 @@ const AdminProductsPage = () => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <Select
-                          label="Status"
-                          {...register('isActive')}
-                        >
+                        <Select label="Status" {...register('isActive')}>
                           <option value="true">Active</option>
                           <option value="false">Inactive</option>
                         </Select>
 
-                        <Select
-                          label="Featured"
-                          {...register('isFeatured')}
-                        >
+                        <Select label="Featured" {...register('isFeatured')}>
                           <option value="false">No</option>
                           <option value="true">Yes</option>
                         </Select>
 
-                        <Select
-                          label="Visible"
-                          {...register('isVisible')}
-                        >
+                        <Select label="Visible" {...register('isVisible')}>
                           <option value="true">Visible</option>
                           <option value="false">Hidden</option>
                         </Select>
                       </div>
 
-                      <Input
-                        label="Product Images (comma separated URLs)"
-                        type="text"
-                        placeholder="https://example.com/image1.jpg, data:image/jpeg;base64,..."
-                        error={errors.images?.message}
-                        {...register('images', {
-                          validate: (value) => {
-                            if (!value) return true;
-                            const urls = value.split(',').map(url => url.trim()).filter(url => url && url.length > 0);
-                            
-                            const urlPattern = /^https?:\/\/.+/;
-                            const dataUrlPattern = /^data:image\/[a-zA-Z0-9]+;base64,.+/;
-                            
-                            const invalidUrls = urls.filter(url => {
-                              if (urlPattern.test(url)) return false;
-                              if (dataUrlPattern.test(url)) return false;
-                              return true;
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            const readers = files.map(
+                              (file) =>
+                                new Promise((resolve) => {
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => resolve(String(ev.target.result));
+                                  reader.readAsDataURL(file);
+                                })
+                            );
+                            Promise.all(readers).then((base64Images) => {
+                              const current = parseImagesField(watch('images'));
+                              const next = [...current, ...base64Images].join('\n');
+                              setValue('images', next, { shouldDirty: true, shouldValidate: true });
                             });
-                            
-                            if (invalidUrls.length > 0) {
-                              console.log('Invalid URLs found:', invalidUrls);
-                              console.log('URL pattern test results:', urls.map(url => ({
-                                url: url.substring(0, 50) + '...',
-                                isHttpUrl: urlPattern.test(url),
-                                isDataUrl: dataUrlPattern.test(url)
-                              })));
-                            }
-                            
-                            return invalidUrls.length === 0 || 'Each image must be a valid HTTP/HTTPS URL or data URL';
-                          }
-                        })}
-                      />
+                          }}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+
+                        <textarea
+                          rows={4}
+                          placeholder="Paste one image URL or data URL per line"
+                          value={watchedImages}
+                          onChange={(e) => setValue('images', e.target.value, { shouldDirty: true, shouldValidate: true })}
+                          className="mt-2 w-full rounded border border-gray-300 p-2 text-sm"
+                        />
+                        <p className="text-xs text-gray-500">
+                          One image per line. Supports http/https and data:image/...;base64,...
+                        </p>
+
+                        {previewImages.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {previewImages.map((img, index) => (
+                              <div key={index} className="relative">
+                                <img
+                                  src={img}
+                                  alt="Preview"
+                                  className="w-16 h-16 object-cover rounded"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    e.currentTarget.style.opacity = '0.3';
+                                    e.currentTarget.title = 'Failed to load';
+                                  }}
+                                  title={img}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const kept = previewImages.filter((_, i) => i !== index);
+                                    setValue('images', kept.join('\n'), { shouldDirty: true, shouldValidate: true });
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

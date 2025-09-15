@@ -1,23 +1,20 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from './hooks/redux.js';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import Layout from './components/Layout/Layout.jsx';
 import LoadingSpinner from './components/UI/LoadingSpinner.jsx';
 import { checkInitializationStatus } from './store/slices/authSlice.js';
 
-// Public Pages
 import HomePage from './pages/HomePage.jsx';
 import ModernLoginPage from './pages/auth/ModernLoginPage.jsx';
 import ModernRegisterPage from './pages/auth/ModernRegisterPage.jsx';
 import SystemInitializationPage from './pages/SystemInitializationPage.jsx';
 import StyleTestPage from './pages/StyleTestPage.jsx';
 
-// Dashboard Pages
 import CustomerDashboardPage from './pages/CustomerDashboardPage.jsx';
 import ModernDashboardPage from './pages/ModernDashboardPage.jsx';
 
-// Product Pages
 import ModernProductsPage from './pages/products/ModernProductsPage.jsx';
 import ProductDetailPage from './pages/products/ProductDetailPage.jsx';
 import CategoriesPage from './pages/categories/CategoriesPage.jsx';
@@ -28,25 +25,22 @@ import OrdersPage from './pages/OrdersPage.jsx';
 import OrderDetailPage from './pages/OrderDetailPage.jsx';
 import WishlistPage from './pages/WishlistPage.jsx';
 
-// Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminProductsPage from './pages/admin/AdminProductsPage.jsx';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage.jsx';
 import AdminRequestsPage from './pages/admin/AdminRequestsPage.jsx';
 
 function AppRoutes() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { user, loading } = useAuth();
-  const { systemInitialized, initializationLoading } = useSelector(state => state.auth);
+  const { systemInitialized, initializationLoading } = useAppSelector(state => state.auth);
 
   useEffect(() => {
-    // Check system initialization status on app load
-    if (systemInitialized === null) {
+    if (systemInitialized === null && !initializationLoading) {
       dispatch(checkInitializationStatus());
     }
-  }, [dispatch, systemInitialized]);
+  }, [dispatch, systemInitialized, initializationLoading]);
 
-  // Show loading spinner while checking initialization or restoring auth state
   if (loading || initializationLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -55,7 +49,6 @@ function AppRoutes() {
     );
   }
 
-  // If system is not initialized, show initialization page
   if (systemInitialized === false) {
     return (
       <Routes>
@@ -65,7 +58,6 @@ function AppRoutes() {
     );
   }
 
-  // Helper function to get the appropriate dashboard component
   const getDashboardComponent = () => {
     if (!user) return null;
     
@@ -80,7 +72,6 @@ function AppRoutes() {
     }
   };
 
-  // Helper function to check if user has access to a route
   const hasAccess = (requiredRole) => {
     if (!user) return false;
     if (requiredRole === 'any') return true;
@@ -92,7 +83,6 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
       <Route 
         path="/login" 
@@ -103,22 +93,16 @@ function AppRoutes() {
         element={!user ? <ModernRegisterPage /> : <Navigate to="/dashboard" replace />} 
       />
 
-      {/* System initialization route (redirect if already initialized) */}
       <Route 
         path="/initialize" 
         element={systemInitialized ? <Navigate to="/login" replace /> : <SystemInitializationPage />} 
       />
 
-      {/* Style Test Route */}
       <Route path="/style-test" element={<StyleTestPage />} />
 
-      {/* Protected Routes */}
       {user && (
         <Route path="/" element={<Layout />}>
-          {/* Dashboard - Role-based */}
-          <Route path="dashboard" element={getDashboardComponent()} />
-          
-          {/* Common Routes - All authenticated users */}
+          <Route path="dashboard" element={getDashboardComponent()} />          
           <Route path="products" element={<ModernProductsPage />} />
           <Route path="products/:id" element={<ProductDetailPage />} />
           <Route path="categories" element={<CategoriesPage />} />
@@ -127,12 +111,10 @@ function AppRoutes() {
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
-          {/* Customer-only routes */}
           {hasAccess('customer') && (
           <Route path="requests" element={<RequestsPage />} />
           )}
 
-          {/* Admin-only Routes */}
           {hasAccess('admin') && (
             <>
               <Route path="admin/dashboard" element={<AdminDashboardPage />} />
@@ -142,7 +124,6 @@ function AppRoutes() {
             </>
           )}
 
-          {/* Store Manager Routes */}
           {hasAccess('store_manager') && (
             <>
               <Route path="manager/products" element={<AdminProductsPage />} />
@@ -152,7 +133,6 @@ function AppRoutes() {
         </Route>
       )}
 
-      {/* Fallback Routes - Only redirect if we're sure about auth state */}
       <Route 
         path="*" 
         element={
