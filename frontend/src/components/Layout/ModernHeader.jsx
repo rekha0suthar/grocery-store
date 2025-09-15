@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
 import { toggleSidebar } from '../../store/slices/uiSlice.js';
 import { openCart } from '../../store/slices/cartSlice.js';
@@ -24,12 +24,15 @@ import Button from '../UI/Button.jsx';
 const ModernHeader = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { items: cartItems } = useAppSelector((state) => state.cart);
   const { categories } = useAppSelector((state) => state.categories);
   const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const currentCategory = searchParams.get('category');
 
   useEffect(() => {
     if (categories.length === 0) {
@@ -58,6 +61,29 @@ const ModernHeader = () => {
 
   const handleWishlistClick = () => {
     navigate('/wishlist');
+  };
+
+  const getDashboardUrl = () => {
+    if (!user) return '/';
+    
+    switch (user.role) {
+      case 'customer':
+        return '/dashboard';
+      case 'admin':
+        return '/admin/dashboard';
+      case 'store_manager':
+        return '/manager/products';
+      default:
+        return '/dashboard';
+    }
+  };
+
+  const handleLogoClick = () => {
+    if (isAuthenticated && user) {
+      navigate(getDashboardUrl());
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -104,7 +130,10 @@ const ModernHeader = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center">
+          <button 
+            onClick={handleLogoClick}
+            className="flex items-center hover:opacity-80 transition-opacity"
+          >
             <div className="flex items-center">
               <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
                 <ShoppingCart className="w-6 h-6 text-white" />
@@ -114,7 +143,7 @@ const ModernHeader = () => {
                 <p className="text-xs text-gray-500">Fresh Groceries</p>
               </div>
             </div>
-          </Link>
+          </button>
 
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
             <form onSubmit={handleSearch} className="relative">
@@ -221,14 +250,25 @@ const ModernHeader = () => {
       <nav className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center space-x-8 py-3 overflow-x-auto">
-            <Link to="/products" className="text-gray-700 hover:text-green-600 font-medium transition-colors whitespace-nowrap">
+            <Link 
+              to="/products" 
+              className={`font-medium transition-colors whitespace-nowrap px-3 py-2 rounded-md ${
+                !currentCategory 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+              }`}
+            >
               All Products
             </Link>
             {categories.slice(0, 6).map((category) => (
               <Link
                 key={category.id}
                 to={`/products?category=${category.id}`}
-                className="text-gray-700 hover:text-green-600 font-medium transition-colors whitespace-nowrap"
+                className={`font-medium transition-colors whitespace-nowrap px-3 py-2 rounded-md ${
+                  currentCategory === category.id.toString()
+                    ? 'bg-green-100 text-green-700'
+                    : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+                }`}
               >
                 {category.name}
             </Link>

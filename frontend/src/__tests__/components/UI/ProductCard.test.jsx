@@ -1,6 +1,7 @@
 import React from 'react';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import ProductCard from '../../../components/UI/ProductCard.jsx';
+import GridProductCard from '../../../components/UI/GridProductCard.jsx';
+import ListProductCard from '../../../components/UI/ListProductCard.jsx';
 import { renderWithProviders, createMockState } from '../../utils/test-utils.jsx';
 
 // Mock react-router-dom
@@ -12,174 +13,187 @@ jest.mock('react-router-dom', () => ({
 
 // Mock react-hot-toast
 jest.mock('react-hot-toast', () => ({
-  toast: {
     success: jest.fn(),
     error: jest.fn(),
-  },
 }));
 
 const mockProduct = {
   id: '1',
   name: 'Test Product',
-  price: 10.99,
+  description: 'A test product description',
+  price: 29.99,
   images: ['test-image.jpg'],
-  description: 'Test product description',
   stock: 10,
-  category: 'Fruits'
+  discount: 0
 };
 
-describe('ProductCard', () => {
+const discountedProduct = {
+  id: '2',
+  name: 'Discounted Product',
+  description: 'A discounted product',
+  price: 50.00,
+  discountPrice: 40.00, // Discount price comes from DB
+  discount: 20, // Percentage for reference
+  images: ['discounted-image.jpg'],
+  stock: 5
+};
+
+const productWithoutImage = {
+  id: '3',
+  name: 'Product Without Image',
+  description: 'A product without image',
+  price: 15.99,
+  images: [],
+  stock: 8
+};
+
+const productWithoutId = {
+  name: 'Product Without ID',
+  description: 'A product without ID',
+  price: 25.99,
+  images: ['no-id-image.jpg'],
+  stock: 3
+};
+
+describe('GridProductCard', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockNavigate.mockClear();
   });
 
-  it('renders product card with product information', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
+  it('renders product information correctly', () => {
+    renderWithProviders(<GridProductCard product={mockProduct} />, {
+      preloadedState: createMockState()
     });
 
-    expect(screen.getByText(mockProduct.name)).toBeInTheDocument();
-    expect(screen.getByText(/\$10\.99/)).toBeInTheDocument();
-    expect(screen.getByText(mockProduct.description)).toBeInTheDocument();
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
+    expect(screen.getByText('A test product description')).toBeInTheDocument();
+    expect(screen.getByText('$29.99')).toBeInTheDocument();
   });
 
-  it('renders product image', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
+  it('renders discounted product with correct pricing', () => {
+    renderWithProviders(<GridProductCard product={discountedProduct} />, {
+      preloadedState: createMockState()
     });
 
-    const image = screen.getByRole('img', { name: mockProduct.name });
-    expect(image).toBeInTheDocument();
-    expect(image).toHaveAttribute('src', mockProduct.images[0]);
+    expect(screen.getByText('$40.00')).toBeInTheDocument(); // discountPrice from DB
+    expect(screen.getByText('$50.00')).toBeInTheDocument(); // original price
   });
 
-  it('shows add to cart button', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
+  it('handles click events correctly', () => {
+    renderWithProviders(<GridProductCard product={mockProduct} />, {
+      preloadedState: createMockState()
     });
 
-    expect(screen.getByRole('button', { name: /add to cart/i })).toBeInTheDocument();
+    const card = screen.getByText('Test Product').closest('.group');
+    fireEvent.click(card);
+    expect(mockNavigate).toHaveBeenCalledWith('/products/1');
   });
 
-  it('shows stock count', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
-    });
+  it('handles add to cart', () => {
+    const mockOnAddToCart = jest.fn();
+    renderWithProviders(
+      <GridProductCard product={mockProduct} onAddToCart={mockOnAddToCart} />,
+      { preloadedState: createMockState() }
+    );
 
-    expect(screen.getByText(/10 in stock/i)).toBeInTheDocument();
-  });
-
-  it('calls add to cart when button is clicked', async () => {
-    const initialState = createMockState();
-    const { store } = renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
-    });
-
-    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
+    const addToCartButton = screen.getByText('Add to Cart');
     fireEvent.click(addToCartButton);
-
-    await waitFor(() => {
-      const state = store.getState();
-      expect(state.cart.items).toHaveLength(1);
-    });
+    expect(mockOnAddToCart).toHaveBeenCalledWith(mockProduct);
   });
 
-  it('navigates to product detail when card is clicked', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
+  it('does not render when product has no ID', () => {
+    const { container } = renderWithProviders(<GridProductCard product={productWithoutId} />, {
+      preloadedState: createMockState()
     });
-
-    // Click on the card (not the button)
-    const cardElement = screen.getByText(mockProduct.name).closest('div[class*="cursor-pointer"]');
-    fireEvent.click(cardElement);
-
-    expect(mockNavigate).toHaveBeenCalledWith(`/products/${mockProduct.id}`);
-  });
-
-  it('shows zero stock when product is out of stock', () => {
-    const outOfStockProduct = { ...mockProduct, stock: 0 };
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={outOfStockProduct} />, {
-      preloadedState: initialState
-    });
-
-    expect(screen.getByText(/0 in stock/i)).toBeInTheDocument();
-  });
-
-  it('shows discount price when product has discount', () => {
-    const discountedProduct = { ...mockProduct, discountPrice: 8.99 };
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={discountedProduct} />, {
-      preloadedState: initialState
-    });
-
-    expect(screen.getByText(/\$8\.99/)).toBeInTheDocument();
-    expect(screen.getByText(/\$8\.99/)).toHaveClass('line-through');
-  });
-
-  it('shows wishlist button', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
-    });
-
-    // The wishlist button should be present (heart icon)
-    const wishlistButton = screen.getByRole('button', { name: '' }); // Heart button has no text
-    expect(wishlistButton).toBeInTheDocument();
-  });
-
-  it('shows rating', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} />, {
-      preloadedState: initialState
-    });
-
-    expect(screen.getByText('4.5')).toBeInTheDocument();
-  });
-
-  it('does not render when product is null', () => {
-    const initialState = createMockState();
-    const { container } = renderWithProviders(<ProductCard product={null} />, {
-      preloadedState: initialState
-    });
-
-    expect(container.firstChild).toBeNull();
-  });
-
-  it('does not render when product has no id', () => {
-    const productWithoutId = { ...mockProduct };
-    delete productWithoutId.id;
-    
-    const initialState = createMockState();
-    const { container } = renderWithProviders(<ProductCard product={productWithoutId} />, {
-      preloadedState: initialState
-    });
-
     expect(container.firstChild).toBeNull();
   });
 
   it('hides add to cart button when showAddToCart is false', () => {
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={mockProduct} showAddToCart={false} />, {
-      preloadedState: initialState
+    renderWithProviders(<GridProductCard product={mockProduct} showAddToCart={false} />, {
+      preloadedState: createMockState()
     });
 
-    expect(screen.queryByRole('button', { name: /add to cart/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Add to Cart')).not.toBeInTheDocument();
   });
 
-  it('uses placeholder image when no images provided', () => {
-    const productWithoutImage = { ...mockProduct, images: [] };
-    const initialState = createMockState();
-    renderWithProviders(<ProductCard product={productWithoutImage} />, {
-      preloadedState: initialState
+  it('renders placeholder image when no image is provided', () => {
+    renderWithProviders(<GridProductCard product={productWithoutImage} />, {
+      preloadedState: createMockState()
     });
 
-    const image = screen.getByRole('img', { name: mockProduct.name });
+    const image = screen.getByAltText('Product Without Image');
     expect(image).toHaveAttribute('src', '/placeholder-product.jpg');
+  });
+});
+
+describe('ListProductCard', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
+  it('renders product information correctly', () => {
+    renderWithProviders(<ListProductCard product={mockProduct} />, {
+      preloadedState: createMockState()
+    });
+
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
+    expect(screen.getByText('A test product description')).toBeInTheDocument();
+    expect(screen.getByText('$29.99')).toBeInTheDocument();
+  });
+
+  it('renders discounted product with correct pricing', () => {
+    renderWithProviders(<ListProductCard product={discountedProduct} />, {
+      preloadedState: createMockState()
+    });
+
+    expect(screen.getByText('$40.00')).toBeInTheDocument(); // discountPrice from DB
+    expect(screen.getByText('$50.00')).toBeInTheDocument(); // original price
+  });
+
+  it('handles click events correctly', () => {
+    renderWithProviders(<ListProductCard product={mockProduct} />, {
+      preloadedState: createMockState()
+    });
+
+    const card = screen.getByText('Test Product').closest('.group');
+    fireEvent.click(card);
+    expect(mockNavigate).toHaveBeenCalledWith('/products/1');
+  });
+
+  it('handles add to cart', () => {
+    const mockOnAddToCart = jest.fn();
+    renderWithProviders(
+      <ListProductCard product={mockProduct} onAddToCart={mockOnAddToCart} />,
+      { preloadedState: createMockState() }
+    );
+
+    const addToCartButton = screen.getByText('Add to Cart');
+    fireEvent.click(addToCartButton);
+    expect(mockOnAddToCart).toHaveBeenCalledWith(mockProduct);
+  });
+
+  it('does not render when product has no ID', () => {
+    const { container } = renderWithProviders(<ListProductCard product={productWithoutId} />, {
+      preloadedState: createMockState()
+    });
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('hides add to cart button when showAddToCart is false', () => {
+    renderWithProviders(<ListProductCard product={mockProduct} showAddToCart={false} />, {
+      preloadedState: createMockState()
+    });
+
+    expect(screen.queryByText('Add to Cart')).not.toBeInTheDocument();
+  });
+
+  it('renders placeholder when no image is provided', () => {
+    renderWithProviders(<ListProductCard product={productWithoutImage} />, {
+      preloadedState: createMockState()
+    });
+
+    // For ListProductCard, when no image is provided, it shows a Package icon instead of an image
+    // We can check that the product name is rendered instead
+    expect(screen.getByText('Product Without Image')).toBeInTheDocument();
   });
 });

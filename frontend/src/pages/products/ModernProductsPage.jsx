@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
-import { fetchProducts, searchProducts } from '../../store/slices/productSlice.js';
+import { fetchProducts, searchProducts, clearSearch } from '../../store/slices/productSlice.js';
+import { fetchCategories } from '../../store/slices/categorySlice.js';
 import { addToCart } from '../../store/slices/cartSlice.js';
 import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
-import ProductCard from '../../components/UI/ProductCard.jsx';
+import GridProductCard from '../../components/UI/GridProductCard.jsx';
+import ListProductCard from '../../components/UI/ListProductCard.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
 import { 
   ShoppingCart, 
@@ -21,7 +23,8 @@ import { toast } from 'react-hot-toast';
 const ModernProductsPage = () => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
-  const { products, loading, searchResults, searchLoading } = useAppSelector((state) => state.products);
+  const { products, loading, searchResults, searchLoading, isSearchActive } = useAppSelector((state) => state.products);
+  const { categories } = useAppSelector((state) => state.categories);
   const { items: cartItems } = useAppSelector((state) => state.cart);
   const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
   const [sortBy, setSortBy] = useState('name');
@@ -35,18 +38,26 @@ const ModernProductsPage = () => {
   const sale = searchParams.get('sale');
 
   useEffect(() => {
+    if (categories.length === 0) {
+      dispatch(fetchCategories());
+    }
+    
     if (search) {
       dispatch(searchProducts({ q: search }));
-    } else if (category) {
-      dispatch(fetchProducts({ category, limit: 20 }));
-    } else if (featured) {
-      dispatch(fetchProducts({ featured: true, limit: 20 }));
-    } else if (sale) {
-      dispatch(fetchProducts({ sale: true, limit: 20 }));
     } else {
-      dispatch(fetchProducts({ limit: 20 }));
+      dispatch(clearSearch());
+      
+      if (category) {
+        dispatch(fetchProducts({ category, limit: 20 }));
+      } else if (featured) {
+        dispatch(fetchProducts({ featured: true, limit: 20 }));
+      } else if (sale) {
+        dispatch(fetchProducts({ sale: true, limit: 20 }));
+      } else {
+        dispatch(fetchProducts({ limit: 20 }));
+      }
     }
-  }, [dispatch, searchParams]);
+  }, [dispatch, searchParams, categories.length]);
 
   const handleAddToCart = (product) => {
     if (product.stock !== undefined && product.stock <= 0) {
@@ -66,7 +77,7 @@ const ModernProductsPage = () => {
     toast.success(`${product.name} added to cart!`);
   };
 
-  let displayProducts = searchResults.length > 0 ? searchResults : products;
+  let displayProducts = search ? searchResults : products;
 
   if (featured === 'true') {
     displayProducts = displayProducts.filter(product => product.isFeatured);
@@ -78,7 +89,10 @@ const ModernProductsPage = () => {
     if (search) return `Search Results for "${search}"`;
     if (featured === 'true') return 'Featured Products';
     if (sale === 'true') return 'Products on Sale';
-    if (category) return `${category} Products`;
+    if (category) {
+      const categoryObj = categories.find(cat => cat.id.toString() === category);
+      return categoryObj ? `${categoryObj.name} Products` : 'Category Products';
+    }
     return 'All Products';
   };
 
@@ -197,8 +211,12 @@ const ModernProductsPage = () => {
             {sortedProducts.length === 0 ? (
               <Card className="p-12 text-center">
                 <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {isSearchActive ? `No products found for "${search}"` : 'No products found'}
+                </h3>
+                <p className="text-gray-500">
+                  {isSearchActive ? 'Try adjusting your search terms.' : 'Try adjusting your filter criteria.'}
+                </p>
               </Card>
             ) : (
               <div className={`grid gap-6 ${
@@ -207,12 +225,21 @@ const ModernProductsPage = () => {
                   : 'grid-cols-1'
               }`}>
                 {sortedProducts.map((product) => (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product} 
-                    showAddToCart={true}
-                    onAddToCart={handleAddToCart}
-                  />
+                  viewMode === 'grid' ? (
+                    <GridProductCard 
+                      key={product.id} 
+                      product={product} 
+                      showAddToCart={true}
+                      onAddToCart={handleAddToCart}
+                    />
+                  ) : (
+                    <ListProductCard 
+                      key={product.id} 
+                      product={product} 
+                      showAddToCart={true}
+                      onAddToCart={handleAddToCart}
+                    />
+                  )
                 ))}
               </div>
             )}

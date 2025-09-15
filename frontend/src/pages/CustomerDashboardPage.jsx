@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { fetchProducts } from '../store/slices/productSlice.js';
 import { fetchCategories } from '../store/slices/categorySlice.js';
+import { addToCart } from '../store/slices/cartSlice.js';
 import Card from '../components/UI/Card.jsx';
 import Button from '../components/UI/Button.jsx';
-import ProductCard from '../components/UI/ProductCard.jsx';
+import GridProductCard from '../components/UI/GridProductCard.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { 
   Package, 
@@ -20,6 +21,7 @@ import {
   Clock,
   Tag
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const CustomerDashboardPage = () => {
   const dispatch = useAppDispatch();
@@ -33,6 +35,10 @@ const CustomerDashboardPage = () => {
     dispatch(fetchCategories({ limit: 8 }));
   }, [dispatch]);
 
+  const handleAddToCart = (product) => {
+    dispatch(addToCart({ product, quantity: 1 }));
+    toast.success(`${product.name} added to cart!`);
+  };
 
   const featuredProducts = (products || []).filter(product => product.isFeatured).slice(0, 6);
   const recentProducts = (products || []).slice(0, 8);
@@ -159,13 +165,14 @@ const CustomerDashboardPage = () => {
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {featuredProducts.map((product) => {
                 return (
-                  <ProductCard 
+                  <GridProductCard 
                     key={product.id || product._id || Math.random()} 
                     product={product} 
                     showAddToCart={true}
+                    onAddToCart={handleAddToCart}
                   />
                 );
               })}
@@ -187,13 +194,14 @@ const CustomerDashboardPage = () => {
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {onSaleProducts.map((product) => {
                 return (
-                  <ProductCard 
+                  <GridProductCard 
                     key={product.id || product._id || Math.random()} 
                     product={product} 
                     showAddToCart={true}
+                    onAddToCart={handleAddToCart}
                   />
                 );
               })}
@@ -214,13 +222,14 @@ const CustomerDashboardPage = () => {
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {recentProducts.map((product) => {
               return (
-                <ProductCard 
+                <GridProductCard 
                   key={product.id || product._id || Math.random()} 
                   product={product} 
                   showAddToCart={true}
+                  onAddToCart={handleAddToCart}
                 />
               );
             })}

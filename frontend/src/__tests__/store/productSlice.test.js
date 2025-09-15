@@ -16,6 +16,8 @@ describe('productSlice', () => {
     currentProduct: null,
     searchResults: [],
     loading: false,
+    searchLoading: false,
+    isSearchActive: false,
     error: null,
     pagination: {}
   };

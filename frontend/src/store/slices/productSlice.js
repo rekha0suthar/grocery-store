@@ -1,13 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { productService } from '../../services/productService.js';
 
-// Async thunks
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await productService.getProducts(params);
-      // Handle nested response structure: response.data.data.products
       const products = response.data?.data?.products || response.data?.products || [];
       const pagination = response.data?.pagination || {};
       return { products, pagination };
@@ -35,7 +33,6 @@ export const searchProducts = createAsyncThunk(
   async (searchParams, { rejectWithValue }) => {
     try {
       const response = await productService.searchProducts(searchParams);
-      // Handle nested response structure
       const products = response.data?.data?.products || response.data?.products || [];
       return { products };
     } catch (error) {
@@ -82,7 +79,6 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
-// Product slice
 const productSlice = createSlice({
   name: 'products',
   initialState: {
@@ -90,6 +86,8 @@ const productSlice = createSlice({
     currentProduct: null,
     searchResults: [],
     loading: false,
+    searchLoading: false,
+    isSearchActive: false,
     error: null,
     pagination: {}
   },
@@ -97,12 +95,18 @@ const productSlice = createSlice({
     clearProducts: (state) => {
       state.products = [];
       state.searchResults = [];
+      state.isSearchActive = false;
     },
     clearCurrentProduct: (state) => {
       state.currentProduct = null;
     },
     clearError: (state) => {
       state.error = null;
+    },
+    clearSearch: (state) => {
+      state.searchResults = [];
+      state.isSearchActive = false;
+      state.searchLoading = false;
     }
   },
   extraReducers: (builder) => {
@@ -135,17 +139,20 @@ const productSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(searchProducts.pending, (state) => {
-        state.loading = true;
+        state.searchLoading = true;
         state.error = null;
+        state.isSearchActive = true;
       })
       .addCase(searchProducts.fulfilled, (state, action) => {
-        state.loading = false;
+        state.searchLoading = false;
         state.searchResults = action.payload.products;
         state.error = null;
+        state.isSearchActive = true;
       })
       .addCase(searchProducts.rejected, (state, action) => {
-        state.loading = false;
+        state.searchLoading = false;
         state.error = action.payload;
+        state.isSearchActive = true;
       })
       .addCase(createProduct.pending, (state) => {
         state.loading = true;
@@ -198,5 +205,5 @@ const productSlice = createSlice({
   }
 });
 
-export const { clearProducts, clearCurrentProduct, clearError } = productSlice.actions;
+export const { clearProducts, clearCurrentProduct, clearError, clearSearch } = productSlice.actions;
 export default productSlice.reducer;

@@ -20,7 +20,7 @@ function parseImagesField(value) {
       return Array.isArray(arr)
         ? arr.map(String).map(s => s.trim()).filter(Boolean)
         : [];
-    } catch {}
+    } catch { }
   }
   return value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 }
@@ -78,10 +78,10 @@ const AdminProductsPage = () => {
   const onSubmit = async (data) => {
     const imagesArray = data.images
       ? parseImagesField(data.images).filter(
-          (img) =>
-            PRODUCT_RULES.URL_PATTERN.test(img) ||
-            PRODUCT_RULES.IMAGE_URL_PATTERN.test(img)
-        )
+        (img) =>
+          PRODUCT_RULES.URL_PATTERN.test(img) ||
+          PRODUCT_RULES.IMAGE_URL_PATTERN.test(img)
+      )
       : [];
 
     const transformedData = {
@@ -267,72 +267,50 @@ const AdminProductsPage = () => {
                 </div>
               )}
               <div className="absolute top-2 right-2">
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  product.stock > 10 
-                    ? 'bg-green-100 text-green-800' 
-                    : product.stock > 0 
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${product.stock > 10
+                  ? 'bg-green-100 text-green-800'
+                  : product.stock > 0
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                  }`}>
                   {product.stock} in stock
                 </span>
-              </div>
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <div className="flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleEdit(product);
-                    }}
-                    className="p-2 bg-white rounded-full shadow-lg hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors"
-                    title="Edit Product"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDelete(product.id);
-                    }}
-                    className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors"
-                    title="Delete Product"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
             </div>
 
             <Card.Content className="p-4">
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 min-h-[3.5rem]">
+                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                   {product.name || 'Unnamed Product'}
                 </h3>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xl font-bold text-blue-600">
-                      ${discountInfo.hasDiscount ? discountInfo.discountPrice : product.price}
-                    </span>
-                    {discountInfo.hasDiscount && (
-                      <span className="text-sm text-gray-500 line-through">
-                        ${discountInfo.originalPrice}
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex">
+                    <div className="flex items-center space-x-2">
+                      {product.discountPrice && product.discountPrice < product.price ? (
+                        <>
+                          <span className="text-2xl font-bold text-gray-900">
+                            ${product.discountPrice.toFixed(2)}
+                          </span>
+                          <span className="text-lg text-gray-500 line-through">
+                            ${product.price.toFixed(2)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-2xl font-bold text-gray-900">
+                          ${product.price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    {(product.weight || product.unit) && (
+                      <span className="text-xs text-gray-500 mt-2 px-1">
+                        per {product.weight || '1'} {product.unit || 'unit'}
                       </span>
                     )}
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-sm font-medium text-gray-700">4.5</span>
                   </div>
                 </div>
                 <p className="text-gray-600 text-sm line-clamp-2 min-h-[2.5rem]">
                   {product.description || 'No description available.'}
                 </p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>SKU: {product.sku || 'N/A'}</span>
-                  <span className="capitalize">{product.unit || 'unit'}</span>
-                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     {product.isFeatured && (
@@ -391,7 +369,7 @@ const AdminProductsPage = () => {
         return (
           <Card key={product.id} className="overflow-hidden hover:shadow-md transition-shadow duration-200 relative z-10">
             <div className="flex">
-              <div className="w-32 h-32 bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-32 bg-gray-100 flex items-center justify-center flex-shrink-0">
                 {product.images && product.images.length > 0 ? (
                   <img
                     src={product.images[0]}
@@ -403,7 +381,7 @@ const AdminProductsPage = () => {
                   <Package className="w-12 h-12 text-gray-400" />
                 )}
               </div>
-              <Card.Content className="p-6 flex-1">
+              <div className="p-4 flex-1"> 
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
@@ -435,36 +413,44 @@ const AdminProductsPage = () => {
                     </div>
                     <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xl font-bold text-blue-600">
-                          ${discountInfo.hasDiscount ? discountInfo.discountPrice : product.price}
-                        </span>
-                        {discountInfo.hasDiscount && (
-                          <span className="text-sm text-gray-500 line-through">
-                            ${discountInfo.originalPrice}
+                      <div className="flex">
+                        <div className="flex items-center space-x-2">
+                          {product.discountPrice && product.discountPrice < product.price ? (
+                            <>
+                              <span className="text-xl font-bold text-gray-900">
+                                ${product.discountPrice.toFixed(2)}
+                              </span>
+                              <span className="text-lg text-gray-500 line-through">
+                                ${product.price.toFixed(2)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xl font-bold text-gray-900">
+                              ${product.price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        {(product.weight || product.unit) && (
+                          <span className="text-xs text-gray-500 mt-2 px-1">
+                            per {product.weight || '1'} {product.unit || 'unit'}
                           </span>
                         )}
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        product.stock > 10 
-                          ? 'bg-green-100 text-green-800' 
-                          : product.stock > 0 
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${product.stock > 10
+                        ? 'bg-green-100 text-green-800'
+                        : product.stock > 0
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                        }`}>
                         {product.stock} in stock
                       </span>
                       {product.sku && (
                         <span className="text-xs text-gray-500">SKU: {product.sku}</span>
                       )}
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-sm font-medium text-gray-700">4.5</span>
-                      </div>
                     </div>
                   </div>
                 </div>
-              </Card.Content>
+              </div>
             </div>
           </Card>
         );
