@@ -1,12 +1,3 @@
-/**
- * Default Clock Implementation
- * 
- * A simple clock implementation that uses the system Date object.
- * This is used as a fallback when no clock is injected.
- * 
- * Note: This is in the adapters layer, not the core domain,
- * so it can use system dependencies like Date.
- */
 export class DefaultClock {
   now() {
     return new Date();

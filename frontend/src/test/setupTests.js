@@ -42,53 +42,50 @@ if (!window.IntersectionObserver) {
   window.IntersectionObserver = IntersectionObserverMock;
 }
 
-// Mock localStorage with a proper implementation
-const localStorageMock = (() => {
+// Safe localStorage/sessionStorage mocks using globalThis
+const storage = () => {
   let store = {};
   return {
-    getItem: jest.fn((k) => store[k] || null),
+    getItem: jest.fn((k) => (k in store ? store[k] : null)),
     setItem: jest.fn((k, v) => { store[k] = String(v); }),
     removeItem: jest.fn((k) => { delete store[k]; }),
     clear: jest.fn(() => { store = {}; }),
+    key: jest.fn((i) => Object.keys(store)[i] ?? null),
+    get length() { return Object.keys(store).length; },
   };
-})();
-
-// Set up localStorage mock
-Object.defineProperty(window, 'localStorage', { 
-  value: localStorageMock, 
-  writable: true 
-});
-
-Object.defineProperty(window, 'sessionStorage', { 
-  value: localStorageMock, 
-  writable: true 
-});
-
-// Mock window.location
-delete window.location;
-window.location = {
-  href: 'http://localhost:3000',
-  origin: 'http://localhost:3000',
-  protocol: 'http:',
-  host: 'localhost:3000',
-  hostname: 'localhost',
-  port: '3000',
-  pathname: '/',
-  search: '',
-  hash: '',
-  assign: jest.fn(),
-  replace: jest.fn(),
-  reload: jest.fn(),
 };
 
-// Mock window.history
-window.history = {
-  pushState: jest.fn(),
-  replaceState: jest.fn(),
-  go: jest.fn(),
-  back: jest.fn(),
-  forward: jest.fn(),
-};
+if (!globalThis.localStorage) {
+  Object.defineProperty(globalThis, 'localStorage', { value: storage(), configurable: true });
+}
+if (!globalThis.sessionStorage) {
+  Object.defineProperty(globalThis, 'sessionStorage', { value: storage(), configurable: true });
+}
+
+// Mock window.location safely - don't try to spy on read-only properties
+// Instead, just ensure the location object has the properties we need
+if (typeof window !== 'undefined' && window.location) {
+  // Don't try to spy on read-only methods, just ensure they exist
+  if (!window.location.assign) {
+    window.location.assign = jest.fn();
+  }
+  if (!window.location.replace) {
+    window.location.replace = jest.fn();
+  }
+  if (!window.location.reload) {
+    window.location.reload = jest.fn();
+  }
+}
+
+// Mock window.history safely
+if (typeof window !== 'undefined' && window.history) {
+  if (!window.history.pushState) {
+    window.history.pushState = jest.fn();
+  }
+  if (!window.history.replaceState) {
+    window.history.replaceState = jest.fn();
+  }
+}
 
 // Mock window.navigator
 Object.defineProperty(window, 'navigator', {
@@ -103,91 +100,15 @@ Object.defineProperty(window, 'navigator', {
   },
 });
 
-// Mock window.getComputedStyle
-window.getComputedStyle = jest.fn(() => ({
-  getPropertyValue: jest.fn(),
-}));
+// Mock fetch
+global.fetch = jest.fn();
 
-// Mock HTMLElement prototype methods (only if they don't exist)
-if (typeof HTMLElement !== 'undefined') {
-  if (!HTMLElement.prototype.scrollIntoView) {
-    HTMLElement.prototype.scrollIntoView = jest.fn();
-  }
-  if (!HTMLElement.prototype.focus) {
-    HTMLElement.prototype.focus = jest.fn();
-  }
-  if (!HTMLElement.prototype.blur) {
-    HTMLElement.prototype.blur = jest.fn();
-  }
-  if (!HTMLElement.prototype.click) {
-    HTMLElement.prototype.click = jest.fn();
-  }
-  if (!HTMLElement.prototype.setAttribute) {
-    HTMLElement.prototype.setAttribute = jest.fn();
-  }
-  if (!HTMLElement.prototype.getAttribute) {
-    HTMLElement.prototype.getAttribute = jest.fn();
-  }
-  if (!HTMLElement.prototype.removeAttribute) {
-    HTMLElement.prototype.removeAttribute = jest.fn();
-  }
-}
-
-// Mock HTMLCollection prototype
-if (typeof HTMLCollection !== 'undefined') {
-  HTMLCollection.prototype._update = jest.fn();
-}
-
-// Mock window._goober for styling libraries
-window._goober = {
-  _version: '1.0.0',
-};
-
-// Mock fetch if not available
-if (typeof global.fetch === 'undefined') {
-  global.fetch = jest.fn(() =>
-    Promise.resolve({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({}),
-      text: () => Promise.resolve(''),
-    })
-  );
-}
-
-// Mock URL constructor
-if (typeof global.URL === 'undefined') {
-  global.URL = class URL {
-    constructor(url, base) {
-      this.href = url;
-      this.origin = 'http://localhost:3000';
-      this.protocol = 'http:';
-      this.host = 'localhost:3000';
-      this.hostname = 'localhost';
-      this.port = '3000';
-      this.pathname = '/';
-      this.search = '';
-      this.hash = '';
-    }
-  };
-}
-
-// Mock crypto for libraries that use it
+// Mock crypto for libraries that need it
 if (!globalThis.crypto) {
   globalThis.crypto = { 
     getRandomValues: (arr) => require('crypto').randomFillSync(arr) 
   };
 }
-
-// Mock console methods to avoid noise in tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-};
 
 // Mock react-hot-toast
 jest.mock('react-hot-toast', () => ({
@@ -207,3 +128,15 @@ jest.mock('goober', () => ({
   glob: jest.fn(),
   keyframes: jest.fn(),
 }));
+
+// Mock HTMLCollection.prototype._update for JSDOM compatibility
+if (typeof HTMLCollection !== 'undefined' && HTMLCollection.prototype) {
+  HTMLCollection.prototype._update = jest.fn();
+}
+
+// Mock window._goober for styling library compatibility
+if (typeof window !== 'undefined') {
+  window._goober = {
+    _version: '2.1.0',
+  };
+}
