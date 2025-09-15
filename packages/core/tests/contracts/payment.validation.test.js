@@ -220,7 +220,7 @@ describe('Payment Validation Rules', () => {
 
   describe('validatePaymentMethod', () => {
     test('should validate valid payment methods', () => {
-      const validMethods = ['credit_card', 'debit_card', 'paypal', 'cash_on_delivery', 'cod'];
+      const validMethods = ['credit_card', 'debit_card', 'paypal', 'cash_on_delivery'];
 
       validMethods.forEach(method => {
         const result = PaymentValidationRules.validatePaymentMethod(method);

@@ -1,8 +1,9 @@
 module.exports = {
   env: {
     browser: true,
-    es2022: true,
+    es2021: true,
     node: true,
+    jest: true,
   },
   extends: [
     'eslint:recommended',
@@ -13,7 +14,7 @@ module.exports = {
     ecmaFeatures: {
       jsx: true,
     },
-    ecmaVersion: 2022,
+    ecmaVersion: 'latest',
     sourceType: 'module',
   },
   plugins: [
@@ -23,9 +24,13 @@ module.exports = {
   rules: {
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
-    'no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
-    'no-useless-escape': 'off',
-    'react/no-unescaped-entities': 'off',
+    'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    'no-console': 'warn',
+    'no-debugger': 'error',
+    'prefer-const': 'error',
+    'no-var': 'error',
+    'object-shorthand': 'error',
+    'prefer-template': 'error',
   },
   settings: {
     react: {

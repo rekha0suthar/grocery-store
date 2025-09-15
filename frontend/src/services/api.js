@@ -19,7 +19,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('❌ Request Error:', error);
+    // console.error('❌ Request Error:', error);
     return Promise.reject(error);
   }
 );
@@ -30,11 +30,6 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('❌ API Error:', {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.response?.data?.message || error.message,
-    });
     
     if (error.response?.status === 401) {
       localStorage.removeItem('token');

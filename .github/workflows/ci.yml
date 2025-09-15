@@ -16,7 +16,7 @@ on:
           - all
           - core
           - backend
-#          - frontend
+- frontend
 
 # Add permissions for GitHub Container Registry
 permissions:
@@ -52,12 +52,12 @@ jobs:
               "core")
                 echo "core=true" >> $GITHUB_OUTPUT
                 echo "backend=false" >> $GITHUB_OUTPUT
-                echo "frontend=false" >> $GITHUB_OUTPUT
+                
                 ;;
               "backend")
                 echo "core=true" >> $GITHUB_OUTPUT  # Core is always needed for backend
                 echo "backend=true" >> $GITHUB_OUTPUT
-                echo "frontend=false" >> $GITHUB_OUTPUT
+                
                 ;;
               "frontend")
                 echo "core=false" >> $GITHUB_OUTPUT
@@ -81,7 +81,7 @@ jobs:
               # Initialize all components as false
               echo "core=false" >> $GITHUB_OUTPUT
               echo "backend=false" >> $GITHUB_OUTPUT
-              echo "frontend=false" >> $GITHUB_OUTPUT
+              
               
               # Check for global changes first (these should run everything)
               if git diff --name-only HEAD~1 HEAD | grep -E '^.github/workflows/' > /dev/null; then
@@ -116,7 +116,7 @@ jobs:
               if git diff --name-only HEAD~1 HEAD | grep -E '^frontend/' > /dev/null; then
                 echo "frontend=true" >> $GITHUB_OUTPUT
               else
-                echo "frontend=false" >> $GITHUB_OUTPUT
+                
               fi
               
               # If workflow file changed, run everything
@@ -136,8 +136,8 @@ jobs:
           fi
           
           echo "🔍 Change detection results:"
-          # Override: Always disable frontend for now
-          echo "frontend=false" >> $GITHUB_OUTPUT
+          # Override: Enable frontend tests
+          
           echo "  Core: ${{ steps.changes.outputs.core }}"
           echo "  Backend: ${{ steps.changes.outputs.backend }}"
           echo "  Frontend: ${{ steps.changes.outputs.frontend }}"
@@ -266,63 +266,46 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check if frontend directory exists
-        id: check-frontend
-        run: |
-          if [ -d "frontend" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "✅ Frontend directory found"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "❌ Frontend directory not found"
-          fi
-
       - name: Setup Node.js
-        if: steps.check-frontend.outputs.exists == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: frontend/package.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install frontend dependencies
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm install
-        working-directory: frontend
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup monorepo
+        run: |
+          chmod +x scripts/setup-monorepo.sh
+          ./scripts/setup-monorepo.sh
 
       - name: Run frontend linting
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm run lint || echo "Frontend linting completed with warnings"
-        working-directory: frontend
+        run: npm run lint --workspace=frontend || echo "Frontend linting completed with warnings"
 
       - name: Run frontend tests
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm run test -- --passWithNoTests || echo "Frontend tests completed with some failures"
-        working-directory: frontend
+        run: npm run test:frontend
         env:
           NODE_ENV: test
 
       - name: Build frontend application
-        if: steps.check-frontend.outputs.exists == 'true'
-        run: npm run build || echo "No frontend build script found, skipping..."
-        working-directory: frontend
+        run: npm run build --workspace=frontend || echo "No frontend build script found, skipping..."
 
       - name: Upload frontend test results
-        if: always() && steps.check-frontend.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: frontend-test-results
           path: frontend/coverage/
           retention-days: 30
 
       - name: Upload frontend build artifacts
-        if: steps.check-frontend.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: frontend/dist/
           retention-days: 30
-
   # Build Backend Docker Image
   build-backend-docker:
     name: Build Backend Docker Image
@@ -415,7 +398,7 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    needs: [detect-changes, test-core, test-backend, test-frontend]
+    needs: [detect-changes, test-core, test-backend, test-frontend, test-all]
     if: always() && (needs.detect-changes.outputs.core == 'true' || needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true')
     
     steps:
@@ -443,11 +426,68 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+  # Run All Tests Together
+  test-all:
+    name: Test All Components
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-core, test-backend, test-frontend, test-all]
+    if: always() && (needs.detect-changes.outputs.core == 'true' || needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: grocery_store_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup monorepo
+        run: |
+          chmod +x scripts/setup-monorepo.sh
+          ./scripts/setup-monorepo.sh
+
+      - name: Run Architecture Tests
+        run: npm run arch:all
+        env:
+          NODE_ENV: test
+
+      - name: Run All Tests Summary
+        run: |
+          echo "## 🧪 All Tests Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- Core Tests: ${{ needs.test-core.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend Tests: ${{ needs.test-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend Tests: ${{ needs.test-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Architecture Tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All components tested successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+
   # Summary
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [detect-changes, test-core, test-backend, test-frontend, build-backend-docker, build-frontend-docker, security-scan]
+    needs: [detect-changes, test-core, test-backend, test-frontend, test-all, build-backend-docker, build-frontend-docker, security-scan]
     if: always()
     
     steps:

@@ -31,14 +31,5 @@ const config = {
   },
 };
 
-// Log configuration in development
-if (config.DEBUG) {
-  console.log('🚀 App Configuration:', {
-    API_BASE_URL: config.API_BASE_URL,
-    APP_NAME: config.APP_NAME,
-    ENVIRONMENT: config.ENVIRONMENT,
-    DEBUG: config.DEBUG,
-  });
-}
 
 export default config;

@@ -364,8 +364,7 @@ export class ManageProductUseCase {
 
   async getFeaturedProducts(filters = {}) {
     try {
-      const { page = 1, limit = 20 } = filters;
-      const offset = (page - 1) * limit;
+      const { limit = 20 } = filters;
       
       const productsData = await this.productRepository.findFeatured(limit);
       const products = productsData.map(data => Product.fromJSON(data));

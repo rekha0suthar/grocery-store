@@ -45,9 +45,9 @@ if (import.meta.env.DEV) {
       connectStorageEmulator(storage, emulatorHost, storagePort);
     }
 
-    console.log('🔧 Connected to Firebase emulators (FREE tier)');
+    // console.log('🔧 Connected to Firebase emulators (FREE tier)');
   } catch (error) {
-    console.warn('⚠️ Failed to connect to Firebase emulators:', error.message);
+    // console.warn('⚠️ Failed to connect to Firebase emulators:', error.message);
   }
 }
 

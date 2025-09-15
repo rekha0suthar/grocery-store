@@ -39,7 +39,7 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
-      console.log('Login response:', response.data);
+      // console.log('Login response:', response.data);
       
       const responseData = response.data?.data || response.data;
       
@@ -49,7 +49,7 @@ export const loginUser = createAsyncThunk(
       
       return responseData;
     } catch (error) {
-      console.error('Login error:', error);
+      // console.error('Login error:', error);
       return _rejectWithValue(error.response?.data?.message || 'Login failed');
     }
   }
@@ -60,7 +60,7 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.register(userData);
-      console.log('Register response:', response.data);
+      // console.log('Register response:', response.data);
       
       const responseData = response.data?.data || response.data;
       
@@ -91,7 +91,7 @@ export const registerUser = createAsyncThunk(
         };
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      // console.error('Registration error:', error);
       return _rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }

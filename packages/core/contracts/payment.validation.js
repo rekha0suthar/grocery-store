@@ -52,7 +52,7 @@ export const PaymentValidationRules = {
     }
     
     // Use provided clock or fallback to Date
-    const now = clock ? clock.now() : new Date();
+    if (!clock) throw new Error("Clock dependency is required for date operations"); const now = clock.now();
     const currentYear = now.getFullYear() % 100;
     const currentMonth = now.getMonth() + 1;
     

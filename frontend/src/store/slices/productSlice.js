@@ -71,7 +71,7 @@ export const deleteProduct = createAsyncThunk(
   'products/deleteProduct',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await productService.deleteProduct(id);
+      await productService.deleteProduct(id);
       return id; 
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete product');

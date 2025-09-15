@@ -1,0 +1,87 @@
+name: Test All Components
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  test-all:
+    name: Test All Components
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: grocery_store_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup monorepo
+        run: |
+          chmod +x scripts/setup-monorepo.sh
+          ./scripts/setup-monorepo.sh
+
+      - name: Run Core Tests
+        run: npm run test:core
+        env:
+          NODE_ENV: test
+
+      - name: Run Backend Tests
+        run: npm run test:backend
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: grocery_store_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          JWT_SECRET: test-secret-key
+
+      - name: Run Frontend Tests
+        run: npm run test:frontend
+        env:
+          NODE_ENV: test
+
+      - name: Run Architecture Tests
+        run: npm run arch:all
+        env:
+          NODE_ENV: test
+
+      - name: Test Summary
+        run: |
+          echo "## 🧪 All Tests Completed Successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Core Package Tests: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backend Tests: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Frontend Tests: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Architecture Tests: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All components are working correctly! 🚀" >> $GITHUB_STEP_SUMMARY
