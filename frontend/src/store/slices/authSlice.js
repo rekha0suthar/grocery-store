@@ -152,8 +152,8 @@ export const approveStoreManagerRequest = createAsyncThunk(
 
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
-  refreshToken: localStorage.getItem('refreshToken'),
+  token: typeof localStorage !== 'undefined' ? (localStorage.getItem('token') || null) : null,
+  refreshToken: typeof localStorage !== 'undefined' ? (localStorage.getItem('refreshToken') || null) : null,
   isAuthenticated: false,
   loading: false,
   error: null,
