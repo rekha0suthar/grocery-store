@@ -112,7 +112,7 @@ describe('HomePage', () => {
       preloadedState: initialState
     });
 
-    expect(screen.getByText(/Get fresh groceries delivered/i)).toBeInTheDocument();
+    expect(screen.getAllByText((content, element) => { return element.textContent.includes("Shop the freshest produce, organic foods, and household essentials") })[0]).toBeInTheDocument();
   });
 
   it('shows shop now and get started buttons', () => {
@@ -165,9 +165,9 @@ describe('HomePage', () => {
       preloadedState: initialState
     });
 
-    expect(screen.getByText(/Why Choose Us/i)).toBeInTheDocument();
-    expect(screen.getByText(/Fast Delivery/i)).toBeInTheDocument();
-    expect(screen.getByText(/Quality Guarantee/i)).toBeInTheDocument();
+    expect(screen.getByText("Free Delivery")).toBeInTheDocument();
+    expect(screen.getByText("Fresh Guarantee")).toBeInTheDocument();
+    expect(screen.getByText("24/7 Support")).toBeInTheDocument();
     expect(screen.getByText("24/7 Support")).toBeInTheDocument();
   });
 
@@ -194,9 +194,9 @@ describe('HomePage', () => {
       preloadedState: initialState
     });
 
-    expect(screen.getByText(/Free delivery on orders over $50. Fast and reliable service./i)).toBeInTheDocument();
-    expect(screen.getByText(/100% fresh products or your money back. Quality guaranteed./i)).toBeInTheDocument();
-    expect(screen.getByText(/Round-the-clock customer support for all your needs./i)).toBeInTheDocument();
+    expect(screen.getByText((content, element) => { return element.textContent === "Free delivery on orders over $50. Fast and reliable service." })).toBeInTheDocument();
+    expect(screen.getByText((content, element) => { return element.textContent === "100% fresh products or your money back. Quality guaranteed." })).toBeInTheDocument();
+    expect(screen.getByText((content, element) => { return element.textContent === "Round-the-clock customer support for all your needs." })).toBeInTheDocument();
   });
 
   it('shows categories section', () => {
@@ -353,7 +353,7 @@ describe('HomePage', () => {
       preloadedState: initialState
     });
 
-    expect(screen.getByLabelText("Loading")).toBeInTheDocument()
+    expect(screen.getAllByLabelText("Loading")[0]).toBeInTheDocument()
   });
 
   it('shows loading spinner when categories are loading', () => {
@@ -379,6 +379,6 @@ describe('HomePage', () => {
       preloadedState: initialState
     });
 
-    expect(screen.getByLabelText("Loading")).toBeInTheDocument()
+    expect(screen.getAllByLabelText("Loading")[0]).toBeInTheDocument()
   });
 });

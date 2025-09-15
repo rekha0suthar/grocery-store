@@ -9,7 +9,7 @@ import authReducer, {
   checkInitializationStatus,
   initializeSystem,
 } from '../../store/slices/authSlice.js';
-import { mockUser, mockAdmin } from '../utils/test-utils.jsx';
+import { mockUser, mockAdmin } from '../utils/test-utils.js';
 
 // Mock the auth service
 jest.mock('../../services/authService.js', () => ({

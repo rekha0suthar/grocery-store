@@ -207,3 +207,13 @@ export const createMockError = (message = 'Test error') => ({
   status: 400,
   data: null,
 });
+
+// Simple test to prevent Jest from complaining about empty test file
+describe('test-utils', () => {
+  it('should export test utilities', () => {
+    expect(mockUser).toBeDefined();
+    expect(mockAdmin).toBeDefined();
+    expect(createMockState).toBeDefined();
+    expect(renderWithProviders).toBeDefined();
+  });
+});
