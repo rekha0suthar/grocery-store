@@ -16,7 +16,8 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "CORS_ORIGINS": "https://grocery-store-frontend-nu.vercel.app,http://localhost:3000,http://localhost:3001,http://localhost:5173"
   },
   "git": {
     "deploymentEnabled": {
