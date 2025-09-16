@@ -16,7 +16,8 @@ import {
   Heart,
   MapPin,
   Phone,
-  Package
+  Package,
+  ShoppingBag
 } from 'lucide-react';
 import Button from '../UI/Button.jsx';
 
@@ -113,6 +114,17 @@ const ModernHeader = () => {
               <Search className="w-6 h-6" />
             </button>
 
+            {/* Orders Icon - Only show for authenticated users */}
+            {isAuthenticated && (
+              <button
+                onClick={() => navigate('/orders')}
+                className="p-2 text-gray-600 hover:text-green-600"
+                title="My Orders"
+              >
+                <ShoppingBag className="w-6 h-6" />
+              </button>
+            )}
+
             <button
               onClick={() => navigate('/wishlist')}
               className="relative p-2 text-gray-600 hover:text-green-600"
@@ -139,8 +151,11 @@ const ModernHeader = () => {
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-2">
-                  <User className="w-5 h-5 text-gray-600" />
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-green-600 transition-colors"
+                >
+                  <User className="w-5 h-5" />
                   <span className="text-sm font-medium text-gray-700">
                     {user?.firstName || user?.name || 'User'}
                   </span>
@@ -149,7 +164,7 @@ const ModernHeader = () => {
                       ({user.role})
                     </span>
                   )}
-                </div>
+                </button>
                 <button
                   onClick={handleLogout}
                   className="flex items-center space-x-1 text-gray-600 hover:text-red-600"

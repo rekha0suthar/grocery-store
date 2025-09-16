@@ -45,7 +45,9 @@ export const authService = {
   },
 
   async updateProfile(profileData) {
+    console.log('profileData', profileData);
     const response = await api.put('/auth/profile', profileData);
+    console.log('response', response);
     return response;
   },
 

@@ -86,11 +86,7 @@ describe('CategoryController - HTTP Interface Adapter', () => {
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: 'Categories retrieved successfully',
-        data: {
-          success: true,
-          message: 'Categories retrieved successfully',
-          categories: mockCategories
-        }
+        categories: mockCategories
       });
     });
   });
@@ -119,11 +115,7 @@ describe('CategoryController - HTTP Interface Adapter', () => {
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: 'Category created successfully',
-        data: {
-          success: true,
-          message: 'Category created successfully',
-          category: createdCategory
-        }
+        category: createdCategory
       });
     });
   });

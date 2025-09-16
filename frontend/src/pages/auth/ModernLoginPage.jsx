@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux.js';
@@ -24,22 +24,24 @@ const ModernLoginPage = () => {
     formState: { errors },
   } = useForm();
 
-
-  const redirectBasedOnRole = (role) => {
+  const redirectBasedOnRole = useCallback((role) => {
+    console.log('role', role);
     switch (role) {
       case 'customer':
+        console.log('customer');
         navigate('/dashboard');
         break;
       case 'admin':
+        console.log('admin');
         navigate('/admin/dashboard');
         break;
       case 'store_manager':
-        navigate('/manager/products');
+        navigate('/manager/dashboard');
         break;
       default:
         navigate('/dashboard');
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {    
     if (!isAuthenticated || !user) {
@@ -55,7 +57,7 @@ const ModernLoginPage = () => {
 
    
     redirectBasedOnRole(user.role);
-  }, [isAuthenticated, user, requestStatus, navigate, redirectBasedOnRole]);
+  }, [isAuthenticated, user, requestStatus, redirectBasedOnRole]);
 
 
 

@@ -4,3 +4,4 @@ export { RegisterStoreManagerUseCase } from './RegisterStoreManagerUseCase.js';
 export { AuthenticateUserWithApprovalUseCase } from './AuthenticateUserWithApprovalUseCase.js';
 export { InitializeSystemUseCase } from './InitializeSystemUseCase.js';
 export { ManageStoreManagerRequestsUseCase } from './ManageStoreManagerRequestsUseCase.js';
+export { UpdateUserUseCase } from './UpdateUserUseCase.js';

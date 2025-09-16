@@ -1,41 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { updateProfile } from '../store/slices/authSlice.js';
 import Card from '../components/UI/Card.jsx';
 import Button from '../components/UI/Button.jsx';
 import Input from '../components/UI/Input.jsx';
-import { User, Mail, Phone, Calendar } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Edit3, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm({
     defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
+      name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || '',
       phone: user?.phone || '',
+      address: user?.address || '',
     },
   });
 
-  const onSubmit = async (data) => {
+  // Update form when user data changes
+  useEffect(() => {
+    if (user) {
+      reset({
+        name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || '',
+        phone: user?.phone || '',
+        address: user?.address || '',
+      });
+    }
+  }, [user, reset]);
+
+  const onSubmit = async (data, e) => {
+    e?.preventDefault();
     setLoading(true);
     try {
-      await dispatch(updateProfile(data)).unwrap();
-      toast.success('Profile updated successfully!');
+      // Include email in the payload to satisfy backend validation
+      const payload = { 
+        ...data, 
+        email: user?.email 
+      };
+      
+      console.log('Submitting profile data:', payload);
+      const result = await dispatch(updateProfile(payload)).unwrap();
+      console.log('Profile update result:', result);
+      
+      // Check if the update was successful
+      if (result && result.success !== false) {
+        toast.success('Profile updated successfully!');
+        setIsEditing(false);
+      } else {
+        // Show error message from backend
+        const errorMessage = result?.message || 'Failed to update profile';
+        toast.error(errorMessage);
+        console.error('Profile update failed:', result);
+      }
     } catch (error) {
-      toast.error(error || 'Failed to update profile');
+      console.error('Profile update error:', error);
+      const errorMessage = error || 'Failed to update profile';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset form to original values
+    reset({
+      name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || '',
+      phone: user?.phone || '',
+      address: user?.address || '',
+    });
   };
 
   const getRoleBadgeColor = (role) => {
@@ -51,112 +98,147 @@ const ProfilePage = () => {
     }
   };
 
+  const getDisplayName = () => {
+    if (user?.name) {
+      return user.name;
+    }
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return 'User';
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-        <p className="text-gray-600">Manage your account information</p>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+          <p className="text-gray-600 mt-2">Manage your account information</p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Info */}
-        <div className="lg:col-span-1">
-          <Card className="p-6">
-            <div className="text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-12 h-12 text-gray-400" />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">{user?.name}</h2>
-              <p className="text-gray-500 mb-2">{user?.email}</p>
-              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user?.role)}`}>
-                {user?.role?.replace('_', ' ').toUpperCase()}
-              </span>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center space-x-3">
-                <Mail className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600">{user?.email}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600">{user?.phone || 'Not provided'}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600">
-                  Joined {new Date(user?.createdAt).toLocaleDateString()}
+        {/* Centered Profile Card */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl">
+            <Card className="p-8 shadow-xl">
+              <div className="text-center">
+                <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <User className="w-16 h-16 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {getDisplayName()}
+                </h2>
+                <p className="text-gray-500 mb-4 text-lg">{user?.email}</p>
+                <span className={`inline-flex px-4 py-2 text-sm font-semibold rounded-full ${getRoleBadgeColor(user?.role)}`}>
+                  {user?.role?.replace('_', ' ').toUpperCase()}
                 </span>
               </div>
-            </div>
-          </Card>
-        </div>
 
-        {/* Edit Profile Form */}
-        <div className="lg:col-span-2">
-          <Card>
-            <Card.Header>
-              <h3 className="text-lg font-semibold text-gray-900">Edit Profile</h3>
-            </Card.Header>
-            <Card.Content>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="First Name"
-                    type="text"
-                    error={errors.firstName?.message}
-                    {...register('firstName', {
-                      required: 'First name is required',
-                    })}
-                  />
-
-                  <Input
-                    label="Last Name"
-                    type="text"
-                    error={errors.lastName?.message}
-                    {...register('lastName', {
-                      required: 'Last name is required',
-                    })}
-                  />
+              <div className="mt-8 space-y-4">
+                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <Mail className="w-6 h-6 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Email</p>
+                    <p className="text-gray-900">{user?.email}</p>
+                  </div>
                 </div>
+                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <Phone className="w-6 h-6 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Phone</p>
+                    <p className="text-gray-900">{user?.phone || 'Not provided'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <Calendar className="w-6 h-6 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Member Since</p>
+                    <p className="text-gray-900">
+                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recently'}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                <Input
-                  label="Email"
-                  type="email"
-                  error={errors.email?.message}
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                  })}
-                />
-
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  error={errors.phone?.message}
-                  {...register('phone', {
-                    pattern: {
-                      value: /^[+]?[1-9][\d]{0,15}$/,
-                      message: 'Invalid phone number',
-                    },
-                  })}
-                />
-
+              {/* Edit Button */}
+              <div className="mt-8">
                 <Button
-                  type="submit"
-                  loading={loading}
-                  className="w-full md:w-auto"
+                  onClick={handleEditClick}
+                  className="w-full flex items-center justify-center space-x-2 py-3"
                 >
-                  Update Profile
+                  <Edit3 className="w-5 h-5" />
+                  <span>Edit Profile</span>
                 </Button>
-              </form>
-            </Card.Content>
-          </Card>
+              </div>
+            </Card>
+          </div>
         </div>
+
+        {/* Edit Profile Form Popup */}
+        {isEditing && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              {/* Popup Header */}
+              <div className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200 px-6 py-4 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                      <Edit3 className="w-5 h-5 mr-2 text-green-600" />
+                      Edit Profile
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">Update your personal information</p>
+                  </div>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Popup Content */}
+              <div className="p-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  <Input
+                    label="Full Name"
+                    type="text"
+                    {...register('name')}
+                  />
+
+                  <Input
+                    label="Phone Number"
+                    type="tel"
+                    {...register('phone')}
+                  />
+
+                  <Input
+                    label="Address"
+                    type="text"
+                    {...register('address')}
+                  />
+
+                  <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      loading={loading}
+                      className="px-8"
+                    >
+                      Update Profile
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

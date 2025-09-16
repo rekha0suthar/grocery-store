@@ -58,51 +58,27 @@ function AppRoutes() {
     );
   }
 
-  const getDashboardComponent = () => {
-    if (!user) return null;
-    
-    switch (user.role) {
-      case 'customer':
-        return <CustomerDashboardPage />;
-      case 'admin':
-      case 'store_manager':
-        return <ModernDashboardPage />;
-      default:
-        return <CustomerDashboardPage />;
-    }
-  };
-
-  const hasAccess = (requiredRole) => {
-    if (!user) return false;
-    if (requiredRole === 'any') return true;
-    if (Array.isArray(requiredRole)) {
-      return requiredRole.includes(user.role);
-    }
-    return user.role === requiredRole;
-  };
-
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route 
-        path="/login" 
-        element={!user ? <ModernLoginPage /> : <Navigate to="/dashboard" replace />} 
+      <Route
+        path="/login"
+        element={!user ? <ModernLoginPage /> : <Navigate to="/dashboard" replace />}
       />
-      <Route 
-        path="/register" 
-        element={!user ? <ModernRegisterPage /> : <Navigate to="/dashboard" replace />} 
+      <Route
+        path="/register"
+        element={!user ? <ModernRegisterPage /> : <Navigate to="/dashboard" replace />}
       />
-
-      <Route 
-        path="/initialize" 
-        element={systemInitialized ? <Navigate to="/login" replace /> : <SystemInitializationPage />} 
+  
+      <Route
+        path="/initialize"
+        element={systemInitialized ? <Navigate to="/login" replace /> : <SystemInitializationPage />}
       />
-
+  
       <Route path="/style-test" element={<StyleTestPage />} />
-
+  
       {user && (
         <Route path="/" element={<Layout />}>
-          <Route path="dashboard" element={getDashboardComponent()} />          
           <Route path="products" element={<ModernProductsPage />} />
           <Route path="products/:id" element={<ProductDetailPage />} />
           <Route path="categories" element={<CategoriesPage />} />
@@ -110,38 +86,45 @@ function AppRoutes() {
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
-          {hasAccess('customer') && (
-          <Route path="requests" element={<RequestsPage />} />
-          )}
-
-          {hasAccess('admin') && (
+          <Route path="wishlist" element={<WishlistPage />} />
+  
+          {user.role === 'customer' && (
             <>
+              <Route path="dashboard" element={<CustomerDashboardPage />} />
+              <Route path="requests" element={<RequestsPage />} />
+            </>
+          )}
+  
+          {user.role === 'admin' && (
+            <>
+              <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="admin/dashboard" element={<AdminDashboardPage />} />
               <Route path="admin/products" element={<AdminProductsPage />} />
               <Route path="admin/categories" element={<AdminCategoriesPage />} />
               <Route path="admin/requests" element={<AdminRequestsPage />} />
             </>
           )}
-
-          {hasAccess('store_manager') && (
+  
+          {user.role === 'store_manager' && (
             <>
+              <Route path="dashboard" element={<ModernDashboardPage />} />
+              <Route path="manager/dashboard" element={<ModernDashboardPage />} />
               <Route path="manager/products" element={<AdminProductsPage />} />
               <Route path="manager/categories" element={<AdminCategoriesPage />} />
             </>
           )}
         </Route>
       )}
-
-      <Route 
-        path="*" 
+  
+      <Route
+        path="*"
         element={
           user ? (
             <Navigate to="/dashboard" replace />
           ) : (
             <Navigate to="/" replace />
           )
-        } 
+        }
       />
     </Routes>
   );

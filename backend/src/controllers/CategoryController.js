@@ -1,6 +1,6 @@
+import { asyncHandler } from '../middleware/errorHandler.js';
 import { BaseController } from './BaseController.js';
 import { CategoryComposition } from '../composition/CategoryComposition.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
 
 export class CategoryController extends BaseController {
   constructor() {
@@ -12,24 +12,20 @@ export class CategoryController extends BaseController {
     const { page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
 
-    const categories = await this.categoryComposition.getManageCategoryUseCase().execute('getAllCategories', {
+    const result = await this.categoryComposition.getManageCategoryUseCase().execute('getAllCategories', {
       limit: parseInt(limit),
       offset
     });
 
-    this.sendSuccess(res, categories, 'Categories retrieved successfully');
+    return res.status(result.success ? 200 : 400).json(result);
   });
 
   getCategoryById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     
-    const category = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryById', { id });
+    const result = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryById', { id });
     
-    if (!category) {
-      return this.sendNotFound(res, 'Category not found');
-    }
-    
-    this.sendSuccess(res, category, 'Category retrieved successfully');
+    return res.status(result.success ? 200 : 400).json(result);
   });
 
   createCategory = asyncHandler(async (req, res) => {
@@ -37,13 +33,13 @@ export class CategoryController extends BaseController {
     const userRole = req.user.role;
     const userId = req.user.id;
     
-    const category = await this.categoryComposition.getManageCategoryUseCase().execute('createCategory', {
+    const result = await this.categoryComposition.getManageCategoryUseCase().execute('createCategory', {
       ...categoryData,
       userRole,
       userId
     });
     
-    this.sendSuccess(res, category, 'Category created successfully', 201);
+    return res.status(result.success ? 201 : 400).json(result);
   });
 
   updateCategory = asyncHandler(async (req, res) => {
@@ -52,18 +48,14 @@ export class CategoryController extends BaseController {
     const userRole = req.user.role;
     const userId = req.user.id;
     
-    const category = await this.categoryComposition.getManageCategoryUseCase().execute('updateCategory', {
+    const result = await this.categoryComposition.getManageCategoryUseCase().execute('updateCategory', {
       id,
       ...updateData,
       userRole,
       userId
     });
     
-    if (!category) {
-      return this.sendNotFound(res, 'Category not found');
-    }
-    
-    this.sendSuccess(res, category, 'Category updated successfully');
+    return res.status(result.success ? 200 : 400).json(result);
   });
 
   deleteCategory = asyncHandler(async (req, res) => {
@@ -77,16 +69,13 @@ export class CategoryController extends BaseController {
       userId 
     });
     
-    if (!result) {
-      return this.sendNotFound(res, 'Category not found');
-    }
-    
-    this.sendSuccess(res, result, 'Category deleted successfully');
+    console.log('DELETE CATEGORY RESULT:', JSON.stringify(result, null, 2));
+    return res.status(result.success ? 200 : 400).json(result);
   });
 
   getCategoryTree = asyncHandler(async (req, res) => {
-    const tree = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryTree');
+    const result = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryTree');
     
-    this.sendSuccess(res, tree, 'Category tree retrieved successfully');
+    return res.status(result.success ? 200 : 400).json(result);
   });
 }

@@ -1,6 +1,7 @@
 import { 
   AuthenticateUserUseCase, 
   CreateUserUseCase,
+  UpdateUserUseCase,
   AuthenticateUserWithApprovalUseCase,
   RegisterStoreManagerUseCase,
   InitializeSystemUseCase,
@@ -44,6 +45,10 @@ export class AuthenticationComposition {
       passwordHasher: this.passwordHasher
     });
 
+    this.updateUserUseCase = new UpdateUserUseCase({
+      userRepo: this.userRepository
+    });
+
     // New use cases with business rules
     this.authenticateUserWithApprovalUseCase = new AuthenticateUserWithApprovalUseCase(
       this.userRepository,
@@ -79,6 +84,10 @@ export class AuthenticationComposition {
 
   getCreateUserUseCase() {
     return this.createUserUseCase;
+  }
+
+  getUpdateUserUseCase() {
+    return this.updateUserUseCase;
   }
 
   // New methods with business rules

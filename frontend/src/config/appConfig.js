@@ -3,7 +3,7 @@ function readViteEnv() {
   try {
     // Using a Function prevents the parser from seeing `import.meta` as syntax.
     // In Vite/ESM it returns import.meta.env; in Jest/Node it throws and we return {}.
-    // eslint-disable-next-line no-new-func
+     
     const fn = new Function('return (typeof import !== "undefined" && import.meta && import.meta.env) ? import.meta.env : {}');
     return fn() || {};
   } catch {

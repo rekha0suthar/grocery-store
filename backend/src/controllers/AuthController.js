@@ -122,13 +122,15 @@ export class AuthController extends BaseController {
   updateProfile = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const updateData = req.body;
+    console.log('updateData', updateData);
+    console.log('userId', userId);
+    const result = await this.authComposition.getUpdateUserUseCase().execute(userId, updateData);
+    console.log('result', result);
+    if (!result.success) {
+      return this.sendError(res, result.message, 400);
+    }
     
-    const user = await this.authComposition.getCreateUserUseCase().execute('updateUser', {
-      id: userId,
-      ...updateData
-    });
-    
-    this.sendSuccess(res, user, 'Profile updated successfully');
+    this.sendSuccess(res, result.user, result.message);
   });
 
   changePassword = asyncHandler(async (req, res) => {
