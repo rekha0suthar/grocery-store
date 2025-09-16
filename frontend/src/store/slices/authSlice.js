@@ -116,7 +116,6 @@ export const updateProfile = createAsyncThunk(
     try {
       const response = await authService.updateProfile(profileData);
       const responseData = response.data?.data || response.data;
-      console.log('responseData', responseData);
       
       // Check if the response indicates failure
       if (responseData.success === false) {

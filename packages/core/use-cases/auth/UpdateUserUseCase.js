@@ -1,13 +1,15 @@
 // packages/core/use-cases/auth/UpdateUserUseCase.js
 import { User } from '../../entities/User.js';
 import { validateUserProfile } from '../../contracts/user.validation.js';
+import { DefaultClock } from '../../adapters/DefaultClock.js';
 
 export class UpdateUserUseCase {
   /**
-   * @param {{ userRepo: { findById(id): Promise<User|Object>, update(id, data): Promise<Object> } }} deps
+   * @param {{ userRepo: { findById(id): Promise<User|Object>, update(id, data): Promise<Object> }, clock?: Object }} deps
    */
-  constructor({ userRepo }) {
+  constructor({ userRepo, clock = null }) {
     this.userRepository = userRepo;
+    this.clock = clock || new DefaultClock();
   }
 
   async execute(userId, updateData) {
@@ -41,7 +43,7 @@ export class UpdateUserUseCase {
       ...existingPlain,
       ...updateData,
       id: userId,
-      updatedAt: new Date().toISOString(),
+      updatedAt: this.clock.now().toISOString(),
     };
 
     console.log('UpdateUserUseCase: merged data:', merged);
