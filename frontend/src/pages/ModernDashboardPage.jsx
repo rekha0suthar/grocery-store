@@ -39,7 +39,7 @@ const ModernDashboardPage = () => {
 
   const pendingRequests = requests.filter(req => req.status === 'pending');
   const lowStockProducts = products.filter(product => product.stock < 10);
-  // const _featuredProducts = products.filter(product => product.isFeatured).slice(0, 4);
+
   const recentProducts = products.slice(0, 6);
 
   const stats = [
@@ -87,7 +87,6 @@ const ModernDashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -96,7 +95,7 @@ const ModernDashboardPage = () => {
                 Welcome back, {user?.name || user?.email}! 👋
               </h1>
               <p className="text-gray-600 mt-1">
-                Here's what's happening with your grocery store today.
+                Here&apos;s what&apos;s happening with your grocery store today.
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -118,7 +117,6 @@ const ModernDashboardPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat) => {
             const Icon = stat.icon;
@@ -152,9 +150,7 @@ const ModernDashboardPage = () => {
           })}
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Products */}
           <div className="lg:col-span-2">
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -223,9 +219,7 @@ const ModernDashboardPage = () => {
             </Card>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Pending Requests */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Pending Requests</h3>
@@ -268,7 +262,6 @@ const ModernDashboardPage = () => {
               )}
             </Card>
 
-            {/* Low Stock Alert */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Low Stock Alert</h3>
@@ -308,7 +301,6 @@ const ModernDashboardPage = () => {
               )}
             </Card>
 
-            {/* Quick Actions */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">

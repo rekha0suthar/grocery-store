@@ -1,5 +1,5 @@
+import { screen, fireEvent } from "@testing-library/react";
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
 import CartSidebar from '../../../components/Layout/CartSidebar.jsx';
 import { renderWithProviders, createMockState } from '../../utils/test-utils.js';
 

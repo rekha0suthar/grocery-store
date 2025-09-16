@@ -1,5 +1,5 @@
+import { screen, fireEvent } from "@testing-library/react";
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
 import GridProductCard from '../../../components/UI/GridProductCard.jsx';
 import ListProductCard from '../../../components/UI/ListProductCard.jsx';
 import { renderWithProviders, createMockState } from '../../utils/test-utils.js';
@@ -167,7 +167,7 @@ describe('ListProductCard', () => {
       { preloadedState: createMockState() }
     );
 
-    const addToCartButton = screen.getByText('Add to Cart');
+    const addToCartButton = screen.getByText('Add');
     fireEvent.click(addToCartButton);
     expect(mockOnAddToCart).toHaveBeenCalledWith(mockProduct);
   });
@@ -184,7 +184,7 @@ describe('ListProductCard', () => {
       preloadedState: createMockState()
     });
 
-    expect(screen.queryByText('Add to Cart')).not.toBeInTheDocument();
+    expect(screen.queryByText('Add')).not.toBeInTheDocument();
   });
 
   it('renders placeholder when no image is provided', () => {

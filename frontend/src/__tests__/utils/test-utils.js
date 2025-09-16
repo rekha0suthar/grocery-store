@@ -4,6 +4,7 @@ import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from '../../contexts/AuthContext.jsx';
 
 // Import all slices
 import authSlice from '../../store/slices/authSlice.js';
@@ -180,7 +181,9 @@ export const renderWithProviders = (
   const Wrapper = ({ children }) => (
     <Provider store={store}>
       <BrowserRouter>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </BrowserRouter>
     </Provider>
   );

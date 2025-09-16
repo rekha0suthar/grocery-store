@@ -22,23 +22,18 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = async () => {
       setAuthLoading(true);
       
-      // Check if we have a token but no user
       if (token && !user) {
         try {
-          // Try to get user profile from API
           const response = await authService.getProfile();
           const userData = response.data?.data || response.data;
           dispatch(setCredentials({ user: userData, token, refreshToken: localStorage.getItem('refreshToken') }));
         } catch (error) {
-          console.error('Failed to get user profile:', error);
-          // If API call fails, try to get user from localStorage
           const storedUser = localStorage.getItem('user');
           if (storedUser) {
             try {
               const parsedUser = JSON.parse(storedUser);
               dispatch(setCredentials({ user: parsedUser, token, refreshToken: localStorage.getItem('refreshToken') }));
             } catch (parseError) {
-              console.error('Failed to parse stored user:', parseError);
               dispatch(clearAuth());
             }
           } else {
@@ -46,7 +41,6 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } else if (!token && !user) {
-        // No token and no user, check localStorage for user data
         const storedUser = localStorage.getItem('user');
         const storedToken = localStorage.getItem('token');
         const storedRefreshToken = localStorage.getItem('refreshToken');
@@ -56,7 +50,6 @@ export const AuthProvider = ({ children }) => {
             const parsedUser = JSON.parse(storedUser);
             dispatch(setCredentials({ user: parsedUser, token: storedToken, refreshToken: storedRefreshToken }));
           } catch (parseError) {
-            console.error('Failed to parse stored user:', parseError);
             dispatch(clearAuth());
           }
         }

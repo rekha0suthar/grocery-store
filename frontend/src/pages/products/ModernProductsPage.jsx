@@ -5,17 +5,13 @@ import { fetchProducts, searchProducts, clearSearch } from '../../store/slices/p
 import { fetchCategories } from '../../store/slices/categorySlice.js';
 import { addToCart } from '../../store/slices/cartSlice.js';
 import Card from '../../components/UI/Card.jsx';
-import Button from '../../components/UI/Button.jsx';
 import GridProductCard from '../../components/UI/GridProductCard.jsx';
 import ListProductCard from '../../components/UI/ListProductCard.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
 import { 
-  ShoppingCart, 
   Package, 
   Grid, 
   List,
-  Star,
-  Heart,
   SlidersHorizontal
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -26,7 +22,6 @@ const ModernProductsPage = () => {
   const { products, loading, searchResults, searchLoading, isSearchActive } = useAppSelector((state) => state.products);
   const { categories } = useAppSelector((state) => state.categories);
   const { items: cartItems } = useAppSelector((state) => state.cart);
-  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [viewMode, setViewMode] = useState('grid');
@@ -57,7 +52,7 @@ const ModernProductsPage = () => {
         dispatch(fetchProducts({ limit: 20 }));
       }
     }
-  }, [dispatch, searchParams, categories.length]);
+  }, [dispatch, searchParams, categories.length, category, featured, sale, search]);
 
   const handleAddToCart = (product) => {
     if (product.stock !== undefined && product.stock <= 0) {

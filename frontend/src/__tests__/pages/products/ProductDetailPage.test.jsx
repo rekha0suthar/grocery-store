@@ -129,6 +129,6 @@ describe('ProductDetailPage', () => {
   it('shows add to cart button when product is available', () => {
     renderWithProviders(<ProductDetailPage />, { preloadedState: initialState });
     
-    expect(screen.getByRole('button', { name: /add to cart/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Add/i })).toBeInTheDocument();
   });
 });

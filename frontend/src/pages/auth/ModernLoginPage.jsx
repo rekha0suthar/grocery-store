@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux.js';
 import { loginUser } from '../../store/slices/authSlice.js';
-import { validateUserLogin } from '../../utils/validation.js';
 import { toast } from 'react-hot-toast';
 import Button from '../../components/UI/Button.jsx';
 import StatusAlert from '../../components/UI/StatusAlert.jsx';
@@ -25,21 +24,6 @@ const ModernLoginPage = () => {
     formState: { errors },
   } = useForm();
 
-  useEffect(() => {    
-    if (!isAuthenticated || !user) {
-      return;
-    }
-
-    if (user.role === 'store_manager') {
-      if (requestStatus?.status === 'approved') {
-        redirectBasedOnRole('store_manager');
-      }
-      return;
-    }
-
-   
-    redirectBasedOnRole(user.role);
-  }, [isAuthenticated, user, requestStatus, navigate]);
 
   const redirectBasedOnRole = (role) => {
     switch (role) {
@@ -56,6 +40,23 @@ const ModernLoginPage = () => {
         navigate('/dashboard');
     }
   };
+
+  useEffect(() => {    
+    if (!isAuthenticated || !user) {
+      return;
+    }
+
+    if (user.role === 'store_manager') {
+      if (requestStatus?.status === 'approved') {
+        redirectBasedOnRole('store_manager');
+      }
+      return;
+    }
+
+   
+    redirectBasedOnRole(user.role);
+  }, [isAuthenticated, user, requestStatus, navigate, redirectBasedOnRole]);
+
 
 
 
@@ -327,7 +328,7 @@ const ModernLoginPage = () => {
 
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
               to="/register"
               className="font-medium text-green-600 hover:text-green-500"

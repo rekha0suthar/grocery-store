@@ -1,10 +1,10 @@
+import { Clock, CheckCircle, XCircle, FileText } from "lucide-react";
 import React, { useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
 import { fetchRequests, approveRequest, rejectRequest } from '../../store/slices/requestSlice.js';
 import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
-import { FileText, CheckCircle, XCircle, Clock, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const AdminRequestsPage = () => {

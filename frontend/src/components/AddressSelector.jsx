@@ -5,7 +5,6 @@ import Card from './UI/Card.jsx';
 import Button from './UI/Button.jsx';
 import { 
   MapPin, 
-  Edit, 
   Trash2, 
   Plus, 
   Check,

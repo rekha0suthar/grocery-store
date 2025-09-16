@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link , useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { fetchProducts } from '../store/slices/productSlice.js';
 import { fetchCategories } from '../store/slices/categorySlice.js';
@@ -9,8 +9,6 @@ import Button from '../components/UI/Button.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import {
   ShoppingCart,
-  Star,
-  Heart,
   Truck,
   Shield,
   Clock,
@@ -18,7 +16,6 @@ import {
   Package
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useSearchParams } from 'react-router-dom';
 import Card from '../components/UI/Card.jsx';
 
 const HomePage = () => {
@@ -26,8 +23,6 @@ const HomePage = () => {
   const [searchParams] = useSearchParams();
   const { categories, loading: categoriesLoading } = useAppSelector((state) => state.categories);
   const { products, loading: productsLoading } = useAppSelector((state) => state.products);
-  const { items: cartItems } = useAppSelector((state) => state.cart);
-  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
 
   const currentCategory = searchParams.get('category');
 

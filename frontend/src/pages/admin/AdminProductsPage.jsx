@@ -20,7 +20,9 @@ function parseImagesField(value) {
       return Array.isArray(arr)
         ? arr.map(String).map(s => s.trim()).filter(Boolean)
         : [];
-    } catch { }
+    } catch {
+      return []; 
+    }
   }
   return value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 }
@@ -128,7 +130,6 @@ const AdminProductsPage = () => {
       reset();
       dispatch(fetchProducts());
     } catch (error) {
-      console.error('Form submission error:', error);
       toast.error(error || 'Failed to save product');
     } finally {
       setCreateLoading(false);
@@ -365,7 +366,6 @@ const AdminProductsPage = () => {
   const ListView = () => (
     <div className="space-y-6">
       {products.map((product) => {
-        const discountInfo = getDiscountInfo(product);
         return (
           <Card key={product.id} className="overflow-hidden hover:shadow-md transition-shadow duration-200 relative z-10">
             <div className="flex">
@@ -381,7 +381,7 @@ const AdminProductsPage = () => {
                   <Package className="w-12 h-12 text-gray-400" />
                 )}
               </div>
-              <div className="p-4 flex-1"> 
+              <div className="p-4 flex-1">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
@@ -833,9 +833,9 @@ const AdminProductsPage = () => {
                           One image per line. Supports http/https and data:image/...;base64,...
                         </p>
 
-                        {previewImages.length > 0 && (
+                        {previewImages && previewImages.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-2">
-                            {previewImages.map((img, index) => (
+                            {previewImages && previewImages.map((img, index) => (
                               <div key={index} className="relative">
                                 <img
                                   src={img}
@@ -851,7 +851,7 @@ const AdminProductsPage = () => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const kept = previewImages.filter((_, i) => i !== index);
+                                    const kept = previewImages && previewImages.filter((_, i) => i !== index) || [];
                                     setValue('images', kept.join('\n'), { shouldDirty: true, shouldValidate: true });
                                   }}
                                   className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
@@ -918,5 +918,6 @@ const AdminProductsPage = () => {
     </div>
   );
 };
+
 
 export default AdminProductsPage;

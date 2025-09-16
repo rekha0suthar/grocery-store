@@ -100,7 +100,6 @@ export const ModernRegisterPage = () => {
         toast.error(result.payload || 'Registration failed. Please try again.');
       }
     } catch (error) {
-      console.error('Registration error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     }
   };

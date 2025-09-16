@@ -6,7 +6,6 @@ import { openCart } from '../../store/slices/cartSlice.js';
 import { logoutUser } from '../../store/slices/authSlice.js';
 import { searchProducts } from '../../store/slices/productSlice.js';
 import { fetchCategories } from '../../store/slices/categorySlice.js';
-import { toggleWishlistItem } from '../../store/slices/wishlistSlice.js';
 import { toast } from 'react-hot-toast';
 import { 
   Menu, 
@@ -30,7 +29,6 @@ const ModernHeader = () => {
   const { categories } = useAppSelector((state) => state.categories);
   const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const currentCategory = searchParams.get('category');
 
@@ -46,7 +44,6 @@ const ModernHeader = () => {
       toast.success('Logged out successfully!');
       navigate('/');
     } catch (error) {
-      console.error('Logout failed:', error);
       toast.error('Logout failed. Please try again.');
     }
   };
@@ -54,37 +51,13 @@ const ModernHeader = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      dispatch(searchProducts({ q: searchQuery }));
-      navigate(`/products?search=${searchQuery}`);
+      dispatch(searchProducts({ query: searchQuery.trim() }));
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  const handleWishlistClick = () => {
-    navigate('/wishlist');
-  };
-
-  const getDashboardUrl = () => {
-    if (!user) return '/';
-    
-    switch (user.role) {
-      case 'customer':
-        return '/dashboard';
-      case 'admin':
-        return '/admin/dashboard';
-      case 'store_manager':
-        return '/manager/products';
-      default:
-        return '/dashboard';
-    }
-  };
-
-  const handleLogoClick = () => {
-    if (isAuthenticated && user) {
-      navigate(getDashboardUrl());
-    } else {
-      navigate('/');
-    }
-  };
+  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const wishlistCount = wishlistItems.length;
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -92,37 +65,17 @@ const ModernHeader = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center space-x-6">
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-1" />
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4" />
                 <span>Free delivery on orders over $50</span>
               </div>
-              <div className="flex items-center">
-                <Phone className="w-4 h-4 mr-1" />
+              <div className="flex items-center space-x-2">
+                <Phone className="w-4 h-4" />
                 <span>Call us: (555) 123-4567</span>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              {user ? (
-                <div className="flex items-center space-x-4">
-                  <span>Welcome, {user.name || user.email}</span>
-                  <button
-                    onClick={handleLogout}
-                    className="hover:text-green-200 transition-colors flex items-center"
-                  >
-                    <LogOut className="w-4 h-4 mr-1" />
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-4">
-                  <Link to="/login" className="hover:text-green-200 transition-colors">
-                    Login
-                  </Link>
-                  <Link to="/register" className="hover:text-green-200 transition-colors">
-                    Register
-                  </Link>
-                </div>
-              )}
+              <span>Welcome to FreshMart!</span>
             </div>
           </div>
         </div>
@@ -130,20 +83,12 @@ const ModernHeader = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <button 
-            onClick={handleLogoClick}
-            className="flex items-center hover:opacity-80 transition-opacity"
-          >
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
-                <ShoppingCart className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">FreshMart</h1>
-                <p className="text-xs text-gray-500">Fresh Groceries</p>
-              </div>
-            </div>
-          </button>
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center space-x-2">
+              <Package className="w-8 h-8 text-green-600" />
+              <span className="text-2xl font-bold text-gray-900">FreshMart</span>
+            </Link>
+          </div>
 
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
             <form onSubmit={handleSearch} className="relative">
@@ -154,92 +99,86 @@ const ModernHeader = () => {
                   placeholder="Search for products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
-                <Button
-                  type="submit"
-                  className="absolute right-1 top-1 bottom-1 px-4"
-                  size="sm"
-                >
-                  Search
-                </Button>
               </div>
             </form>
           </div>
 
           <div className="flex items-center space-x-4">
-            <button className="md:hidden p-2 text-gray-500 hover:text-gray-700">
+            <button
+              onClick={() => navigate('/products')}
+              className="md:hidden p-2 text-gray-600 hover:text-green-600"
+            >
               <Search className="w-6 h-6" />
             </button>
 
-            <button 
-              onClick={handleWishlistClick}
-              className="relative p-2 text-gray-500 hover:text-gray-700 transition-colors"
+            <button
+              onClick={() => navigate('/wishlist')}
+              className="relative p-2 text-gray-600 hover:text-green-600"
             >
               <Heart className="w-6 h-6" />
-              {wishlistItems.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {wishlistItems.length}
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {wishlistCount}
                 </span>
               )}
             </button>
 
             <button
               onClick={() => dispatch(openCart())}
-              className="relative p-2 text-gray-500 hover:text-gray-700"
+              className="relative p-2 text-gray-600 hover:text-green-600"
             >
               <ShoppingCart className="w-6 h-6" />
-              {cartItems.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs rounded-full flex items-center justify-center">
-                  {cartItems.length}
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItemCount}
                 </span>
               )}
             </button>
 
-            {user ? (
+            {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-green-600" />
+                <div className="flex items-center space-x-2">
+                  <User className="w-5 h-5 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {user?.firstName || user?.name || 'User'}
+                  </span>
+                  {user?.role && (
+                    <span className="text-xs text-gray-500">
+                      ({user.role})
+                    </span>
+                  )}
                 </div>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900">{user.name || user.email}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                </div>
-                <div className="hidden md:flex items-center space-x-1">
-                  <Link
-                    to="/orders"
-                    className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                    title="My Orders"
-                  >
-                    <Package className="w-4 h-4" />
-                  </Link>
                 <button
                   onClick={handleLogout}
-                    className="p-2 text-gray-500 hover:text-red-600 transition-colors"
-                  title="Logout"
+                  className="flex items-center space-x-1 text-gray-600 hover:text-red-600"
                 >
                   <LogOut className="w-4 h-4" />
+                  <span className="text-sm">Logout</span>
                 </button>
-                </div>
               </div>
             ) : (
-              <div className="hidden md:flex items-center space-x-2">
-                <Link to="/login">
-                  <Button variant="outline" size="sm">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button size="sm">
-                    Sign Up
-                  </Button>
-                </Link>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/login')}
+                >
+                  Login
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/register')}
+                >
+                  Sign Up
+                </Button>
               </div>
             )}
 
             <button
               onClick={() => dispatch(toggleSidebar())}
-              className="md:hidden p-2 text-gray-500 hover:text-gray-700"
+              className="md:hidden p-2 text-gray-600 hover:text-green-600"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -250,29 +189,38 @@ const ModernHeader = () => {
       <nav className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center space-x-8 py-3 overflow-x-auto">
-            <Link 
-              to="/products" 
+            <Link
+              to="/products"
               className={`font-medium transition-colors whitespace-nowrap px-3 py-2 rounded-md ${
-                !currentCategory 
-                  ? 'bg-green-100 text-green-700' 
+                !currentCategory
+                  ? 'bg-green-100 text-green-700'
                   : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
               }`}
             >
               All Products
             </Link>
-            {categories.slice(0, 6).map((category) => (
-              <Link
-                key={category.id}
-                to={`/products?category=${category.id}`}
-                className={`font-medium transition-colors whitespace-nowrap px-3 py-2 rounded-md ${
-                  currentCategory === category.id.toString()
-                    ? 'bg-green-100 text-green-700'
-                    : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
-                }`}
-              >
-                {category.name}
-            </Link>
-            ))}
+            {categories && categories.length > 0 && categories.slice(0, 6).map((category) => {
+              if (!category || !category.id || !category.name) {
+                return null;
+              }
+              
+              const categoryId = String(category.id);
+              const isActive = currentCategory === categoryId;
+              
+              return (
+                <Link
+                  key={categoryId}
+                  to={`/products?category=${categoryId}`}
+                  className={`font-medium transition-colors whitespace-nowrap px-3 py-2 rounded-md ${
+                    isActive
+                      ? 'bg-green-100 text-green-700'
+                      : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+                  }`}
+                >
+                  {category.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </nav>

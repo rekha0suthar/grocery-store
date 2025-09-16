@@ -70,7 +70,6 @@ const AddressForm = ({
       
       onSave();
     } catch (error) {
-      console.error('Failed to save address:', error);
       alert('Failed to save address. Please try again.');
     } finally {
       setIsSubmitting(false);

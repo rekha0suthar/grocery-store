@@ -1,25 +1,15 @@
+import GridProductCard from "../components/UI/GridProductCard.jsx";
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { fetchProducts } from '../store/slices/productSlice.js';
 import { fetchCategories } from '../store/slices/categorySlice.js';
 import { addToCart } from '../store/slices/cartSlice.js';
-import Card from '../components/UI/Card.jsx';
-import Button from '../components/UI/Button.jsx';
-import GridProductCard from '../components/UI/GridProductCard.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { 
   Package, 
   ShoppingCart,
-  Star,
-  Search,
-  Filter,
-  Heart,
-  Eye,
   ArrowRight,
-  TrendingUp,
-  Clock,
-  Tag
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -28,7 +18,7 @@ const CustomerDashboardPage = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
   const { products, loading: productsLoading } = useAppSelector((state) => state.products);
-  const { categories, loading: categoriesLoading } = useAppSelector((state) => state.categories);
+  const { loading: categoriesLoading } = useAppSelector((state) => state.categories);
 
   useEffect(() => {
     dispatch(fetchProducts({ limit: 12 }));
@@ -71,7 +61,6 @@ const CustomerDashboardPage = () => {
               <div className="flex space-x-3">
                 <button
                   onClick={() => {
-                    console.log('Start Shopping button clicked!');
                     navigate('/products');
                   }}
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
@@ -94,7 +83,7 @@ const CustomerDashboardPage = () => {
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No Products Available</h2>
             <p className="text-gray-600 mb-6">
-              We're currently updating our product catalog. Please check back later or contact support.
+              We&apos;re currently updating our product catalog. Please check back later or contact support.
             </p>
             <div className="flex justify-center space-x-4">
               <button
@@ -158,7 +147,6 @@ const CustomerDashboardPage = () => {
               <Link
                 to="/products?featured=true"
                 className="text-green-600 hover:text-green-700 font-medium flex items-center cursor-pointer z-10 relative"
-                onClick={() => console.log('Featured link clicked!')}
                 style={{ pointerEvents: 'auto' }}
               >
                 View all featured
@@ -187,7 +175,6 @@ const CustomerDashboardPage = () => {
               <Link
                 to="/products?sale=true"
                 className="text-green-600 hover:text-green-700 font-medium flex items-center cursor-pointer z-10 relative"
-                onClick={() => console.log('Sale link clicked!')}
                 style={{ pointerEvents: 'auto' }}
               >
                 View all sales
@@ -215,7 +202,6 @@ const CustomerDashboardPage = () => {
             <Link
               to="/products"
               className="text-green-600 hover:text-green-700 font-medium flex items-center cursor-pointer z-10 relative"
-              onClick={() => console.log('All products link clicked!')}
               style={{ pointerEvents: 'auto' }}
             >
               View all products

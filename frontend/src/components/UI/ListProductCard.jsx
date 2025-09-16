@@ -1,5 +1,5 @@
+import { Package, Heart, ShoppingCart } from "lucide-react";
 import React from 'react';
-import { Heart, ShoppingCart, Star, Package } from 'lucide-react';
 import Card from './Card.jsx';
 import Button from './Button.jsx';
 import { useProductCard } from '../../hooks/useProductCard.js';
@@ -106,7 +106,7 @@ const ListProductCard = ({
                 className="flex items-center space-x-1 ml-auto"
               >
                 <ShoppingCart className="w-4 h-4" />
-                <span>Add to Cart</span>
+                <span>Add</span>
               </Button>
             )}
           </div>

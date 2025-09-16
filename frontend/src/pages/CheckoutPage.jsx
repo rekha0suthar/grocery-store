@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { clearCart } from '../store/slices/cartSlice.js';
-import { selectAddress, clearSelectedAddress, fetchUserAddresses } from '../store/slices/addressSlice.js';
+import { clearSelectedAddress, fetchUserAddresses } from '../store/slices/addressSlice.js';
 import Card from '../components/UI/Card.jsx';
 import Button from '../components/UI/Button.jsx';
 import Input from '../components/UI/Input.jsx';
@@ -10,8 +10,8 @@ import AddressForm from '../components/AddressForm.jsx';
 import { 
   CreditCard, 
   MapPin, 
-  Phone, 
-  Mail, 
+  
+  
   ShoppingBag,
   ArrowLeft,
   CheckCircle,
@@ -24,14 +24,13 @@ import { createOrder } from '../store/slices/orderSlice.js';
 import { 
   PaymentValidationRules, 
   PaymentFormatters, 
-  validateOrderData 
 } from '../utils/validation.js';
 
 const CheckoutPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { items, totalItems, totalPrice } = useAppSelector((state) => state.cart);
-  const { selectedAddressId, addresses, loading: addressesLoading, error: addressesError } = useAppSelector((state) => state.addresses);
+  const { items, totalPrice } = useAppSelector((state) => state.cart);
+  const { selectedAddressId, addresses, loading: addressesLoading } = useAppSelector((state) => state.addresses);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -74,11 +73,9 @@ const CheckoutPage = () => {
   }, [selectedAddressId, addresses, useSavedAddress]);
 
   useEffect(() => {
-    console.log('Fetching addresses...');
-    dispatch(fetchUserAddresses()).then((result) => {
-      console.log('Addresses fetched:', result);
-    }).catch((error) => {
-      console.log('Error fetching addresses:', error);
+    dispatch(fetchUserAddresses()).then((_result) => { 
+    }).catch((_error) => {
+      
     });
   }, [dispatch]);
 
@@ -286,7 +283,6 @@ const CheckoutPage = () => {
       const taxAmount = 0;
       const discountAmount = 0;
       const finalAmount = subtotal + shippingAmount + taxAmount - discountAmount;
-
       const orderData = {
         items: items.map(item => ({
           productId: item.productId,
@@ -296,10 +292,10 @@ const CheckoutPage = () => {
           imageUrl: item.imageUrl
         })),
         totalAmount: subtotal,
-        shippingAmount: shippingAmount,
-        taxAmount: taxAmount,
-        discountAmount: discountAmount,
-        finalAmount: finalAmount,
+        shippingAmount,
+        taxAmount,
+        discountAmount,
+        finalAmount,
         shippingAddress: {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -325,7 +321,7 @@ const CheckoutPage = () => {
         notes: ''
       };
 
-      const result = await dispatch(createOrder(orderData)).unwrap();
+      await dispatch(createOrder(orderData)).unwrap();
       
       dispatch(clearCart());
       dispatch(clearSelectedAddress());
@@ -333,7 +329,7 @@ const CheckoutPage = () => {
       toast.success('Order placed successfully!');
       
     } catch (error) {
-      console.error('Order creation failed:', error);
+      
       toast.error('Failed to place order. Please try again.');
     } finally {
       setIsProcessing(false);

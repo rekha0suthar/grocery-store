@@ -7,7 +7,7 @@ import { addToWishlist, removeFromWishlist } from '../../store/slices/wishlistSl
 import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
-import { ArrowLeft, ShoppingCart, Package, Minus, Plus, Star, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Package, Minus, Plus, Heart, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ProductDetailPage = () => {
@@ -15,11 +15,9 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const productsState = useAppSelector((state) => state.products) || { currentProduct: null, loading: false };
-  const categoriesState = useAppSelector((state) => state.categories) || { categories: [] };
   const wishlistState = useAppSelector((state) => state.wishlist) || { items: [] };
   
   const { currentProduct, loading } = productsState;
-  const { categories } = categoriesState;
   const { items: wishlistItems } = wishlistState;
   
   const [quantity, setQuantity] = useState(1);
@@ -92,7 +90,7 @@ const ProductDetailPage = () => {
         <div className="text-center">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Product not found</h2>
-          <p className="text-gray-500 mb-4">The product you're looking for doesn't exist.</p>
+          <p className="text-gray-500 mb-4">The product you&apos;re looking for doesn&apos;t exist.</p>
           <Button onClick={() => navigate('/products')} variant="outline">
             Back to Products
           </Button>
@@ -218,7 +216,7 @@ const ProductDetailPage = () => {
                 className="flex-1"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {isInStock ? 'Add to Cart' : 'Out of Stock'}
+                {isInStock ? 'Add' : 'Out of Stock'}
               </Button>
               <Button
                 onClick={handleToggleWishlist}
@@ -254,10 +252,10 @@ const ProductDetailPage = () => {
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Specifications</h3>
                             <div className="space-y-2">
                               {Object.entries(currentProduct.specifications)
-                                .filter(([key, value]) => value && value.toString().trim() !== '')
-                                .map(([key, value]) => (
-                                  <div key={key} className="flex justify-between">
-                                    <span className="text-gray-600 capitalize">{key}:</span>
+                                .filter(([_key, value]) => value && value.toString().trim() !== '')
+                                .map(([_key, value]) => (
+                                  <div key={_key} className="flex justify-between">
+                                    <span className="text-gray-600 capitalize">{_key}:</span>
                                     <span className="text-gray-900">{value}</span>
                                   </div>
                                 ))}
@@ -272,11 +270,11 @@ const ProductDetailPage = () => {
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Nutrition Information</h3>
                             <div className="space-y-2">
                               {Object.entries(currentProduct.nutritionInfo)
-                                .filter(([key, value]) => value && value.toString().trim() !== '')
-                                .map(([key, value]) => (
-                                  <div key={key} className="flex justify-between">
-                                    <span className="text-gray-600 capitalize">{key}:</span>
-                                    <span className="text-gray-900">{value}{key !== 'calories' ? 'g' : ''}</span>
+                                .filter(([_key, value]) => value && value.toString().trim() !== '')
+                                .map(([_key, value]) => (
+                                  <div key={_key} className="flex justify-between">
+                                    <span className="text-gray-600 capitalize">{_key}:</span>
+                                    <span className="text-gray-900">{value}{_key !== 'calories' ? 'g' : ''}</span>
                                   </div>
                                 ))}
                             </div>

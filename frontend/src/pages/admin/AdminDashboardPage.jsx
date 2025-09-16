@@ -80,7 +80,7 @@ const AdminDashboardPage = () => {
         <div>
           <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-2 text-lg">
-            Welcome, {user?.name}! Here's an overview of your store management.
+            Welcome, {user?.name}! Here&apos;s an overview of your store management.
           </p>
         </div>
 

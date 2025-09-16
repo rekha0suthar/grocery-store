@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import clsx from 'clsx';
+import { clsx } from 'clsx';
 
 const Select = forwardRef(({
   options = [],
@@ -42,7 +42,12 @@ const Select = forwardRef(({
 
   const handleChange = (e) => {
     if (onChange) {
-      onChange(e.target.value);
+      const value = e.target ? e.target.value : e;
+      onChange(value);
+    }
+    
+    if (props.onChange) {
+      props.onChange(e);
     }
   };
 

@@ -33,15 +33,12 @@ export const SystemInitializationPage = () => {
     }
   });
 
-  // const _password = watch('password');
 
   useEffect(() => {
-    // Check if system is already initialized
     dispatch(checkInitializationStatus());
   }, [dispatch]);
 
   useEffect(() => {
-    // Redirect if system is already initialized
     if (systemInitialized === true) {
       navigate('/login');
     }
@@ -53,10 +50,8 @@ export const SystemInitializationPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Clear previous errors
       clearErrors();
 
-      // Client-side validation using shared validators
       const validation = validateUserRegistration(data);
       if (!validation.isValid) {
         Object.keys(validation.errors).forEach(field => {
@@ -68,7 +63,6 @@ export const SystemInitializationPage = () => {
         return;
       }
 
-      // Dispatch initialization
       const result = await dispatch(initializeSystem(data));
 
       if (result.type.endsWith('/fulfilled')) {
@@ -78,12 +72,10 @@ export const SystemInitializationPage = () => {
         toast.error(result.payload || 'System initialization failed. Please try again.');
       }
     } catch (error) {
-      console.error('Initialization error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     }
   };
 
-  // Show loading spinner while checking initialization status
   if (initializationLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
@@ -92,7 +84,6 @@ export const SystemInitializationPage = () => {
     );
   }
 
-  // Don't render if system is already initialized (will redirect)
   if (systemInitialized === true) {
     return null;
   }
@@ -114,7 +105,6 @@ export const SystemInitializationPage = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
-            {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name
@@ -140,7 +130,6 @@ export const SystemInitializationPage = () => {
               )}
             </div>
 
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
@@ -166,7 +155,6 @@ export const SystemInitializationPage = () => {
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -203,7 +191,6 @@ export const SystemInitializationPage = () => {
               )}
             </div>
 
-            {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                 Confirm Password

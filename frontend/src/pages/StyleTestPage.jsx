@@ -5,7 +5,6 @@ import Button from '../components/UI/Button.jsx';
 import Card from '../components/UI/Card.jsx';
 import Input from '../components/UI/Input.jsx';
 import { testApiConnection, getApiStatus, testProductsEndpoint } from '../utils/apiTest.js';
-// import config from '../config/appConfig.js';
 
 const StyleTestPage = () => {
   const [apiStatus, setApiStatus] = useState(null);
@@ -14,7 +13,6 @@ const StyleTestPage = () => {
   const [isTestingProducts, setIsTestingProducts] = useState(false);
 
   useEffect(() => {
-    // Test API connection on component mount
     handleApiTest();
   }, []);
 
@@ -37,7 +35,6 @@ const StyleTestPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             API & Style Test Page
@@ -52,7 +49,6 @@ const StyleTestPage = () => {
           </Link>
         </div>
 
-        {/* API Status Card */}
         <Card className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">API Configuration</h2>
           <div className="space-y-4">
@@ -102,7 +98,6 @@ const StyleTestPage = () => {
           </div>
         </Card>
 
-        {/* Products Test Card */}
         <Card className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Products API Test</h2>
           <div className="space-y-4">
@@ -147,10 +142,8 @@ const StyleTestPage = () => {
           </div>
         </Card>
 
-        {/* Style Test Component */}
         <StyleTest />
 
-        {/* Button Tests */}
         <Card className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Button Styles</h2>
           <div className="flex flex-wrap gap-4">
@@ -163,7 +156,6 @@ const StyleTestPage = () => {
           </div>
         </Card>
 
-        {/* Form Tests */}
         <Card className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Form Styles</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -190,7 +182,6 @@ const StyleTestPage = () => {
           </div>
         </Card>
 
-        {/* Color Tests */}
         <Card className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Color Palette</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -221,7 +212,6 @@ const StyleTestPage = () => {
           </div>
         </Card>
 
-        {/* Typography Tests */}
         <Card className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Typography</h2>
           <div className="space-y-4">
@@ -236,7 +226,6 @@ const StyleTestPage = () => {
           </div>
         </Card>
 
-        {/* Spacing Tests */}
         <Card className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Spacing & Layout</h2>
           <div className="space-y-4">

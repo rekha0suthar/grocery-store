@@ -7,7 +7,6 @@ import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { 
   Package, 
   Calendar, 
-  DollarSign, 
   MapPin,
   Eye,
   ArrowLeft
@@ -95,7 +94,7 @@ const OrdersPage = () => {
           <Card className="p-12 text-center">
             <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-            <p className="text-gray-500 mb-6">You haven't placed any orders yet.</p>
+            <p className="text-gray-500 mb-6">You haven&apos;t placed any orders yet.</p>
             <Button onClick={() => navigate('/products')}>
               Start Shopping
             </Button>
@@ -103,7 +102,6 @@ const OrdersPage = () => {
         ) : (
           <div className="space-y-6">
             {orders.map((order) => {
-              // Add safety checks for order properties
               if (!order) return null;
               
               return (

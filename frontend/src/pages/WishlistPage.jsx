@@ -108,7 +108,7 @@ const WishlistPage = () => {
                       className="flex-1"
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
-                      Add to Cart
+                      Add
                     </Button>
                   </div>
                 </div>
@@ -121,4 +121,5 @@ const WishlistPage = () => {
   );
 };
 
-export default WishlistPage; 
+export default WishlistPage;
+ 
