@@ -28,14 +28,7 @@ class AppConfig {
       },
 
       cors: {
-        origin: process.env.CORS_ORIGINS
-          ? process.env.CORS_ORIGINS.split(',')
-          : [
-              'http://localhost:3000',
-              'http://localhost:3001',
-              'http://localhost:5173',
-              'https://grocery-store-frontend-nu.vercel.app',
-            ],
+        origin: this.getCorsOrigin(),
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -57,6 +50,62 @@ class AppConfig {
     };
   }
 
+  getCorsOrigin() {
+    // If CORS_ORIGINS is set, use it
+    if (process.env.CORS_ORIGINS) {
+      return process.env.CORS_ORIGINS.split(',');
+    }
+
+    // Dynamic CORS function for production
+    if (this.isProduction()) {
+      return (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Allow localhost for development
+        if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+          return callback(null, true);
+        }
+
+        // Allow any Vercel deployment (your domain pattern)
+        if (origin.includes('vercel.app') || origin.includes('grocery-store-frontend')) {
+          return callback(null, true);
+        }
+
+        // Allow your custom domain if you have one
+        if (origin.includes('yourdomain.com')) {
+          return callback(null, true);
+        }
+
+        // Allow any subdomain of your main domain
+        const allowedDomains = [
+          'grocery-store-frontend',
+          'grocery-store-admin',
+          'yourdomain.com'
+        ];
+
+        const isAllowed = allowedDomains.some(domain => origin.includes(domain));
+        
+        if (isAllowed) {
+          return callback(null, true);
+        }
+
+        // Reject other origins
+        return callback(new Error('Not allowed by CORS'), false);
+      };
+    }
+
+    // Development: allow all localhost origins
+    return [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:5173',
+    ];
+  }
+
   get(key) {
     return key ? this.config[key] : this.config;
   }
@@ -72,6 +121,7 @@ class AppConfig {
     console.log(`   Host: ${this.config.host}`);
     console.log(`   Database: ${this.config.database.type}`);
     console.log(`   API Prefix: ${this.config.api.prefix}`);
+    console.log(`   CORS: ${this.isProduction() ? 'Dynamic (production)' : 'Static (development)'}`);
   }
 
   getBaseUrl() {
