@@ -156,7 +156,7 @@ const AdminDashboardPage = () => {
                           <img
                             src={product.images[0]}
                             alt={product.name}
-                            className="w-full h-full object-cover rounded-lg"
+                            className="w-full h-full rounded-lg"
                           />
                         ) : (
                           <Package className="w-6 h-6 text-gray-400" />
@@ -209,7 +209,7 @@ const AdminDashboardPage = () => {
                         <img
                           src={product.images[0]}
                           alt={product.name}
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full rounded-lg"
                         />
                       ) : (
                         <Package className="w-8 h-8 text-gray-400" />

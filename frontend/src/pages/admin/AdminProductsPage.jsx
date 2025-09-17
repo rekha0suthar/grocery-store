@@ -255,7 +255,7 @@ const AdminProductsPage = () => {
                   <img
                     src={product.images[0]}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
                     loading="lazy"
                   />
                 ) : (
@@ -374,7 +374,7 @@ const AdminProductsPage = () => {
                   <img
                     src={product.images[0]}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
                     loading="lazy"
                   />
                 ) : (
@@ -840,7 +840,7 @@ const AdminProductsPage = () => {
                                 <img
                                   src={img}
                                   alt="Preview"
-                                  className="w-16 h-16 object-cover rounded"
+                                  className="w-16 h-16 rounded"
                                   loading="lazy"
                                   onError={(e) => {
                                     e.currentTarget.style.opacity = '0.3';

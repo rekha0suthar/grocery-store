@@ -7,20 +7,24 @@ import { addToWishlist, removeFromWishlist } from '../../store/slices/wishlistSl
 import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
-import { ArrowLeft, ShoppingCart, Package, Minus, Plus, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import ProductImageGallery from '../../components/UI/ProductImageGallery.jsx';
+import { ArrowLeft, Heart, ShoppingCart, Star, Truck, Shield, RotateCcw, AlertTriangle, Minus, Plus, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const productsState = useAppSelector((state) => state.products) || { currentProduct: null, loading: false };
+  
+  const productsState = useAppSelector((state) => state.products) || { currentProduct: null, loading: false, error: null };
   const wishlistState = useAppSelector((state) => state.wishlist) || { items: [] };
   
-  const { currentProduct, loading } = productsState;
+  const { currentProduct, loading, error } = productsState;
   const { items: wishlistItems } = wishlistState;
   
   const [quantity, setQuantity] = useState(1);
+  const [showQuantityLimitDialog, setShowQuantityLimitDialog] = useState(false);
+  const [requestedQuantity, setRequestedQuantity] = useState(1);
   const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false);
 
   useEffect(() => {
@@ -30,16 +34,55 @@ const ProductDetailPage = () => {
   }, [dispatch, id]);
 
   const handleAddToCart = () => {
+    if (!currentProduct) return;
+
+    if (currentProduct.stock && quantity > currentProduct.stock) {
+      setRequestedQuantity(quantity);
+      setShowQuantityLimitDialog(true);
+      return;
+    }
+
+    dispatch(addToCart({
+      product: currentProduct,
+      quantity
+    }));
+    toast.success(`${currentProduct.name} added to cart!`);
+  };
+
+  const handleConfirmQuantityLimit = () => {
+    if (!currentProduct) return;
+    
+    dispatch(addToCart({
+      product: currentProduct,
+      quantity: currentProduct.stock
+    }));
+    toast.success(`${currentProduct.name} added to cart! (Limited to ${currentProduct.stock} items)`);
+    setShowQuantityLimitDialog(false);
+  };
+
+  const handleCancelQuantityLimit = () => {
+    setShowQuantityLimitDialog(false);
     if (currentProduct) {
-      dispatch(addToCart({ product: currentProduct, quantity }));
-      toast.success(`${currentProduct.name} added to cart!`);
+      setQuantity(currentProduct.stock);
     }
   };
 
   const handleQuantityChange = (newQuantity) => {
-    if (newQuantity >= 1 && newQuantity <= (currentProduct?.stock || 0)) {
-      setQuantity(newQuantity);
+    if (!currentProduct) return;
+    
+    if (newQuantity <= 0) {
+      setQuantity(1);
+      return;
     }
+    
+    const maxQuantity = currentProduct.stock !== undefined ? currentProduct.stock : newQuantity;
+    const finalQuantity = Math.min(newQuantity, maxQuantity);
+    
+    if (finalQuantity !== newQuantity) {
+      toast.error(`Only ${maxQuantity} items available in stock!`);
+    }
+    
+    setQuantity(finalQuantity);
   };
 
   const isInWishlist = wishlistItems.some(item => item.id === currentProduct?.id);
@@ -79,7 +122,22 @@ const ProductDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner data-testid="loading-spinner" />
+        <LoadingSpinner data-testid="loading-spinner" size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <Button onClick={() => navigate('/products')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Products
+          </Button>
+        </div>
       </div>
     );
   }
@@ -92,6 +150,7 @@ const ProductDetailPage = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Product not found</h2>
           <p className="text-gray-500 mb-4">The product you&apos;re looking for doesn&apos;t exist.</p>
           <Button onClick={() => navigate('/products')} variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Products
           </Button>
         </div>
@@ -120,14 +179,14 @@ const ProductDetailPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-4">
-            <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
-              <img
-                src={currentProduct.images?.[0] || '/placeholder-product.jpg'}
+            <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden relative">
+              <ProductImageGallery
+                images={currentProduct.images || []}
                 alt={currentProduct.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = '/placeholder-product.jpg';
-                }}
+                className="absolute inset-0 w-full h-full"
+                showNavigation={true}
+                showThumbnails={true}
+                autoPlay={false}
               />
             </div>
           </div>
@@ -167,6 +226,20 @@ const ProductDetailPage = () => {
             </div>
 
             <div className="flex items-center space-x-2">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-5 h-5 ${
+                      i < Math.floor(4.5) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-gray-600">(4.5) • 128 reviews</span>
+            </div>
+
+            <div className="flex items-center space-x-2">
               {isInStock ? (
                 <span className="text-green-600 font-medium">In Stock ({stockCount} available)</span>
               ) : (
@@ -192,15 +265,13 @@ const ProductDetailPage = () => {
                     id="quantity"
                     type="number"
                     min="1"
-                    max={stockCount}
                     value={quantity}
                     onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                     className="w-16 text-center border-0 focus:ring-0 focus:outline-none"
                   />
                   <button
                     onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={quantity >= stockCount}
-                    className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 hover:bg-gray-100"
                     aria-label="Increase quantity"
                   >
                     <Plus className="w-4 h-4" />
@@ -214,17 +285,34 @@ const ProductDetailPage = () => {
                 onClick={handleAddToCart}
                 disabled={!isInStock}
                 className="flex-1"
+                size="lg"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {isInStock ? 'Add' : 'Out of Stock'}
+                {isInStock ? 'Add to Cart' : 'Out of Stock'}
               </Button>
               <Button
                 onClick={handleToggleWishlist}
-                variant="outline"
-                className="flex items-center justify-center px-4"
+                variant={isInWishlist ? 'outline' : 'secondary'}
+                className="px-4"
+                size="lg"
               >
-                <Heart className={`w-5 h-5 ${isInWishlist ? 'text-red-500 fill-current' : 'text-gray-500'}`} />
+                <Heart className={`w-5 h-5 ${isInWishlist ? 'text-red-500 fill-current' : ''}`} />
               </Button>
+            </div>
+
+            <div className="space-y-3 pt-6 border-t border-gray-200">
+              <div className="flex items-center space-x-3">
+                <Truck className="w-5 h-5 text-gray-400" />
+                <span className="text-sm text-gray-600">Free shipping on orders over $50</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Shield className="w-5 h-5 text-gray-400" />
+                <span className="text-sm text-gray-600">30-day return policy</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <RotateCcw className="w-5 h-5 text-gray-400" />
+                <span className="text-sm text-gray-600">Easy returns and exchanges</span>
+              </div>
             </div>
 
             {hasAdditionalInfo() && (
@@ -367,6 +455,36 @@ const ProductDetailPage = () => {
           </div>
         </div>
       </div>
+      
+      {showQuantityLimitDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-yellow-500 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">Quantity Limit Reached</h3>
+            </div>
+            <p className="text-gray-600 mb-4">
+              You requested {requestedQuantity} items, but only {currentProduct.stock} are available in stock.
+              Would you like to add the maximum available quantity ({currentProduct.stock} items) to your cart?
+            </p>
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleConfirmQuantityLimit}
+                className="flex-1"
+              >
+                Add {currentProduct.stock} Items
+              </Button>
+              <Button
+                onClick={handleCancelQuantityLimit}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

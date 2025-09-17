@@ -2,6 +2,7 @@ import React from 'react';
 import { Heart, ShoppingCart } from 'lucide-react';
 import Card from './Card.jsx';
 import Button from './Button.jsx';
+import ProductImageGallery from './ProductImageGallery.jsx';
 import { useProductCard } from '../../hooks/useProductCard.js';
 
 const GridProductCard = ({
@@ -27,18 +28,17 @@ const GridProductCard = ({
       onClick={handleCardClick}
     >
       <div className="relative w-full h-64 bg-gray-100 overflow-hidden flex-shrink-0">
-        <img
-          src={product.images?.[0] || '/placeholder-product.jpg'}
+        <ProductImageGallery
+          images={product.images || []}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-          onError={(e) => {
-            e.target.src = '/placeholder-product.jpg';
-          }}
+          className="w-full h-full"
+          showNavigation={true}
+          showThumbnails={false}
+          autoPlay={false}
         />
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 transition-all duration-200" />
         
         <button
-          className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors ${isInWishlist
+          className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors z-30 ${isInWishlist
               ? 'text-red-500'
               : 'text-gray-400 hover:text-red-500'
             }`}
@@ -46,6 +46,7 @@ const GridProductCard = ({
             e.stopPropagation();
             handleToggleWishlist(e);
           }}
+          aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           <Heart className={`w-5 h-5 ${isInWishlist ? 'text-red-500 fill-current' : ''}`} />
         </button>
@@ -63,21 +64,21 @@ const GridProductCard = ({
         </p>
 
         {(product.weight || product.unit) && (
-          <div className="text-xs text-gray-500 mb-3 flex-shrink-0">
+          <div className="text-xs text-gray-500 mb-3">
             {product.weight && product.unit ? (
               <span>{product.weight} {product.unit}</span>
             ) : product.weight ? (
               <span>{product.weight}</span>
-            ) : product.unit ? (
+            ) : (
               <span>{product.unit}</span>
-            ) : null}
+            )}
           </div>
         )}
 
         <div className="flex items-center justify-between mt-auto">
           <div className="flex">
             <div className="flex items-center space-x-2">
-              {product.discountPrice && product.discountPrice < product.price ? (
+              {product.discountPrice ? (
                 <>
                   <span className="text-2xl font-bold text-gray-900">
                     ${product.discountPrice.toFixed(2)}
@@ -92,18 +93,17 @@ const GridProductCard = ({
                 </span>
               )}
             </div>
-            {(product.weight || product.unit) && (
-              <span className="text-xs text-gray-500 mt-2 px-1">
-                per {product.weight || '1'} {product.unit || 'unit'}
-              </span>
-            )}
           </div>
 
           {showAddToCart && (
             <Button
-              onClick={handleAddToCart}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToCart(e);
+              }}
+              className="flex-shrink-0"
               size="sm"
-              className="flex items-center space-x-1 flex-shrink-0"
+              aria-label="Add to cart"
             >
               <ShoppingCart className="w-4 h-4" />
               <span>Add</span>
@@ -115,4 +115,4 @@ const GridProductCard = ({
   );
 };
 
-export default GridProductCard; 
+export default GridProductCard;

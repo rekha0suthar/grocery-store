@@ -1,7 +1,8 @@
-import { Package, Heart, ShoppingCart } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 import React from 'react';
 import Card from './Card.jsx';
 import Button from './Button.jsx';
+import ProductImageGallery from './ProductImageGallery.jsx';
 import { useProductCard } from '../../hooks/useProductCard.js';
 
 const ListProductCard = ({
@@ -23,23 +24,19 @@ const ListProductCard = ({
 
   return (
     <Card
-      className="group hover:shadow-lg transition-shadow duration-200 cursor-pointer overflow-hidden"
+      className="group hover:shadow-lg transition-shadow duration-200 cursor-pointer overflow-hidden p-0"
       onClick={handleCardClick}
     >
       <div className="flex">
-        <div className="w-32 bg-gray-100 flex items-center justify-center flex-shrink-0">
-          {product.images && product.images.length > 0 ? (
-            <img
-              src={product.images[0]}
-              alt={product.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.src = '/placeholder-product.jpg';
-              }}
-            />
-          ) : (
-            <Package className="w-12 h-12 text-gray-400" />
-          )}
+        <div className="w-40 h-40 bg-gray-100 flex-shrink-0 overflow-hidden relative">
+          <ProductImageGallery
+            images={product.images || []}
+            alt={product.name}
+            className="w-full h-full"
+            showNavigation={false}
+            showThumbnails={false}
+            autoPlay={false}
+          />
         </div>
 
         <div className="p-4 flex-1">
@@ -53,6 +50,7 @@ const ListProductCard = ({
                   : 'text-gray-400 hover:text-red-500'
                 }`}
               onClick={handleToggleWishlist}
+              aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
             >
               <Heart className={`w-5 h-5 ${isInWishlist ? 'text-red-500 fill-current' : ''}`} />
             </button>
@@ -68,16 +66,16 @@ const ListProductCard = ({
                 <span>{product.weight} {product.unit}</span>
               ) : product.weight ? (
                 <span>{product.weight}</span>
-              ) : product.unit ? (
+              ) : (
                 <span>{product.unit}</span>
-              ) : null}
+              )}
             </div>
           )}
 
           <div className="flex items-center gap-4">
             <div className="flex">
               <div className="flex items-center space-x-2">
-                {product.discountPrice && product.discountPrice < product.price ? (
+                {product.discountPrice ? (
                   <>
                     <span className="text-xl font-bold text-gray-900">
                       ${product.discountPrice.toFixed(2)}
@@ -92,18 +90,14 @@ const ListProductCard = ({
                   </span>
                 )}
               </div>
-              {(product.weight || product.unit) && (
-                <span className="text-xs text-gray-500 mt-2 px-1">
-                  per {product.weight || '1'} {product.unit || 'unit'}
-                </span>
-              )}
             </div>
 
             {showAddToCart && (
               <Button
                 onClick={handleAddToCart}
+                className="ml-auto"
                 size="sm"
-                className="flex items-center space-x-1 ml-auto"
+                aria-label="Add to cart"
               >
                 <ShoppingCart className="w-4 h-4" />
                 <span>Add</span>
@@ -116,4 +110,4 @@ const ListProductCard = ({
   );
 };
 
-export default ListProductCard; 
+export default ListProductCard;

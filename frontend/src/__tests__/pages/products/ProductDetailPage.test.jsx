@@ -106,7 +106,7 @@ describe('ProductDetailPage', () => {
     const errorState = { ...initialState, products: { ...initialState.products, error: 'Failed to load product', currentProduct: null } };
     renderWithProviders(<ProductDetailPage />, { preloadedState: errorState });
     
-    expect(screen.getByText('Product not found')).toBeInTheDocument();
+    expect(screen.getByText('Product Not Found')).toBeInTheDocument();
   });
 
   it('navigates back when back button is clicked in error state', () => {

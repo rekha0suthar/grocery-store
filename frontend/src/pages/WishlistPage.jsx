@@ -69,7 +69,7 @@ const WishlistPage = () => {
                       <img
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full"
                       />
                     ) : (
                       <Package className="w-12 h-12 text-gray-400 m-auto" />
