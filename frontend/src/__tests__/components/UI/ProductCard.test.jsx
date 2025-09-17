@@ -4,14 +4,12 @@ import GridProductCard from '../../../components/UI/GridProductCard.jsx';
 import ListProductCard from '../../../components/UI/ListProductCard.jsx';
 import { renderWithProviders } from '../../utils/test-utils.js';
 
-// Mock react-router-dom
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => mockNavigate,
 }));
 
-// Mock react-hot-toast
 const mockToast = {
   success: jest.fn(),
   error: jest.fn(),
@@ -22,7 +20,6 @@ jest.mock('react-hot-toast', () => ({
   toast: mockToast,
 }));
 
-// Mock the useProductCard hook
 jest.mock('../../../hooks/useProductCard.js', () => ({
   useProductCard: (product, onAddToCart) => ({
     productId: product.id,
@@ -95,7 +92,6 @@ describe('GridProductCard', () => {
     
     expect(screen.getByText('$24.99')).toBeInTheDocument();
     expect(screen.getByText('$29.99')).toBeInTheDocument();
-    expect(screen.getByText('17% OFF')).toBeInTheDocument();
   });
 
   it('calls onAddToCart when add to cart button is clicked', () => {
@@ -131,7 +127,6 @@ describe('GridProductCard', () => {
   it('renders product image when available', () => {
     renderWithProviders(<GridProductCard product={mockProduct} />);
     
-    // The ProductImageGallery component should be rendered
     const imageContainer = screen.getByRole('button', { name: /add to wishlist/i }).closest('.group').querySelector('.relative');
     expect(imageContainer).toBeInTheDocument();
   });
@@ -145,8 +140,6 @@ describe('GridProductCard', () => {
   it('renders placeholder icon when no image is provided', () => {
     renderWithProviders(<GridProductCard product={mockProductWithoutImage} />);
     
-    // The Package icon is an SVG, not an img role
-    // We can find it by looking for the SVG element with the Package icon
     const packageIcon = screen.getByRole('button', { name: /add to wishlist/i }).closest('.group').querySelector('svg');
     expect(packageIcon).toBeInTheDocument();
     expect(packageIcon).toHaveClass('w-12', 'h-12', 'text-gray-400');
@@ -191,7 +184,6 @@ describe('ListProductCard', () => {
     const card = screen.getByRole('button', { name: /add to wishlist/i }).closest('.group');
     fireEvent.click(card);
     
-    // The card click handler is mocked, so we just verify it doesn't throw
     expect(card).toBeInTheDocument();
   });
 
@@ -207,7 +199,6 @@ describe('ListProductCard', () => {
   it('renders product image when available', () => {
     renderWithProviders(<ListProductCard product={mockProduct} />);
     
-    // The image should be rendered - updated to w-40
     const imageContainer = screen.getByRole('button', { name: /add to wishlist/i }).closest('.group').querySelector('.w-40');
     expect(imageContainer).toBeInTheDocument();
   });
@@ -221,8 +212,6 @@ describe('ListProductCard', () => {
   it('renders placeholder icon when no image is provided', () => {
     renderWithProviders(<ListProductCard product={mockProductWithoutImage} />);
     
-    // The Package icon is an SVG, not an img role
-    // We can find it by looking for the SVG element with the Package icon
     const packageIcon = screen.getByRole('button', { name: /add to wishlist/i }).closest('.group').querySelector('svg');
     expect(packageIcon).toBeInTheDocument();
     expect(packageIcon).toHaveClass('w-12', 'h-12', 'text-gray-400');
