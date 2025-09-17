@@ -53,7 +53,7 @@ describe('AuthController - HTTP Interface Adapter', () => {
       expect(typeof controller.updateProfile).toBe('function');
       expect(typeof controller.changePassword).toBe('function');
       expect(typeof controller.initializeSystem).toBe('function');
-      expect(typeof controller.checkInitialization).toBe('function');
+      expect(typeof controller.checkInitializationStatus).toBe('function');
       expect(typeof controller.getPendingStoreManagerRequests).toBe('function');
       expect(typeof controller.approveStoreManagerRequest).toBe('function');
     });
@@ -95,9 +95,9 @@ describe('AuthController - HTTP Interface Adapter', () => {
       expect(typeof controller.initializeSystem).toBe('function');
     });
 
-    test('checkInitialization method is properly defined', () => {
-      expect(controller.checkInitialization).toBeDefined();
-      expect(typeof controller.checkInitialization).toBe('function');
+    test('checkInitializationStatus method is properly defined', () => {
+      expect(controller.checkInitializationStatus).toBeDefined();
+      expect(typeof controller.checkInitializationStatus).toBe('function');
     });
 
     test('getPendingStoreManagerRequests method is properly defined', () => {

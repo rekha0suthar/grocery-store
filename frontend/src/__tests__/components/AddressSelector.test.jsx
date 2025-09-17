@@ -20,55 +20,7 @@ const mockAddress = {
   updatedAt: '2023-01-01T00:00:00Z'
 };
 
-const initialState = {
-  addresses: {
-    addresses: [mockAddress],
-    loading: false,
-    error: null,
-  },
-  auth: {
-    user: null,
-    isAuthenticated: false,
-    loading: false,
-    error: null,
-  },
-  cart: {
-    items: [],
-    totalItems: 0,
-    totalPrice: 0,
-    loading: false,
-    error: null,
-  },
-  categories: {
-    categories: [],
-    loading: false,
-    error: null,
-  },
-  wishlist: {
-    items: [],
-    loading: false,
-    error: null,
-  },
-  ui: {
-    isSidebarOpen: false,
-  },
-  products: {
-    products: [],
-    currentProduct: null,
-    loading: false,
-    error: null,
-  },
-  orders: {
-    orders: [],
-    loading: false,
-    error: null,
-  },
-  requests: {
-    requests: [],
-    loading: false,
-    error: null,
-  },
-};
+const mockAddresses = [mockAddress];
 
 describe('AddressSelector', () => {
   const mockOnAddressSelect = jest.fn();
@@ -80,8 +32,11 @@ describe('AddressSelector', () => {
 
   it('renders address selector with addresses', () => {
     renderWithProviders(
-      <AddressSelector onAddressSelect={mockOnAddressSelect} onAddNew={mockOnAddNew} />,
-      { preloadedState: initialState }
+      <AddressSelector 
+        addresses={mockAddresses}
+        onAddressSelect={mockOnAddressSelect} 
+        onAddNew={mockOnAddNew} 
+      />
     );
 
     expect(screen.getByText(/123 test street/i)).toBeInTheDocument();
@@ -93,8 +48,11 @@ describe('AddressSelector', () => {
 
   it('calls onAddNew when add new address button is clicked', () => {
     renderWithProviders(
-      <AddressSelector onAddressSelect={mockOnAddressSelect} onAddNew={mockOnAddNew} />,
-      { preloadedState: initialState }
+      <AddressSelector 
+        addresses={mockAddresses}
+        onAddressSelect={mockOnAddressSelect} 
+        onAddNew={mockOnAddNew} 
+      />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /add new address/i }));
@@ -103,8 +61,11 @@ describe('AddressSelector', () => {
 
   it('calls onAddressSelect when address is clicked', () => {
     renderWithProviders(
-      <AddressSelector onAddressSelect={mockOnAddressSelect} onAddNew={mockOnAddNew} />,
-      { preloadedState: initialState }
+      <AddressSelector 
+        addresses={mockAddresses}
+        onAddressSelect={mockOnAddressSelect} 
+        onAddNew={mockOnAddNew} 
+      />
     );
 
     fireEvent.click(screen.getByText(/123 test street/i));
@@ -112,10 +73,12 @@ describe('AddressSelector', () => {
   });
 
   it('shows empty state when no addresses are available', () => {
-    const emptyState = { ...initialState, addresses: { ...initialState.addresses, addresses: [] } };
     renderWithProviders(
-      <AddressSelector onAddressSelect={mockOnAddressSelect} onAddNew={mockOnAddNew} />,
-      { preloadedState: emptyState }
+      <AddressSelector 
+        addresses={[]}
+        onAddressSelect={mockOnAddressSelect} 
+        onAddNew={mockOnAddNew} 
+      />
     );
 
     expect(screen.getByText(/no saved addresses/i)).toBeInTheDocument();
@@ -124,8 +87,11 @@ describe('AddressSelector', () => {
 
   it('shows address count in header', () => {
     renderWithProviders(
-      <AddressSelector onAddressSelect={mockOnAddressSelect} onAddNew={mockOnAddNew} />,
-      { preloadedState: initialState }
+      <AddressSelector 
+        addresses={mockAddresses}
+        onAddressSelect={mockOnAddressSelect} 
+        onAddNew={mockOnAddNew} 
+      />
     );
 
     expect(screen.getByText(/saved addresses \(1\)/i)).toBeInTheDocument();
@@ -134,11 +100,11 @@ describe('AddressSelector', () => {
   it('highlights selected address', () => {
     renderWithProviders(
       <AddressSelector 
+        addresses={mockAddresses}
         onAddressSelect={mockOnAddressSelect} 
         onAddNew={mockOnAddNew} 
         selectedAddressId="address-1"
-      />,
-      { preloadedState: initialState }
+      />
     );
 
     // Find the card by looking for the element with the selected styling classes
@@ -149,8 +115,11 @@ describe('AddressSelector', () => {
 
   it('shows default address indicator', () => {
     renderWithProviders(
-      <AddressSelector onAddressSelect={mockOnAddressSelect} onAddNew={mockOnAddNew} />,
-      { preloadedState: initialState }
+      <AddressSelector 
+        addresses={mockAddresses}
+        onAddressSelect={mockOnAddressSelect} 
+        onAddNew={mockOnAddNew} 
+      />
     );
 
     expect(screen.getByText(/default/i)).toBeInTheDocument();

@@ -10,7 +10,7 @@ export class JWTAuthProvider extends IAuthProvider {
     this.algorithm = options.algorithm || 'HS256';
   }
 
-  async authenticate(credentials) {
+  async authenticate(_credentials) {
     throw new Error('authenticate method must be implemented with your user repository');
   }
 
@@ -22,7 +22,7 @@ export class JWTAuthProvider extends IAuthProvider {
       iat: Math.floor(Date.now() / 1000)
     };
 
-    const token = jwt.sign(payload, this.secret, {
+    const _token = jwt.sign(payload, this.secret, {
       expiresIn: this.expiresIn,
       algorithm: this.algorithm
     });
@@ -34,21 +34,21 @@ export class JWTAuthProvider extends IAuthProvider {
     );
 
     return {
-      token,
+      _token,
       refreshToken,
       expiresIn: this.expiresIn,
       type: 'Bearer'
     };
   }
 
-  async verifyToken(token) {
+  async verifyToken(_token) {
     try {
-      const decoded = jwt.verify(token, this.secret, {
+      const decoded = jwt.verify(_token, this.secret, {
         algorithms: [this.algorithm]
       });
       return decoded;
     } catch (error) {
-      throw new Error('Invalid or expired token');
+      throw new Error('Invalid or expired _token');
     }
   }
 
@@ -59,22 +59,22 @@ export class JWTAuthProvider extends IAuthProvider {
       });
 
       if (decoded.type !== 'refresh') {
-        throw new Error('Invalid refresh token');
+        throw new Error('Invalid refresh _token');
       }
 
       const user = { id: decoded.id }; 
       return await this.generateToken(user);
     } catch (error) {
-      throw new Error('Invalid refresh token');
+      throw new Error('Invalid refresh _token');
     }
   }
 
-  async revokeToken(token) {
+  async revokeToken(_token) {
     return true;
   }
 
-  async getUserFromToken(token) {
-    const decoded = await this.verifyToken(token);
+  async getUserFromToken(_token) {
+    const decoded = await this.verifyToken(_token);
     return {
       id: decoded.id,
       email: decoded.email,

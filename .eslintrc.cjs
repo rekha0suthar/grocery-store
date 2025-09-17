@@ -29,6 +29,12 @@ module.exports = {
     'import/default': 'error',
     'import/namespace': 'error',
     
+    // Allow unused parameters that start with underscore
+    'no-unused-vars': ['error', { 
+      'argsIgnorePattern': '^_',
+      'varsIgnorePattern': '^_'
+    }],
+    
     // Ban frameworks in core
     'import/no-restricted-paths': ['error', {
       zones: [

@@ -101,8 +101,18 @@ const addressSlice = createSlice({
         state.error = action.payload;
       })
       // Save address
+      .addCase(saveAddress.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(saveAddress.fulfilled, (state, action) => {
+        state.loading = false;
         state.addresses.push(action.payload);
+        state.error = null;
+      })
+      .addCase(saveAddress.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
       // Update address
       .addCase(updateAddress.fulfilled, (state, action) => {

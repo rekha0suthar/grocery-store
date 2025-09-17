@@ -9,3 +9,5 @@ export * from './order/index.js';
 export * from './category/index.js';
 
 export * from './request/index.js';
+
+export * from './payment/index.js';

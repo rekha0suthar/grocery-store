@@ -7,3 +7,5 @@ export { CartItem } from './CartItem.js';
 export { Order, OrderItem } from './Order.js';
 export { Request } from './Request.js';
 export { StoreManagerProfile } from './StoreManagerProfile.js';
+export { Money } from './Money.js';
+export { PaymentIntent, PaymentResult } from './Payment.js';

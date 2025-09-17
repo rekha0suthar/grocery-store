@@ -1,4 +1,4 @@
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (err, req, res, _next) => {
   console.error('Error:', err);
 
   // Default error
@@ -53,7 +53,7 @@ export const errorHandler = (err, req, res, next) => {
 };
 
 export const asyncHandler = (fn) => {
-  return (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+  return (req, res, _next) => {
+    Promise.resolve(fn(req, res, _next)).catch(_next);
   };
 };

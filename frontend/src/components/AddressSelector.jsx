@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
-import { selectAddress, deleteAddress, setDefaultAddress } from '../store/slices/addressSlice.js';
 import Card from './UI/Card.jsx';
 import Button from './UI/Button.jsx';
 import { 
@@ -12,24 +10,16 @@ import {
   Clock
 } from 'lucide-react';
 
-const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
-  const dispatch = useAppDispatch();
-  const { addresses, loading } = useAppSelector((state) => state.addresses);
+const AddressSelector = ({ 
+  addresses = [], 
+  onAddressSelect, 
+  onAddNew, 
+  selectedAddressId 
+}) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   const handleSelectAddress = (address) => {
-    dispatch(selectAddress(address.id));
     onAddressSelect(address);
-  };
-
-  const handleDeleteAddress = (addressId) => {
-    dispatch(deleteAddress(addressId));
-    setShowDeleteConfirm(null);
-  };
-
-  const handleSetDefault = (addressId, e) => {
-    e.stopPropagation();
-    dispatch(setDefaultAddress(addressId));
   };
 
   return (
@@ -48,11 +38,7 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
         </Button>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        </div>
-      ) : !addresses || addresses.length === 0 ? (
+      {!addresses || addresses.length === 0 ? (
         <Card className="p-6 text-center">
           <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-medium text-gray-900 mb-2">No saved addresses</h4>
@@ -101,9 +87,6 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!address.isDefault) {
-                        handleSetDefault(address.id, e);
-                      }
                     }}
                     className={`p-1 rounded ${
                       address.isDefault 
@@ -158,7 +141,7 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
           <Card className="max-w-md w-full mx-4 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Address</h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this address? This action cannot be undone.
+              This address is from a previous order and cannot be deleted. You can add a new address instead.
             </p>
             <div className="flex space-x-3">
               <Button
@@ -169,10 +152,13 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
                 Cancel
               </Button>
               <Button
-                onClick={() => handleDeleteAddress(showDeleteConfirm)}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                onClick={() => {
+                  setShowDeleteConfirm(null);
+                  onAddNew();
+                }}
+                className="flex-1"
               >
-                Delete
+                Add New Address
               </Button>
             </div>
           </Card>
@@ -183,4 +169,3 @@ const AddressSelector = ({ onAddressSelect, onAddNew, selectedAddressId }) => {
 };
 
 export default AddressSelector;
- 

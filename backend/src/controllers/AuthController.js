@@ -7,19 +7,22 @@ export class AuthController extends BaseController {
   constructor() {
     super();
     this.authComposition = new AuthenticationComposition();
-    this.jwtProvider = new JWTAuthProvider();
+    this.jwtProvider = new JWTAuthProvider({ secret: process.env.JWT_SECRET });
   }
 
-  // System initialization endpoint
+  checkInitializationStatus = asyncHandler(async (req, res) => {
+    const status = await this.authComposition.getInitializeSystemUseCase().execute('checkInitializationStatus');
+    this.sendSuccess(res, status, 'System status retrieved successfully');
+  });
+
   initializeSystem = asyncHandler(async (req, res) => {
     const adminData = req.body;
-    
     const result = await this.authComposition.getInitializeSystemUseCase().execute(adminData);
     
     if (!result.success) {
       return this.sendError(res, result.message, 400);
     }
-
+    
     const tokenData = await this.jwtProvider.generateToken(result.user);
     
     this.sendSuccess(res, {
@@ -28,27 +31,23 @@ export class AuthController extends BaseController {
     }, result.message, 201);
   });
 
-  checkInitialization = asyncHandler(async (req, res) => {
-    const status = await this.authComposition.getInitializeSystemUseCase().checkInitializationStatus();
-    this.sendSuccess(res, status, 'System status retrieved successfully');
-  });
-
-  // Register endpoint with role-based logic
   register = asyncHandler(async (req, res) => {
     const userData = req.body;
     const { role = 'customer' } = userData;
     
+    if (userData.firstName && userData.lastName) {
+      userData.name = `${userData.firstName} ${userData.lastName}`;
+    }
+    
     let result;
     
     if (role === 'store_manager') {
-      // Use store manager registration with approval workflow
       result = await this.authComposition.getRegisterStoreManagerUseCase().execute(userData);
       
       if (!result.success) {
         return this.sendError(res, result.message, 400);
       }
 
-      // For store managers, return success without token (they need approval first)
       this.sendSuccess(res, {
         user: result.user,
         profile: result.profile,
@@ -56,10 +55,8 @@ export class AuthController extends BaseController {
       }, result.message, 201);
       
     } else if (role === 'admin') {
-      // Get existing users first
       const existingUsers = await this.authComposition.userRepository.findAll();
       
-      // Check if admin already exists
       const adminPolicy = this.authComposition.getAdminManagementPolicy();
       const canCreate = adminPolicy.canCreateAdmin(existingUsers);
       
@@ -67,26 +64,30 @@ export class AuthController extends BaseController {
         return this.sendError(res, canCreate.reason, 400);
       }
 
-      // Use regular user creation for admin
       const user = await this.authComposition.getCreateUserUseCase().execute(userData);
       
-      // Generate token for admin
-      const tokenData = await this.jwtProvider.generateToken(user);
+      if (!user.success) {
+        return this.sendError(res, user.message, 400);
+      }
+      
+      const tokenData = await this.jwtProvider.generateToken(user.user);
       
       this.sendSuccess(res, {
-        user,
+        user: user.user,
         ...tokenData
       }, 'Admin registered successfully', 201);
       
     } else {
-      // Regular customer registration
       const user = await this.authComposition.getCreateUserUseCase().execute(userData);
       
-      // Generate token for customer
-      const tokenData = await this.jwtProvider.generateToken(user);
+      if (!user.success) {
+        return this.sendError(res, user.message, 400);
+      }
+      
+      const tokenData = await this.jwtProvider.generateToken(user.user);
       
       this.sendSuccess(res, {
-        user,
+        user: user.user,
         ...tokenData
       }, 'User registered successfully', 201);
     }
@@ -145,35 +146,33 @@ export class AuthController extends BaseController {
     this.sendSuccess(res, user, 'Password changed successfully');
   });
 
-  // Admin-only endpoints for managing store manager requests
   getPendingStoreManagerRequests = asyncHandler(async (req, res) => {
-    const adminUser = req.user;
-    
-    const result = await this.authComposition.getManageStoreManagerRequestsUseCase().getPendingRequests(adminUser);
-    
-    if (!result.success) {
-      return this.sendError(res, result.message, 403);
-    }
-    
-    this.sendSuccess(res, result.requests, 'Pending store manager requests retrieved successfully');
-  });
-
-  approveStoreManagerRequest = asyncHandler(async (req, res) => {
-    const adminUser = req.user;
-    const { requestId } = req.params;
-    const { action, reason } = req.body;
-    
-    const result = await this.authComposition.getManageStoreManagerRequestsUseCase().approveRequest(
-      adminUser, 
-      requestId, 
-      action, 
-      reason
-    );
+    const adminUserId = req.user.id;
+    const result = await this.authComposition.getManageStoreManagerRequestsUseCase().execute('getPendingRequests', adminUserId);
     
     if (!result.success) {
       return this.sendError(res, result.message, 400);
     }
     
-    this.sendSuccess(res, result.request, result.message);
+    this.sendSuccess(res, { requests: result.requests }, result.message);
+  });
+
+  approveStoreManagerRequest = asyncHandler(async (req, res) => {
+    const { requestId } = req.params;
+    const { action, reason } = req.body;
+    const adminUserId = req.user.id;
+    
+    const result = await this.authComposition.getManageStoreManagerRequestsUseCase().execute('approveRequest', {
+      requestId,
+      adminUserId,
+      action,
+      reason
+    });
+    
+    if (!result.success) {
+      return this.sendError(res, result.message, 400);
+    }
+    
+    this.sendSuccess(res, result, result.message);
   });
 }

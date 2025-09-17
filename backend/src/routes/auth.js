@@ -13,7 +13,7 @@ const router = express.Router();
 const authController = new AuthController();
 
 router.post('/initialize', registerValidation, handleValidationErrors, authController.initializeSystem);
-router.get('/initialization-status', authController.checkInitialization);
+router.get('/initialization-status', authController.checkInitializationStatus);
 
 router.post('/register', registerValidation, handleValidationErrors, authController.register);
 router.post('/login', loginValidation, handleValidationErrors, authController.login);

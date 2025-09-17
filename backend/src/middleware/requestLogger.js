@@ -12,7 +12,7 @@ morgan.token('responseTime', (req, res) => {
   return `${ms}ms`;
 });
 
-const devFormat = ':method :url :status :response-time ms - :res[content-length] - :requestId';
+const devFormat = ':method :url :status :responseTime ms - :res[content-length] - :requestId';
 
 const prodFormat = ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" - :responseTime';
 
@@ -28,23 +28,20 @@ export const requestLogger = (req, res, next) => {
 export const morganLogger = morgan(
   process.env.NODE_ENV === 'production' ? prodFormat : devFormat,
   {
-    skip: (req, res) => { 
-      if (process.env.NODE_ENV === 'production' && req.url === '/api/health') {
-        return true;
-      }
-      return false;
+    skip: (req, res) => {
+      // Skip logging for health checks and static assets
+      return req.url === '/health' || req.url.startsWith('/static');
     }
   }
 );
 
 export const errorLogger = (err, req, res, next) => {
-  console.error(`[${req.id}] Error:`, {
+  console.error('Error:', {
     message: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
+    requestId: req.id,
     timestamp: new Date().toISOString()
   });
   next(err);

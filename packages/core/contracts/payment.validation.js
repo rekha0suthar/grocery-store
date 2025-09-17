@@ -121,7 +121,7 @@ export const PaymentValidationRules = {
   },
 
   validatePaymentMethod: (paymentMethod) => {
-    const validMethods = ['credit_card', 'debit_card', 'paypal', 'cash_on_delivery'];
+    const validMethods = ['credit_card', 'cash_on_delivery', 'upi', 'paypal', 'apple_pay', 'google_pay', 'stripe', 'razorpay'];
     
     return {
       isValid: validMethods.includes(paymentMethod),
@@ -130,7 +130,7 @@ export const PaymentValidationRules = {
   },
 
   validatePaymentStatus: (paymentStatus) => {
-    const validStatuses = ['pending', 'paid', 'failed', 'refunded'];
+    const validStatuses = ['created', 'requires_action', 'authorized', 'captured', 'pending', 'paid', 'failed', 'refunded', 'canceled'];
     
     return {
       isValid: validStatuses.includes(paymentStatus),

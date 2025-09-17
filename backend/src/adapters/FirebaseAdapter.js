@@ -42,7 +42,7 @@ export class FirebaseAdapter extends IDatabaseAdapter {
     return true;
   }
 
-  async query(text, params = []) {
+  async query(text, _params = []) {
     throw new Error('Firebase does not support SQL queries. Use collection methods instead.');
   }
 
@@ -111,7 +111,7 @@ export class FirebaseAdapter extends IDatabaseAdapter {
   async create(collection, data) {
     try {
       // Remove id from data since Firestore manages document IDs
-      const { id, ...dataWithoutId } = data;
+      const { id: _id, ...dataWithoutId } = data;
       
       const docRef = await this.db.collection(collection).add({
         ...dataWithoutId

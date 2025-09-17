@@ -1,784 +1,295 @@
 import React, { useState, useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
-import { clearCart } from '../store/slices/cartSlice.js';
-import { clearSelectedAddress, fetchUserAddresses } from '../store/slices/addressSlice.js';
+import { useSelector, useDispatch } from 'react-redux';
 import Card from '../components/UI/Card.jsx';
 import Button from '../components/UI/Button.jsx';
-import Input from '../components/UI/Input.jsx';
-import AddressSelector from '../components/AddressSelector.jsx';
-import AddressForm from '../components/AddressForm.jsx';
+import AddressSection from '../components/AddressSection.jsx';
+import PaymentMethodPicker from '../components/PaymentMethodPicker.jsx';
+import PaymentFields from '../components/PaymentFields.jsx';
+import { useFlexiblePayment } from '../hooks/useFlexiblePayment.js';
+import { useAddressForm } from '../hooks/useAddressForm.js';
 import { 
-  CreditCard, 
-  MapPin, 
-  
-  
-  ShoppingBag,
+  generateOrderId, 
+  calculateOrderTotals, 
+  validateAddressForm, 
+  prepareOrderData 
+} from '../services/orderUtils.js';
+import { 
+  ShoppingCart, 
   ArrowLeft,
   CheckCircle,
-  AlertCircle,
-  Plus
+  CreditCard
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../store/slices/orderSlice.js';
-import { 
-  PaymentValidationRules, 
-  PaymentFormatters, 
-} from '../utils/validation.js';
 
 const CheckoutPage = () => {
-  const dispatch = useAppDispatch();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items, totalPrice } = useAppSelector((state) => state.cart);
-  const { selectedAddressId, addresses, loading: addressesLoading } = useAppSelector((state) => state.addresses);
+  const { items: cartItems, totalPrice } = useSelector(state => state.cart);
+  const { user } = useSelector(state => state.auth);
 
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    paymentMethod: 'card',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-  });
-  
-  const [validationErrors, setValidationErrors] = useState({});
+  // Payment state
+  const {
+    selectedMethod,
+    methodFields,
+    fieldErrors,
+    availableMethods,
+    loading: paymentLoading,
+    error: paymentError,
+    handleMethodChange,
+    handleFieldChange,
+    validateFields,
+    processPayment,
+    reset: resetPayment
+  } = useFlexiblePayment();
+
+  // Address state
+  const {
+    formData,
+    validationErrors,
+    useSavedAddress,
+    handleInputChange,
+    handleAddressSelect,
+    handleUseSavedAddressChange,
+    handleAddNewAddress,
+    selectedAddressId,
+    addresses,
+    addressesLoading
+  } = useAddressForm();
+
+  // Local state
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOrderPlaced, setIsOrderPlaced] = useState(false);
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [useSavedAddress, setUseSavedAddress] = useState(false);
 
+  // Redirect if cart is empty
   useEffect(() => {
-    if (selectedAddressId && useSavedAddress) {
-      const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
-      if (selectedAddress) {
-        setFormData(prev => ({
-          ...prev,
-          firstName: selectedAddress.firstName,
-          lastName: selectedAddress.lastName,
-          email: selectedAddress.email,
-          phone: selectedAddress.phone,
-          address: selectedAddress.address,
-          city: selectedAddress.city,
-          state: selectedAddress.state,
-          zipCode: selectedAddress.zipCode,
-        }));
-      }
+    if (cartItems.length === 0) {
+      navigate('/');
     }
-  }, [selectedAddressId, addresses, useSavedAddress]);
+  }, [cartItems.length, navigate]);
 
+  // Reset payment when component unmounts
   useEffect(() => {
-    dispatch(fetchUserAddresses()).then((_result) => { 
-    }).catch((_error) => {
-      
-    });
-  }, [dispatch]);
+    return () => {
+      resetPayment();
+    };
+  }, [resetPayment]);
 
-  const validateField = (name, value) => {
-    let error = null;
-
-    switch (name) {
-      case 'email':
-        if (value && !PaymentValidationRules.validateEmail(value).isValid) {
-          error = PaymentValidationRules.validateEmail(value).message;
-        }
-        break;
-      case 'phone':
-        if (value && !PaymentValidationRules.validatePhone(value).isValid) {
-          error = PaymentValidationRules.validatePhone(value).message;
-        }
-        break;
-      case 'zipCode':
-        if (value && !PaymentValidationRules.validateZIPCode(value).isValid) {
-          error = PaymentValidationRules.validateZIPCode(value).message;
-        }
-        break;
-      case 'cardNumber':
-        if (value && formData.paymentMethod === 'card' && !PaymentValidationRules.validateCardNumber(value).isValid) {
-          error = PaymentValidationRules.validateCardNumber(value).message;
-        }
-        break;
-      case 'expiryDate':
-        if (value && formData.paymentMethod === 'card' && !PaymentValidationRules.validateExpiryDate(value).isValid) {
-          error = PaymentValidationRules.validateExpiryDate(value).message;
-        }
-        break;
-      case 'cvv':
-        if (value && formData.paymentMethod === 'card' && !PaymentValidationRules.validateCVV(value).isValid) {
-          error = PaymentValidationRules.validateCVV(value).message;
-        }
-        break;
-      default:
-        if (!value.trim()) {
-          error = `${name.charAt(0).toUpperCase() + name.slice(1)} is required`;
-        }
-    }
-
-    return error;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-    
-    if (name === 'cardNumber') {
-      formattedValue = PaymentFormatters.formatCardNumber(value);
-    } else if (name === 'expiryDate') {
-      formattedValue = PaymentFormatters.formatExpiryDate(value);
-    } else if (name === 'cvv') {
-      formattedValue = PaymentFormatters.formatCVV(value);
-    } else if (name === 'phone') {
-      formattedValue = PaymentFormatters.formatPhone(value);
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: formattedValue
-    }));
-    
-    const error = validateField(name, formattedValue);
-    setValidationErrors(prev => ({
-      ...prev,
-      [name]: error
-    }));
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    
-    if (useSavedAddress) {
-      if (!Array.isArray(addresses) || addresses.length === 0) {
-        errors.savedAddress = 'No saved addresses available';
-        return false;
-      }
-      
-      if (!selectedAddressId) {
-        errors.savedAddress = 'Please select a saved address';
-        return false;
-      }
-      
-      if (formData.paymentMethod === 'card') {
-        const cardFields = ['cardNumber', 'expiryDate', 'cvv'];
-        cardFields.forEach(field => {
-          if (!formData[field].trim()) {
-            errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required for card payments`;
-          } else {
-            const error = validateField(field, formData[field]);
-            if (error) {
-              errors[field] = error;
-            }
-          }
-        });
-      }
-    } else {
-      const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
-      requiredFields.forEach(field => {
-        if (!formData[field].trim()) {
-          errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-        } else {
-          const error = validateField(field, formData[field]);
-          if (error) {
-            errors[field] = error;
-          }
-        }
-      });
-
-      if (formData.paymentMethod === 'card') {
-        const cardFields = ['cardNumber', 'expiryDate', 'cvv'];
-        cardFields.forEach(field => {
-          if (!formData[field].trim()) {
-            errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required for card payments`;
-          } else {
-            const error = validateField(field, formData[field]);
-            if (error) {
-              errors[field] = error;
-            }
-          }
-        });
-      }
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleAddressSelect = (address) => {
-    setFormData(prev => ({
-      ...prev,
-      firstName: address.firstName,
-      lastName: address.lastName,
-      email: address.email,
-      phone: address.phone,
-      address: address.address,
-      city: address.city,
-      state: address.state,
-      zipCode: address.zipCode,
-    }));
-
-    setValidationErrors(prev => {
-      const newErrors = { ...prev };
-      const addressFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
-      addressFields.forEach(field => {
-        delete newErrors[field];
-      });
-      return newErrors;
-    });
-  };
-
-  const handleAddNewAddress = () => {
-    setShowAddressForm(true);
-  };
-
-  const handleAddressFormSave = () => {
-    setShowAddressForm(false);
-    toast.success('Address saved successfully!');
-  };
-
-  const handleAddressFormCancel = () => {
-    setShowAddressForm(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (items.length === 0) {
-      toast.error('Your cart is empty!');
-      return;
-    }
-
-    if (!validateForm()) {
-      const errorCount = Object.keys(validationErrors).length;
-      if (useSavedAddress) {
-        if (validationErrors.savedAddress) {
-          toast.error(validationErrors.savedAddress);
-        } else {
-          toast.error(`Please fix the ${errorCount} validation error${errorCount > 1 ? 's' : ''} in payment details`);
-        }
-      } else {
-        toast.error(`Please fix the ${errorCount} validation error${errorCount > 1 ? 's' : ''} in the form`);
-      }
-      return;
-    }
-
-    if (useSavedAddress && !selectedAddressId) {
-      toast.error('Please select a saved address');
-      return;
-    }
-
-    setIsProcessing(true);
-
+  const handlePlaceOrder = async () => {
     try {
-      const paymentMethodMap = {
-        'card': 'credit_card',
-        'cod': 'cash_on_delivery'
-      };
-
-      const subtotal = totalPrice;
-      const shippingAmount = 0;
-      const taxAmount = 0;
-      const discountAmount = 0;
-      const finalAmount = subtotal + shippingAmount + taxAmount - discountAmount;
-      const orderData = {
-        items: items.map(item => ({
-          productId: item.productId,
-          productName: item.productName,
-          productPrice: item.productPrice,
-          quantity: item.quantity,
-          imageUrl: item.imageUrl
-        })),
-        totalAmount: subtotal,
-        shippingAmount,
-        taxAmount,
-        discountAmount,
-        finalAmount,
-        shippingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          phone: formData.phone,
-          email: formData.email
-        },
-        billingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          phone: formData.phone,
-          email: formData.email
-        },
-        paymentMethod: paymentMethodMap[formData.paymentMethod] || 'credit_card',
-        paymentStatus: 'paid',
-        notes: ''
-      };
-
-      await dispatch(createOrder(orderData)).unwrap();
+      setIsProcessing(true);
       
-      dispatch(clearCart());
-      dispatch(clearSelectedAddress());
-      setIsOrderPlaced(true);
-      toast.success('Order placed successfully!');
+      // Validate address form using service
+      const addressValidation = validateAddressForm(formData);
+      if (!addressValidation.isValid) {
+        toast.error('Please fill in all required address fields');
+        return;
+      }
+
+      // Validate payment fields
+      const paymentValidation = validateFields();
+      if (!paymentValidation.isValid) {
+        toast.error('Please fix payment validation errors');
+        return;
+      }
+
+      // Generate order ID
+      const orderId = generateOrderId();
       
+      // Calculate totals
+      const totals = calculateOrderTotals(totalPrice, 0, 0);
+      
+      // Prepare order data
+      const orderData = prepareOrderData({
+        orderId,
+        userId: user?.id,
+        items: cartItems,
+        shippingAddress: useSavedAddress && selectedAddressId 
+          ? addresses.find(addr => addr.id === selectedAddressId)
+          : formData,
+        paymentMethod: selectedMethod?.id || 'cash_on_delivery',
+        paymentFields: methodFields,
+        totals
+      });
+
+      // Process payment
+      const paymentResult = await processPayment({
+        methodId: selectedMethod?.id || 'cash_on_delivery',
+        amount: totals.total,
+        fields: methodFields,
+        orderId
+      });
+
+      if (!paymentResult || !['authorized', 'captured', 'pending'].includes(paymentResult.status)) {
+        toast.error('Payment failed. Please try again.');
+        return;
+      }
+
+      // Create order
+      const orderResult = await dispatch(createOrder(orderData)).unwrap();
+      
+      if (orderResult.success) {
+        toast.success('Order placed successfully!');
+        navigate(`/orders/${orderResult.order.id}`);
+      } else {
+        toast.error(orderResult.message || 'Failed to create order');
+      }
     } catch (error) {
-      
-      toast.error('Failed to place order. Please try again.');
+      // console.error('Order placement error:', error);
+      toast.error(error.message || 'Failed to place order. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  if (isOrderPlaced) {
+  if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md w-full mx-4 text-center p-8">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h1>
-          <p className="text-gray-600 mb-6">
-            Thank you for your order. You will receive a confirmation email shortly.
-          </p>
-          <div className="space-y-3">
-            <Button 
-              onClick={() => navigate('/products')}
-              className="w-full"
-            >
-              Continue Shopping
-            </Button>
-            <Button 
-              onClick={() => navigate('/')}
-              variant="outline"
-              className="w-full"
-            >
-              Go Home
-            </Button>
-          </div>
+        <Card className="p-8 text-center max-w-md">
+          <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
+          <p className="text-gray-600 mb-6">Add some items to your cart before checking out.</p>
+          <Button onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Continue Shopping
+          </Button>
         </Card>
       </div>
     );
   }
 
+  const totals = calculateOrderTotals(totalPrice, 0, 0);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Button
-            variant="outline"
             onClick={() => navigate(-1)}
+            variant="outline"
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Cart
+            Back
           </Button>
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <ShoppingBag className="w-5 h-5 mr-2" />
-                Order Summary
-              </h2>
-              
-              <div className="space-y-4 mb-6">
-                {items.map((item) => (
-                  <div key={item.productId} className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.productName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-6 h-6 text-gray-400" />
-                        </div>
-                      )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Forms */}
+          <div className="space-y-8">
+            {/* Address Section */}
+            <AddressSection
+              useSavedAddress={useSavedAddress}
+              addresses={addresses}
+              addressesLoading={addressesLoading}
+              selectedAddressId={selectedAddressId}
+              formData={formData}
+              validationErrors={validationErrors}
+              handleInputChange={handleInputChange}
+              handleAddressSelect={handleAddressSelect}
+              handleUseSavedAddressChange={handleUseSavedAddressChange}
+              handleAddNewAddress={handleAddNewAddress}
+            />
+
+            {/* Payment Section */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-2">
+                <CreditCard className="w-5 h-5 text-gray-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Payment Method</h2>
+              </div>
+
+              {paymentLoading ? (
+                <Card className="p-6 text-center">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                  </div>
+                </Card>
+              ) : paymentError ? (
+                <Card className="p-6 text-center">
+                  <p className="text-red-600">Failed to load payment methods</p>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  <PaymentMethodPicker
+                    methods={availableMethods}
+                    selectedMethod={selectedMethod}
+                    onChange={handleMethodChange}
+                  />
+                  
+                  {selectedMethod && (
+                    <PaymentFields
+                      fields={selectedMethod.fields || []}
+                      values={methodFields}
+                      errors={fieldErrors}
+                      onChange={handleFieldChange}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column - Order Summary */}
+          <div className="space-y-6">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-5 h-5 text-gray-600" />
+              <h2 className="text-xl font-semibold text-gray-900">Order Summary</h2>
+            </div>
+
+            <Card className="p-6">
+              <div className="space-y-4">
+                {cartItems.map((item) => (
+                  <div key={item.productId} className="flex items-center space-x-4">
+                    <img
+                      src={item.imageUrl || '/placeholder-product.jpg'}
+                      alt={item.productName}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{item.productName}</h3>
+                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
-                        {item.productName}
-                      </h4>
-                      <p className="text-sm text-gray-500">
-                        Qty: {item.quantity} × ${item.productPrice.toFixed(2)}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="font-medium text-gray-900">
                       ${(item.productPrice * item.quantity).toFixed(2)}
                     </p>
                   </div>
                 ))}
               </div>
-              
-              <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between text-sm">
+
+              <div className="border-t pt-4 mt-4 space-y-2">
+                <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="text-gray-900">${totalPrice.toFixed(2)}</span>
+                  <span className="font-medium">${totals.subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className="text-gray-900">Free</span>
+                  <span className="font-medium">${totals.shipping.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tax</span>
+                  <span className="font-medium">${totals.tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-semibold">
-                  <span className="text-gray-900">Total</span>
-                  <span className="text-gray-900">${totalPrice.toFixed(2)}</span>
+                  <span>Total</span>
+                  <span>${totals.total.toFixed(2)}</span>
                 </div>
               </div>
+
+              <Button
+                onClick={handlePlaceOrder}
+                disabled={isProcessing || paymentLoading}
+                className="w-full mt-6"
+              >
+                {isProcessing ? 'Processing...' : 'Place Order'}
+              </Button>
             </Card>
-          </div>
-
-          {/* Checkout Form */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Address Selection */}
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <MapPin className="w-5 h-5 mr-2" />
-                    Shipping Information
-                  </h2>
-                  {/* Debug info */}
-                  <div className="text-sm text-gray-500">
-                    {addressesLoading ? 'Loading addresses...' : `${Array.isArray(addresses) ? addresses.length : 0} saved addresses`}
-                  </div>
-                </div>
-
-                {/* Always show the checkbox, but handle empty state */}
-                <div className="mb-6">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={useSavedAddress}
-                      onChange={(e) => {
-                        setUseSavedAddress(e.target.checked);
-                        if (!e.target.checked) {
-                          dispatch(clearSelectedAddress());
-                        }
-                      }}
-                      className="mr-2"
-                      disabled={!addresses || !Array.isArray(addresses) || addresses.length === 0}
-                    />
-                    <span className={`text-sm ${(!addresses || !Array.isArray(addresses) || addresses.length === 0) ? 'text-gray-400' : 'text-gray-700'}`}>
-                      Use saved address {(!addresses || !Array.isArray(addresses) || addresses.length === 0) && '(no saved addresses)'}
-                    </span>
-                  </label>
-                </div>
-
-                {useSavedAddress ? (
-                  <div>
-                    {addressesLoading ? (
-                      <div className="flex items-center justify-center p-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    ) : addresses && Array.isArray(addresses) && addresses.length > 0 ? (
-                      <AddressSelector
-                        onAddressSelect={handleAddressSelect}
-                        onAddNew={handleAddNewAddress}
-                        selectedAddressId={selectedAddressId}
-                      />
-                    ) : (
-                      <div className="text-center p-8 bg-gray-50 rounded-lg">
-                        <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h4 className="text-lg font-medium text-gray-900 mb-2">No saved addresses</h4>
-                        <p className="text-gray-500 mb-4">Your addresses from previous orders will appear here</p>
-                        <Button onClick={handleAddNewAddress}>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Your First Address
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        First Name *
-                      </label>
-                      <Input
-                        type="text"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.firstName ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.firstName && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.firstName}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Last Name *
-                      </label>
-                      <Input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.lastName ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.lastName && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.lastName}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email *
-                      </label>
-                      <Input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.email ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.email && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.email}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone *
-                      </label>
-                      <Input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.phone ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.phone && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.phone}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address *
-                      </label>
-                      <Input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.address ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.address && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.address}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        City *
-                      </label>
-                      <Input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.city ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.city && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.city}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State *
-                      </label>
-                      <Input
-                        type="text"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.state ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.state && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.state}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ZIP Code *
-                      </label>
-                      <Input
-                        type="text"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleInputChange}
-                        required
-                        className={validationErrors.zipCode ? 'border-red-500' : ''}
-                      />
-                      {validationErrors.zipCode && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.zipCode}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* Payment Information */}
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  Payment Information
-                </h2>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Method
-                    </label>
-                    <select
-                      name="paymentMethod"
-                      value={formData.paymentMethod}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="card">Credit/Debit Card</option>
-                      <option value="cod">Cash on Delivery</option>
-                    </select>
-                  </div>
-                  
-                  {formData.paymentMethod === 'card' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Card Number *
-                        </label>
-                        <Input
-                          type="text"
-                          name="cardNumber"
-                          value={formData.cardNumber}
-                          onChange={handleInputChange}
-                          placeholder="1234 5678 9012 3456"
-                          required
-                          className={validationErrors.cardNumber ? 'border-red-500' : ''}
-                        />
-                        {validationErrors.cardNumber && (
-                          <p className="text-red-500 text-xs mt-1 flex items-center">
-                            <AlertCircle className="w-4 h-4 mr-1" />
-                            {validationErrors.cardNumber}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Expiry Date *
-                          </label>
-                          <Input
-                            type="text"
-                            name="expiryDate"
-                            value={formData.expiryDate}
-                            onChange={handleInputChange}
-                            placeholder="MM/YY"
-                            required
-                            className={validationErrors.expiryDate ? 'border-red-500' : ''}
-                          />
-                          {validationErrors.expiryDate && (
-                            <p className="text-red-500 text-xs mt-1 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" />
-                              {validationErrors.expiryDate}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            CVV *
-                          </label>
-                          <Input
-                            type="text"
-                            name="cvv"
-                            value={formData.cvv}
-                            onChange={handleInputChange}
-                            placeholder="123"
-                            required
-                            className={validationErrors.cvv ? 'border-red-500' : ''}
-                          />
-                          {validationErrors.cvv && (
-                            <p className="text-red-500 text-xs mt-1 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" />
-                              {validationErrors.cvv}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </Card>
-
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={isProcessing || items.length === 0}
-                  className="px-8 py-3"
-                >
-                  {isProcessing ? 'Processing...' : `Place Order - $${totalPrice.toFixed(2)}`}
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       </div>
-
-      {showAddressForm && (
-        <AddressForm
-          onSave={handleAddressFormSave}
-          onCancel={handleAddressFormCancel}
-        />
-      )}
     </div>
   );
 };
 
-export default CheckoutPage; 
+export default CheckoutPage;
