@@ -85,7 +85,7 @@ const ModernHeader = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-2">
               <Package className="w-8 h-8 text-green-600" />
               <span className="text-2xl font-bold text-gray-900">FreshMart</span>
             </Link>
@@ -203,10 +203,10 @@ const ModernHeader = () => {
 
       <nav className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-8 py-3 overflow-x-auto">
+          <div className="flex items-center space-x-4 py-2 overflow-x-auto scrollbar-hide">
             <Link
               to="/products"
-              className={`font-medium transition-colors whitespace-nowrap px-3 py-2 rounded-md ${
+              className={`font-medium text-sm transition-colors whitespace-nowrap px-3 py-1.5 rounded-full ${
                 !currentCategory
                   ? 'bg-green-100 text-green-700'
                   : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
@@ -214,7 +214,7 @@ const ModernHeader = () => {
             >
               All Products
             </Link>
-            {categories && categories.length > 0 && categories.slice(0, 6).map((category) => {
+            {categories && categories.length > 0 && categories.map((category) => {
               if (!category || !category.id || !category.name) {
                 return null;
               }
@@ -226,7 +226,7 @@ const ModernHeader = () => {
                 <Link
                   key={categoryId}
                   to={`/products?category=${categoryId}`}
-                  className={`font-medium transition-colors whitespace-nowrap px-3 py-2 rounded-md ${
+                  className={`font-medium text-sm transition-colors whitespace-nowrap px-3 py-1.5 rounded-full ${
                     isActive
                       ? 'bg-green-100 text-green-700'
                       : 'text-gray-700 hover:text-green-600 hover:bg-green-50'

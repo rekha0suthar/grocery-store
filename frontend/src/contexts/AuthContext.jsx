@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { setCredentials, clearAuth } from '../store/slices/authSlice.js';
 import { authService } from '../services/authService.js';
@@ -17,49 +17,55 @@ export const AuthProvider = ({ children }) => {
   const dispatch = useAppDispatch();
   const { user, token, isAuthenticated } = useAppSelector((state) => state.auth);
   const [authLoading, setAuthLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      setAuthLoading(true);
-      
-      if (token && !user) {
-        try {
-          const response = await authService.getProfile();
-          const userData = response.data?.data || response.data;
-          dispatch(setCredentials({ user: userData, token, refreshToken: localStorage.getItem('refreshToken') }));
-        } catch (error) {
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            try {
-              const parsedUser = JSON.parse(storedUser);
-              dispatch(setCredentials({ user: parsedUser, token, refreshToken: localStorage.getItem('refreshToken') }));
-            } catch (parseError) {
-              dispatch(clearAuth());
-            }
-          } else {
-            dispatch(clearAuth());
-          }
-        }
-      } else if (!token && !user) {
+  const initializeAuth = useCallback(async () => {
+    if (initialized && user) {
+      return;
+    }
+
+    setAuthLoading(true);
+    
+    if (token && !user) {
+      try {
+        const response = await authService.getProfile();
+        const userData = response.data?.data || response.data;
+        dispatch(setCredentials({ user: userData, token, refreshToken: localStorage.getItem('refreshToken') }));
+      } catch (error) {
         const storedUser = localStorage.getItem('user');
-        const storedToken = localStorage.getItem('token');
-        const storedRefreshToken = localStorage.getItem('refreshToken');
-        
-        if (storedUser && storedToken) {
+        if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
-            dispatch(setCredentials({ user: parsedUser, token: storedToken, refreshToken: storedRefreshToken }));
+            dispatch(setCredentials({ user: parsedUser, token, refreshToken: localStorage.getItem('refreshToken') }));
           } catch (parseError) {
             dispatch(clearAuth());
           }
+        } else {
+          dispatch(clearAuth());
         }
       }
+    } else if (!token && !user) {
+      const storedUser = localStorage.getItem('user');
+      const storedToken = localStorage.getItem('token');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
       
-      setAuthLoading(false);
-    };
+      if (storedUser && storedToken) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          dispatch(setCredentials({ user: parsedUser, token: storedToken, refreshToken: storedRefreshToken }));
+        } catch (parseError) {
+          dispatch(clearAuth());
+        }
+      }
+    }
+    
+    setInitialized(true);
+    setAuthLoading(false);
+  }, [token, user, dispatch, initialized]);
 
+  useEffect(() => {
     initializeAuth();
-  }, [token, user, dispatch]);
+  }, [initializeAuth]);
 
   const value = {
     user,

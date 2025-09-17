@@ -53,11 +53,27 @@ const AdminCategoriesPage = () => {
   const handleEdit = (category) => {
     setEditingCategory(category);
     setShowCreateForm(true);
-    reset({
-      name: category.name,
-      description: category.description || '',
-      parentId: category.parentId || '',
-    });
+    // Use setTimeout to ensure the form is reset after state updates
+    setTimeout(() => {
+      reset({
+        name: category.name,
+        description: category.description || '',
+        parentId: category.parentId || '',
+      });
+    }, 0);
+  };
+
+  const handleAddCategory = () => {
+    setEditingCategory(null);
+    setShowCreateForm(true);
+    // Use setTimeout to ensure the form is reset after state updates
+    setTimeout(() => {
+      reset({
+        name: '',
+        description: '',
+        parentId: '',
+      });
+    }, 0);
   };
 
   const handleDelete = async (categoryId) => {
@@ -99,11 +115,7 @@ const AdminCategoriesPage = () => {
           </div>
           
           <Button
-            onClick={() => {
-              setEditingCategory(null);
-              setShowCreateForm(true);
-              reset();
-            }}
+            onClick={handleAddCategory}
             className="flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -178,50 +190,43 @@ const AdminCategoriesPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category) => (
-            <Card key={category.id} className="hover:shadow-lg transition-shadow">
-              <Card.Content className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <FolderOpen className="w-8 h-8 text-green-600 mr-3" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {category.name}
-                      </h3>
-                      {category.parentId && (
-                        <p className="text-sm text-gray-500">
-                          Subcategory
-                        </p>
-                      )}
-                    </div>
+            <Card key={category.id}>
+              <Card.Header>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FolderOpen className="w-6 h-6 text-green-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
                   </div>
                   <div className="flex space-x-2">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(category)}
-                      className="p-2"
+                      className="flex items-center"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => handleDelete(category.id)}
-                      className="p-2 text-red-600 hover:text-red-700"
+                      className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-
-                {category.description && (
-                  <p className="text-gray-600 text-sm mb-4">
-                    {category.description}
+              </Card.Header>
+              <Card.Content>
+                <p className="text-gray-600 mb-2">{category.description || 'No description'}</p>
+                {category.parent && (
+                  <p className="text-sm text-gray-500">
+                    Parent: {category.parent.name}
                   </p>
                 )}
-
-                <div className="text-xs text-gray-500">
-                  Created: {new Date(category.createdAt).toLocaleDateString()}
+                <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                  <span>Products: {category.productCount || 0}</span>
+                  <span>Created: {new Date(category.createdAt).toLocaleDateString()}</span>
                 </div>
               </Card.Content>
             </Card>
@@ -234,11 +239,7 @@ const AdminCategoriesPage = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">No categories yet</h3>
             <p className="text-gray-600 mb-4">Get started by creating your first category</p>
             <Button
-              onClick={() => {
-                setEditingCategory(null);
-                setShowCreateForm(true);
-                reset();
-              }}
+              onClick={handleAddCategory}
               className="flex items-center mx-auto"
             >
               <Plus className="w-4 h-4 mr-2" />

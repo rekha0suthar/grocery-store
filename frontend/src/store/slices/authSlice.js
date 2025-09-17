@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../../services/authService.js';
 
-// System initialization thunks
 export const checkInitializationStatus = createAsyncThunk(
   'auth/checkInitializationStatus',
   async (_, { rejectWithValue: _rejectWithValue }) => {
@@ -33,13 +32,11 @@ export const initializeSystem = createAsyncThunk(
   }
 );
 
-// Authentication thunks
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (credentials, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
-      // console.log('Login response:', response.data);
       
       const responseData = response.data?.data || response.data;
       
@@ -49,7 +46,6 @@ export const loginUser = createAsyncThunk(
       
       return responseData;
     } catch (error) {
-      // console.error('Login error:', error);
       return _rejectWithValue(error.response?.data?.message || 'Login failed');
     }
   }
@@ -60,7 +56,6 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue: _rejectWithValue }) => {
     try {
       const response = await authService.register(userData);
-      // console.log('Register response:', response.data);
       
       const responseData = response.data?.data || response.data;
       
@@ -68,9 +63,7 @@ export const registerUser = createAsyncThunk(
         return _rejectWithValue(responseData.message || 'Registration failed');
       }
       
-      // Handle different registration types
       if (userData.role === 'store_manager') {
-        // Store manager registration creates a pending request
         return { 
           success: true, 
           message: responseData.message || 'Store manager registration submitted for approval',
@@ -80,7 +73,6 @@ export const registerUser = createAsyncThunk(
           requiresApproval: true
         };
       } else {
-        // Regular registration (customer/admin) with immediate login
         return { 
           success: true, 
           message: responseData.message || 'Registration successful',
@@ -91,7 +83,6 @@ export const registerUser = createAsyncThunk(
         };
       }
     } catch (error) {
-      // console.error('Registration error:', error);
       return _rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }
@@ -104,7 +95,6 @@ export const logoutUser = createAsyncThunk(
       await authService.logout();
       return { success: true };
     } catch (error) {
-      // Even if logout fails, we should clear local state
       return { success: true };
     }
   }
@@ -117,19 +107,17 @@ export const updateProfile = createAsyncThunk(
       const response = await authService.updateProfile(profileData);
       const responseData = response.data?.data || response.data;
       
-      // Check if the response indicates failure
       if (responseData.success === false) {
         return _rejectWithValue(responseData.message || 'Profile update failed');
       }
       
-      return responseData;
+      return responseData.data || responseData;
     } catch (error) {
       return _rejectWithValue(error.response?.data?.message || 'Profile update failed');
     }
   }
 );
 
-// Store manager management thunks (admin-only)
 export const getPendingStoreManagerRequests = createAsyncThunk(
   'auth/getPendingStoreManagerRequests',
   async (_, { rejectWithValue: _rejectWithValue }) => {
@@ -164,11 +152,9 @@ const initialState = {
   loading: false,
   error: null,
   
-  // System initialization state
-  systemInitialized: null, // null = unknown, true = initialized, false = needs initialization
+  systemInitialized: null,
   initializationLoading: false,
   
-  // Store manager requests state (admin-only)
   pendingRequests: [],
   requestsLoading: false,
   requestsError: null,
@@ -211,7 +197,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // System initialization
       .addCase(checkInitializationStatus.pending, (state) => {
         state.initializationLoading = true;
       })
@@ -232,7 +217,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.systemInitialized = true;
         
-        // Auto-login the first admin
         if (action.payload.user && action.payload.token) {
           state.user = action.payload.user;
           state.token = action.payload.token;
@@ -251,7 +235,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
       
-      // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -275,7 +258,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
       })
       
-      // Registration
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -283,7 +265,6 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         
-        // Only auto-login for non-store-manager registrations
         if (!action.payload.requiresApproval && action.payload.token) {
           state.user = action.payload.user;
           state.token = action.payload.token;
@@ -302,7 +283,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
       
-      // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
@@ -314,13 +294,11 @@ const authSlice = createSlice({
         localStorage.removeItem('user');
       })
       
-      // Profile update
       .addCase(updateProfile.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        state.user = action.payload;
+        localStorage.setItem('user', JSON.stringify(action.payload));
       })
       
-      // Store manager requests (admin-only)
       .addCase(getPendingStoreManagerRequests.pending, (state) => {
         state.requestsLoading = true;
         state.requestsError = null;
@@ -340,7 +318,6 @@ const authSlice = createSlice({
       })
       .addCase(approveStoreManagerRequest.fulfilled, (state, action) => {
         state.requestsLoading = false;
-        // Update the request in the list
         const updatedRequest = action.payload;
         state.pendingRequests = state.pendingRequests.map(request =>
           request.id === updatedRequest.id ? updatedRequest : request

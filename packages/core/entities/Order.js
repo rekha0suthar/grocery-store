@@ -7,6 +7,15 @@ import { InvalidTransitionError } from '../errors/DomainErrors.js';
 export class Order extends BaseEntity {
   constructor(data = {}, clock = null) {
     super(data.id, clock);
+    
+    // Preserve createdAt and updatedAt from data if provided
+    if (data.createdAt) {
+      this.createdAt = data.createdAt;
+    }
+    if (data.updatedAt) {
+      this.updatedAt = data.updatedAt;
+    }
+    
     this.orderNumber = data.orderNumber || this.generateOrderNumber();
     this.userId = data.userId || null;
     this.items = data.items || []; 

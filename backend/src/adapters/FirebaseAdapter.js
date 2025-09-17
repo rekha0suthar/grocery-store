@@ -1,9 +1,37 @@
 import { db } from '../config/firebase.js';
 import { IDatabaseAdapter } from '@grocery-store/core/interfaces';
+
 export class FirebaseAdapter extends IDatabaseAdapter {
   constructor() {
     super();
     this.db = db;
+  }
+
+  // Helper method to convert Firestore timestamps to JavaScript Date objects
+  convertTimestamps(data) {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+
+    const converted = { ...data };
+    
+    // Convert Firestore timestamp objects to JavaScript Date objects
+    Object.keys(converted).forEach(key => {
+      const value = converted[key];
+      
+      if (value && typeof value === 'object' && value._seconds !== undefined && value._nanoseconds !== undefined) {
+        // This is a Firestore timestamp
+        converted[key] = new Date(value._seconds * 1000 + value._nanoseconds / 1000000);
+      } else if (Array.isArray(value)) {
+        // Handle arrays (like items in orders)
+        converted[key] = value.map(item => this.convertTimestamps(item));
+      } else if (value && typeof value === 'object') {
+        // Handle nested objects (like shippingAddress, billingAddress)
+        converted[key] = this.convertTimestamps(value);
+      }
+    });
+    
+    return converted;
   }
 
   async connect() {
@@ -26,10 +54,12 @@ export class FirebaseAdapter extends IDatabaseAdapter {
         return null;
       }
 
-      return {
+      const data = {
         id: doc.id,
         ...doc.data()
       };
+      
+      return this.convertTimestamps(data);
     } catch (error) {
       throw new Error(`Failed to find document by ID: ${error.message}`);
     }
@@ -61,15 +91,18 @@ export class FirebaseAdapter extends IDatabaseAdapter {
         });
       });
 
+      // Convert timestamps for all documents
+      const convertedDocuments = documents.map(doc => this.convertTimestamps(doc));
+
       // Sort by created_at in memory and apply offset
-      documents.sort((a, b) => {
-        const aTime = new Date(a.created_at || 0).getTime();
-        const bTime = new Date(b.created_at || 0).getTime();
+      convertedDocuments.sort((a, b) => {
+        const aTime = new Date(a.createdAt || 0).getTime();
+        const bTime = new Date(b.createdAt || 0).getTime();
         return bTime - aTime; // desc order
       });
 
       // Apply offset and limit
-      return documents.slice(offset, offset + limit);
+      return convertedDocuments.slice(offset, offset + limit);
     } catch (error) {
       throw new Error(`Failed to find documents: ${error.message}`);
     }
@@ -82,14 +115,14 @@ export class FirebaseAdapter extends IDatabaseAdapter {
       
       const docRef = await this.db.collection(collection).add({
         ...dataWithoutId
-        // Removed created_at and updated_at since they're already in data
       });
       
-      return {
+      const result = {
         ...dataWithoutId,
         id: docRef.id
-        // Removed created_at and updated_at since they're already in data
       };
+      
+      return this.convertTimestamps(result);
     } catch (error) {
       throw new Error(`Failed to create document: ${error.message}`);
     }
@@ -101,14 +134,15 @@ export class FirebaseAdapter extends IDatabaseAdapter {
       
       await docRef.update({
         ...data
-        // Removed updated_at since it's already in data
       });
       
       const updatedDoc = await docRef.get();
-      return {
+      const result = {
         id: updatedDoc.id,
         ...updatedDoc.data()
       };
+      
+      return this.convertTimestamps(result);
     } catch (error) {
       throw new Error(`Failed to update document: ${error.message}`);
     }
@@ -152,10 +186,12 @@ export class FirebaseAdapter extends IDatabaseAdapter {
       }
 
       const doc = snapshot.docs[0];
-      return {
+      const data = {
         id: doc.id,
         ...doc.data()
       };
+      
+      return this.convertTimestamps(data);
     } catch (error) {
       throw new Error(`Failed to find document by field: ${error.message}`);
     }

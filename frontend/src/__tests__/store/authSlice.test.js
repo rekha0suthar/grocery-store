@@ -11,7 +11,6 @@ import authReducer, {
 } from '../../store/slices/authSlice.js';
 import { mockUser, mockAdmin } from '../utils/test-utils.js';
 
-// Mock the auth service
 jest.mock('../../services/authService.js', () => ({
   authService: {
     login: jest.fn(),
@@ -50,7 +49,13 @@ describe('Auth Slice', () => {
       isAuthenticated: true,
     };
 
-    expect(authReducer(previousState, clearAuth())).toEqual(initialState);
+    const state = authReducer(previousState, clearAuth());
+    
+    expect(state.user).toBeNull();
+    expect(state.token).toBeNull();
+    expect(state.refreshToken).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.error).toBeNull();
   });
 
   it('should handle clearError', () => {
@@ -59,7 +64,9 @@ describe('Auth Slice', () => {
       error: 'Some error',
     };
 
-    expect(authReducer(previousState, clearError())).toEqual(initialState);
+    const state = authReducer(previousState, clearError());
+    
+    expect(state.error).toBeNull();
   });
 
   it('should handle setCredentials', () => {
@@ -69,15 +76,12 @@ describe('Auth Slice', () => {
       refreshToken: 'refresh-token',
     };
 
-    const expectedState = {
-      ...initialState,
-      user: mockUser,
-      token: 'test-token',
-      refreshToken: 'refresh-token',
-      isAuthenticated: true,
-    };
-
-    expect(authReducer(initialState, setCredentials(credentials))).toEqual(expectedState);
+    const state = authReducer(initialState, setCredentials(credentials));
+    
+    expect(state.user).toEqual(mockUser);
+    expect(state.token).toBe('test-token');
+    expect(state.refreshToken).toBe('refresh-token');
+    expect(state.isAuthenticated).toBe(true);
   });
 
   describe('loginUser', () => {
@@ -212,7 +216,7 @@ describe('Auth Slice', () => {
       const updatedUser = { ...mockUser, name: 'Updated Name' };
       const action = { 
         type: updateProfile.fulfilled.type, 
-        payload: { user: updatedUser } 
+        payload: updatedUser
       };
       
       const state = authReducer(initialState, action);

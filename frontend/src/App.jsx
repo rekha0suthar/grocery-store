@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from './hooks/redux.js';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
@@ -31,7 +31,6 @@ import AdminCategoriesPage from './pages/admin/AdminCategoriesPage.jsx';
 import AdminRequestsPage from './pages/admin/AdminRequestsPage.jsx';
 
 function AppRoutes() {
-  const hasCheckedInit = useRef(false);
   const dispatch = useAppDispatch();
   const { user, loading } = useAuth();
   const { systemInitialized, initializationLoading } = useAppSelector(state => state.auth);

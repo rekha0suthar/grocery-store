@@ -25,14 +25,11 @@ const ModernLoginPage = () => {
   } = useForm();
 
   const redirectBasedOnRole = useCallback((role) => {
-    console.log('role', role);
     switch (role) {
       case 'customer':
-        console.log('customer');
         navigate('/dashboard');
         break;
       case 'admin':
-        console.log('admin');
         navigate('/admin/dashboard');
         break;
       case 'store_manager':

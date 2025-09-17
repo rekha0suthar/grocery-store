@@ -5,7 +5,7 @@ import { updateProfile } from '../store/slices/authSlice.js';
 import Card from '../components/UI/Card.jsx';
 import Button from '../components/UI/Button.jsx';
 import Input from '../components/UI/Input.jsx';
-import { User, Mail, Phone, Calendar, Edit3, X } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Edit3, X, MapPin } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ProfilePage = () => {
@@ -17,7 +17,6 @@ const ProfilePage = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
     reset,
   } = useForm({
     defaultValues: {
@@ -27,7 +26,6 @@ const ProfilePage = () => {
     },
   });
 
-  // Update form when user data changes
   useEffect(() => {
     if (user) {
       reset({
@@ -42,28 +40,21 @@ const ProfilePage = () => {
     e?.preventDefault();
     setLoading(true);
     try {
-      // Include email in the payload to satisfy backend validation
       const payload = { 
         ...data, 
         email: user?.email 
       };
       
-      console.log('Submitting profile data:', payload);
       const result = await dispatch(updateProfile(payload)).unwrap();
-      console.log('Profile update result:', result);
       
-      // Check if the update was successful
       if (result && result.success !== false) {
         toast.success('Profile updated successfully!');
         setIsEditing(false);
       } else {
-        // Show error message from backend
         const errorMessage = result?.message || 'Failed to update profile';
         toast.error(errorMessage);
-        console.error('Profile update failed:', result);
       }
     } catch (error) {
-      console.error('Profile update error:', error);
       const errorMessage = error || 'Failed to update profile';
       toast.error(errorMessage);
     } finally {
@@ -77,7 +68,6 @@ const ProfilePage = () => {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    // Reset form to original values
     reset({
       name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || '',
       phone: user?.phone || '',
@@ -150,6 +140,13 @@ const ProfilePage = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <MapPin className="w-6 h-6 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Address</p>
+                    <p className="text-gray-900">{user?.address || 'Not provided'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                   <Calendar className="w-6 h-6 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium text-gray-500">Member Since</p>
@@ -215,6 +212,7 @@ const ProfilePage = () => {
                   <Input
                     label="Address"
                     type="text"
+                    placeholder="Enter your full address"
                     {...register('address')}
                   />
 
