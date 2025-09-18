@@ -52,25 +52,25 @@ export const validateAddressForm = (formData) => {
   };
 };
 
-/**
- * Prepare order data for API submission
- * @param {Object} params - Order preparation parameters
- * @returns {Object} - Prepared order data
- */
+
 export const prepareOrderData = ({
   orderId,
   customerId,
-  cartItems,
+  cartItems = [], // Default to empty array
   shippingAddress,
   billingAddress,
   totals,
   paymentMethod,
+  paymentFields,
   metadata = {}
 }) => {
+  // Ensure cartItems is an array
+  const items = Array.isArray(cartItems) ? cartItems : [];
+  
   return {
     orderId,
     customerId,
-    items: cartItems.map(item => ({
+    items: items.map(item => ({
       productId: item.productId,
       productName: item.productName,
       productPrice: item.productPrice,
@@ -84,6 +84,7 @@ export const prepareOrderData = ({
     totalAmount: totals.total,
     currency: 'USD',
     paymentMethod,
+    paymentFields,
     metadata: {
       source: 'web',
       timestamp: new Date().toISOString(),

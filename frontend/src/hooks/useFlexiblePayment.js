@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { paymentService } from '../services/paymentService.js';
+import { PaymentFieldValidator } from '@grocery-store/core/validation/PaymentFieldValidator.js';
 
 export const useFlexiblePayment = () => {
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -11,28 +12,28 @@ export const useFlexiblePayment = () => {
 
   // Load payment methods on mount
   useEffect(() => {
+    const loadPaymentMethods = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await paymentService.getPaymentMethods();
+        setAvailableMethods(response.data.methods || []);
+        
+        // Auto-select first method if available
+        if (response.data.methods && response.data.methods.length > 0) {
+          setSelectedMethod(response.data.methods[0]);
+          setMethodFields({});
+        }
+      } catch (err) {
+        // console.error('Error loading payment methods:', err);
+        setError('Failed to load payment methods');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadPaymentMethods();
   }, []);
-
-  const loadPaymentMethods = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await paymentService.getPaymentMethods();
-      setAvailableMethods(response.data.methods || []);
-      
-      // Auto-select first method if available
-      if (response.data.methods && response.data.methods.length > 0) {
-        setSelectedMethod(response.data.methods[0]);
-        setMethodFields({});
-      }
-    } catch (err) {
-      // console.error('Error loading payment methods:', err);
-      setError('Failed to load payment methods');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleMethodChange = (method) => {
     setSelectedMethod(method);
@@ -40,19 +41,30 @@ export const useFlexiblePayment = () => {
     setFieldErrors({});
   };
 
+  // Real-time validation using core validation system
+  const validateField = (fieldName, value) => {
+    if (!selectedMethod) return null;
+
+    const field = selectedMethod.fields?.find(f => f.name === fieldName);
+    if (!field) return null;
+
+    // Use core validation system
+    return PaymentFieldValidator.validateField(field, value);
+  };
+
   const handleFieldChange = (fieldName, value) => {
+    // Update the field value first
     setMethodFields(prev => ({
       ...prev,
       [fieldName]: value
     }));
     
-    // Clear field error when user starts typing
-    if (fieldErrors[fieldName]) {
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: null
-      }));
-    }
+    // Then validate the formatted value
+    const error = validateField(fieldName, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldName]: error
+    }));
   };
 
   const validateFields = () => {
@@ -65,14 +77,9 @@ export const useFlexiblePayment = () => {
 
     fields.forEach(field => {
       const value = methodFields[field.name];
-      
-      if (field.required && (!value || value.trim() === '')) {
-        errors[field.name] = `${field.label} is required`;
-      } else if (value && field.pattern) {
-        const regex = new RegExp(field.pattern);
-        if (!regex.test(value)) {
-          errors[field.name] = `${field.label} format is invalid`;
-        }
+      const error = PaymentFieldValidator.validateField(field, value);
+      if (error) {
+        errors[field.name] = error;
       }
     });
 
@@ -84,20 +91,27 @@ export const useFlexiblePayment = () => {
     setLoading(true);
     setError(null);
 
-    const response = await paymentService.processPayment({
-      methodId: selectedMethod.id,
-      amount: orderData.amount,
-      currency: orderData.currency || 'USD',
-      fields: methodFields,
-      orderId: orderData.orderId,
-      metadata: {
-        ...orderData.metadata,
-        paymentMethod: selectedMethod.displayName
-      }
-    });
+    try {
+      const response = await paymentService.processPayment({
+        methodId: selectedMethod.id,
+        amount: orderData.amount,
+        currency: orderData.currency || 'USD',
+        fields: methodFields,
+        orderId: orderData.orderId,
+        metadata: {
+          ...orderData.metadata,
+          paymentMethod: selectedMethod.displayName
+        }
+      });
 
-    setLoading(false);
-    return response.data.result;
+      setLoading(false);
+      
+      // Return the response directly (paymentService already returns response.data)
+      return response;
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
 
   const capturePayment = async (intentId, amount, currency = 'USD') => {
@@ -123,12 +137,13 @@ export const useFlexiblePayment = () => {
     return response.data.result;
   };
 
-  const reset = () => {
+  // Fixed: Use useCallback to memoize the reset function
+  const reset = useCallback(() => {
     setSelectedMethod(null);
     setMethodFields({});
     setFieldErrors({});
     setError(null);
-  };
+  }, []);
 
   return {
     selectedMethod,

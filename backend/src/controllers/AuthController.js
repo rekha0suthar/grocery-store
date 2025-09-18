@@ -47,49 +47,24 @@ export class AuthController extends BaseController {
       if (!result.success) {
         return this.sendError(res, result.message, 400);
       }
-
+      
       this.sendSuccess(res, {
         user: result.user,
-        profile: result.profile,
-        request: result.request
+        requiresApproval: true
       }, result.message, 201);
-      
-    } else if (role === 'admin') {
-      const existingUsers = await this.authComposition.userRepository.findAll();
-      
-      const adminPolicy = this.authComposition.getAdminManagementPolicy();
-      const canCreate = adminPolicy.canCreateAdmin(existingUsers);
-      
-      if (!canCreate.canCreate) {
-        return this.sendError(res, canCreate.reason, 400);
-      }
-
-      const user = await this.authComposition.getCreateUserUseCase().execute(userData);
-      
-      if (!user.success) {
-        return this.sendError(res, user.message, 400);
-      }
-      
-      const tokenData = await this.jwtProvider.generateToken(user.user);
-      
-      this.sendSuccess(res, {
-        user: user.user,
-        ...tokenData
-      }, 'Admin registered successfully', 201);
-      
     } else {
-      const user = await this.authComposition.getCreateUserUseCase().execute(userData);
+      result = await this.authComposition.getRegisterUserUseCase().execute(userData);
       
-      if (!user.success) {
-        return this.sendError(res, user.message, 400);
+      if (!result.success) {
+        return this.sendError(res, result.message, 400);
       }
       
-      const tokenData = await this.jwtProvider.generateToken(user.user);
+      const tokenData = await this.jwtProvider.generateToken(result.user);
       
       this.sendSuccess(res, {
-        user: user.user,
+        user: result.user,
         ...tokenData
-      }, 'User registered successfully', 201);
+      }, result.message, 201);
     }
   });
 
@@ -110,6 +85,21 @@ export class AuthController extends BaseController {
     }, 'Login successful');
   });
 
+  refreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return this.sendError(res, 'Refresh token is required', 400);
+    }
+    
+    try {
+      const tokenData = await this.jwtProvider.refreshToken(refreshToken);
+      this.sendSuccess(res, tokenData, 'Token refreshed successfully');
+    } catch (error) {
+      return this.sendError(res, 'Invalid or expired refresh token', 401);
+    }
+  });
+
   logout = asyncHandler(async (req, res) => {
     this.sendSuccess(res, null, 'Logout successful');
   });
@@ -123,56 +113,49 @@ export class AuthController extends BaseController {
   updateProfile = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const updateData = req.body;
-    console.log('updateData', updateData);
-    console.log('userId', userId);
+    
     const result = await this.authComposition.getUpdateUserUseCase().execute(userId, updateData);
-    console.log('result', result);
+    
     if (!result.success) {
       return this.sendError(res, result.message, 400);
     }
     
-    this.sendSuccess(res, result.user, result.message);
+    this.sendSuccess(res, result.user, 'Profile updated successfully');
   });
 
   changePassword = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
     
-    const user = await this.authComposition.getCreateUserUseCase().execute('updateUser', {
-      id: userId,
-      password: newPassword
-    });
-    
-    this.sendSuccess(res, user, 'Password changed successfully');
-  });
-
-  getPendingStoreManagerRequests = asyncHandler(async (req, res) => {
-    const adminUserId = req.user.id;
-    const result = await this.authComposition.getManageStoreManagerRequestsUseCase().execute('getPendingRequests', adminUserId);
+    const result = await this.authComposition.getChangePasswordUseCase().execute(userId, currentPassword, newPassword);
     
     if (!result.success) {
       return this.sendError(res, result.message, 400);
     }
     
-    this.sendSuccess(res, { requests: result.requests }, result.message);
+    this.sendSuccess(res, null, 'Password changed successfully');
+  });
+
+  getPendingStoreManagerRequests = asyncHandler(async (req, res) => {
+    const result = await this.authComposition.getPendingStoreManagerRequestsUseCase().execute();
+    
+    if (!result.success) {
+      return this.sendError(res, result.message, 400);
+    }
+    
+    this.sendSuccess(res, result.requests, 'Store manager requests retrieved successfully');
   });
 
   approveStoreManagerRequest = asyncHandler(async (req, res) => {
     const { requestId } = req.params;
     const { action, reason } = req.body;
-    const adminUserId = req.user.id;
     
-    const result = await this.authComposition.getManageStoreManagerRequestsUseCase().execute('approveRequest', {
-      requestId,
-      adminUserId,
-      action,
-      reason
-    });
+    const result = await this.authComposition.getApproveStoreManagerRequestUseCase().execute(requestId, action, reason);
     
     if (!result.success) {
       return this.sendError(res, result.message, 400);
     }
     
-    this.sendSuccess(res, result, result.message);
+    this.sendSuccess(res, result.request, 'Request processed successfully');
   });
 }

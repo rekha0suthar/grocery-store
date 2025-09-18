@@ -46,6 +46,8 @@
     "./contracts/payment.validation.js": "./contracts/payment.validation.js",
     "./contracts/payment.contracts.js": "./contracts/payment.contracts.js",
     "./contracts/payment.methods.defaults.js": "./contracts/payment.methods.defaults.js",
+    "./validation": "./validation/index.js",
+    "./validation/PaymentFieldValidator.js": "./validation/PaymentFieldValidator.js",
     "./adapters": "./adapters/DefaultClock.js",
     "./adapters/DefaultClock.js": "./adapters/DefaultClock.js"
   },

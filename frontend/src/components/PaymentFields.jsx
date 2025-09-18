@@ -3,12 +3,112 @@ import Input from './UI/Input.jsx';
 import Select from './UI/Select.jsx';
 
 const PaymentFields = ({ contract, values, onChange, errors = {} }) => {
-  if (!contract || !contract.fields || contract.fields.length === 0) {
+  // Add comprehensive null/undefined checks
+  if (!contract) {
+    return null;
+  }
+
+  if (!contract.fields) {
+    return null;
+  }
+
+  if (!Array.isArray(contract.fields)) {
+    return null;
+  }
+
+  if (contract.fields.length === 0) {
     return null;
   }
 
   const handleFieldChange = (fieldName, value) => {
     onChange(fieldName, value);
+  };
+
+  // Auto-format card number with spaces every 4 digits
+  const formatCardNumber = (value) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Limit to 16 digits
+    const limitedDigits = digits.substring(0, 16);
+    
+    // Add spaces every 4 digits
+    return limitedDigits.replace(/(\d{4})(?=\d)/g, '$1 ');
+  };
+
+  // Auto-format expiry date (MM/YY)
+  const formatExpiryDate = (value) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Limit to 4 digits
+    const limitedDigits = digits.substring(0, 4);
+    
+    // Add slash after 2 digits
+    if (limitedDigits.length >= 2) {
+      return `${limitedDigits.substring(0, 2)}/${limitedDigits.substring(2)}`;
+    }
+    
+    return limitedDigits;
+  };
+
+  // Auto-format CVV (limit to 4 digits)
+  const formatCVV = (value) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Limit to 4 digits
+    return digits.substring(0, 4);
+  };
+
+  // Format cardholder name (letters, spaces, hyphens, apostrophes only)
+  const formatCardholderName = (value) => {
+    // Remove any characters that aren't letters, spaces, hyphens, or apostrophes
+    return value.replace(/[^a-zA-Z\s\-']/g, '');
+  };
+
+  // Get user-friendly format message for each field
+  const getFormatMessage = (fieldName) => {
+    switch (fieldName) {
+      case 'cardNumber':
+        return 'Enter 13-19 digits with spaces (e.g., 4111 1111 1111 1111)';
+      case 'expiry':
+        return 'Enter month and year (e.g., 12/25)';
+      case 'cvv':
+        return 'Enter 3-4 digits (e.g., 123)';
+      case 'cardholder':
+        return 'Enter full name (letters and spaces only)';
+      case 'upiId':
+        return 'Enter UPI ID (e.g., username@bankname)';
+      default:
+        return null;
+    }
+  };
+
+  // Handle special formatting for payment fields
+  const handlePaymentFieldChange = (fieldName, value, _field) => {
+    let formattedValue = value;
+
+    // Apply specific formatting based on field name
+    switch (fieldName) {
+      case 'cardNumber':
+        formattedValue = formatCardNumber(value);
+        break;
+      case 'expiry':
+        formattedValue = formatExpiryDate(value);
+        break;
+      case 'cvv':
+        formattedValue = formatCVV(value);
+        break;
+      case 'cardholder':
+        formattedValue = formatCardholderName(value);
+        break;
+      default:
+        formattedValue = value;
+    }
+
+    // Call the parent onChange with formatted value
+    handleFieldChange(fieldName, formattedValue);
   };
 
   const renderField = (field) => {
@@ -17,11 +117,67 @@ const PaymentFields = ({ contract, values, onChange, errors = {} }) => {
 
     const commonProps = {
       value: fieldValue,
-      onChange: (e) => handleFieldChange(field.name, e.target.value),
+      onChange: (e) => handlePaymentFieldChange(field.name, e.target.value, field),
       placeholder: field.placeholder || '',
       required: field.required,
-      className: `w-full ${fieldError ? 'border-red-500' : ''}`
+      className: `w-full ${fieldError ? 'border-red-500' : ''}`,
+      maxLength: field.maxLength
     };
+
+    // Special handling for card number field
+    if (field.name === 'cardNumber') {
+      return (
+        <Input
+          {...commonProps}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9\s]*"
+          placeholder="4111 1111 1111 1111"
+          maxLength={23} // 19 digits + 4 spaces
+        />
+      );
+    }
+
+    // Special handling for expiry field
+    if (field.name === 'expiry') {
+      return (
+        <Input
+          {...commonProps}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9\/]*"
+          placeholder="MM/YY"
+          maxLength={5} // MM/YY format
+        />
+      );
+    }
+
+    // Special handling for CVV field
+    if (field.name === 'cvv') {
+      return (
+        <Input
+          {...commonProps}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          placeholder="123"
+          maxLength={4}
+        />
+      );
+    }
+
+    // Special handling for cardholder name field
+    if (field.name === 'cardholder') {
+      return (
+        <Input
+          {...commonProps}
+          type="text"
+          pattern="[a-zA-Z\s]*"
+          placeholder="John Doe"
+          maxLength={50}
+        />
+      );
+    }
 
     switch (field.type) {
       case 'select':
@@ -110,9 +266,10 @@ const PaymentFields = ({ contract, values, onChange, errors = {} }) => {
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </label>
             {renderField(field)}
-            {field.pattern && (
+            {/* Show user-friendly format message instead of regex pattern */}
+            {getFormatMessage(field.name) && (
               <p className="text-xs text-gray-500 mt-1">
-                Format: {field.pattern}
+                {getFormatMessage(field.name)}
               </p>
             )}
             {errors[field.name] && (

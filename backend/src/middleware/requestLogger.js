@@ -28,14 +28,13 @@ export const requestLogger = (req, res, next) => {
 export const morganLogger = morgan(
   process.env.NODE_ENV === 'production' ? prodFormat : devFormat,
   {
-    skip: (req, res) => {
-      // Skip logging for health checks and static assets
+    skip: (req, _res) => {
       return req.url === '/health' || req.url.startsWith('/static');
     }
   }
 );
 
-export const errorLogger = (err, req, res, next) => {
+export const errorLogger = (err, req, _res, next) => {
   console.error('Error:', {
     message: err.message,
     stack: err.stack,

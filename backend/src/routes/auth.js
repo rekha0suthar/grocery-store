@@ -18,6 +18,7 @@ router.get('/initialization-status', authController.checkInitializationStatus);
 router.post('/register', registerValidation, handleValidationErrors, authController.register);
 router.post('/login', loginValidation, handleValidationErrors, authController.login);
 router.post('/logout', authController.logout);
+router.post('/refresh', authController.refreshToken);
 
 router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, updateProfileValidation, handleValidationErrors, authController.updateProfile);

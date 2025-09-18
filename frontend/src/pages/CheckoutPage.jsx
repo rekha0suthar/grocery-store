@@ -21,7 +21,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { createOrder } from '../store/slices/orderSlice.js';
+import { clearCart } from '../store/slices/cartSlice.js';
+import { orderService } from '../services/orderService.js';
 
 const CheckoutPage = () => {
   const dispatch = useDispatch();
@@ -34,7 +35,6 @@ const CheckoutPage = () => {
     selectedMethod,
     methodFields,
     fieldErrors,
-    availableMethods,
     loading: paymentLoading,
     error: paymentError,
     handleMethodChange,
@@ -64,7 +64,7 @@ const CheckoutPage = () => {
   // Redirect if cart is empty
   useEffect(() => {
     if (cartItems.length === 0) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [cartItems.length, navigate]);
 
@@ -99,19 +99,6 @@ const CheckoutPage = () => {
       // Calculate totals
       const totals = calculateOrderTotals(totalPrice, 0, 0);
       
-      // Prepare order data
-      const orderData = prepareOrderData({
-        orderId,
-        userId: user?.id,
-        items: cartItems,
-        shippingAddress: useSavedAddress && selectedAddressId 
-          ? addresses.find(addr => addr.id === selectedAddressId)
-          : formData,
-        paymentMethod: selectedMethod?.id || 'cash_on_delivery',
-        paymentFields: methodFields,
-        totals
-      });
-
       // Process payment
       const paymentResult = await processPayment({
         methodId: selectedMethod?.id || 'cash_on_delivery',
@@ -120,22 +107,46 @@ const CheckoutPage = () => {
         orderId
       });
 
-      if (!paymentResult || !['authorized', 'captured', 'pending'].includes(paymentResult.status)) {
-        toast.error('Payment failed. Please try again.');
-        return;
+      let isPaymentSuccessful = false;
+      
+      if (paymentResult.success === true) {
+        // Direct success response
+        isPaymentSuccessful = true;
+      } else if (paymentResult.data && paymentResult.data.success === true) {
+        // Nested success response
+        isPaymentSuccessful = true;
+      } else if (paymentResult.data && paymentResult.data.result) {
+        // Result exists (assume success)
+        isPaymentSuccessful = true;
       }
 
-      // Create order
-      const orderResult = await dispatch(createOrder(orderData)).unwrap();
-      
-      if (orderResult.success) {
-        toast.success('Order placed successfully!');
-        navigate(`/orders/${orderResult.order.id}`);
+      if (isPaymentSuccessful) {
+        // Payment successful - proceed with order creation
+        const orderData = prepareOrderData({
+          orderId,
+          customerId: user?.id,
+          cartItems,
+          shippingAddress: useSavedAddress && selectedAddressId 
+            ? addresses.find(addr => addr.id === selectedAddressId)
+            : formData,
+          paymentMethod: selectedMethod?.id || 'cash_on_delivery',
+          paymentFields: methodFields,
+          totals
+        });
+
+        // Create order
+        await orderService.createOrder(orderData);
+        
+        // Clear cart and redirect
+        dispatch(clearCart());
+        navigate('/orders');
+        
+        // Show success message
+        alert('Order placed successfully!');
       } else {
-        toast.error(orderResult.message || 'Failed to create order');
+        throw new Error('Payment failed. Please try again.');
       }
     } catch (error) {
-      // console.error('Order placement error:', error);
       toast.error(error.message || 'Failed to place order. Please try again.');
     } finally {
       setIsProcessing(false);
@@ -144,12 +155,12 @@ const CheckoutPage = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="p-10 mt-10 bg-gray-50 flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">
           <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
           <p className="text-gray-600 mb-6">Add some items to your cart before checking out.</p>
-          <Button onClick={() => navigate('/')}>
+          <Button onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Continue Shopping
           </Button>
@@ -161,8 +172,8 @@ const CheckoutPage = () => {
   const totals = calculateOrderTotals(totalPrice, 0, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="mb-8">
           <Button
             onClick={() => navigate(-1)}
@@ -176,9 +187,7 @@ const CheckoutPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Forms */}
           <div className="space-y-8">
-            {/* Address Section */}
             <AddressSection
               useSavedAddress={useSavedAddress}
               addresses={addresses}
@@ -192,7 +201,6 @@ const CheckoutPage = () => {
               handleAddNewAddress={handleAddNewAddress}
             />
 
-            {/* Payment Section */}
             <div className="space-y-6">
               <div className="flex items-center space-x-2">
                 <CreditCard className="w-5 h-5 text-gray-600" />
@@ -213,18 +221,19 @@ const CheckoutPage = () => {
               ) : (
                 <div className="space-y-4">
                   <PaymentMethodPicker
-                    methods={availableMethods}
-                    selectedMethod={selectedMethod}
+                    value={selectedMethod?.id}
                     onChange={handleMethodChange}
                   />
                   
                   {selectedMethod && (
-                    <PaymentFields
-                      fields={selectedMethod.fields || []}
-                      values={methodFields}
-                      errors={fieldErrors}
-                      onChange={handleFieldChange}
-                    />
+                    <>
+                      <PaymentFields
+                        contract={selectedMethod}
+                        values={methodFields}
+                        errors={fieldErrors}
+                        onChange={handleFieldChange}
+                      />
+                    </>
                   )}
                 </div>
               )}

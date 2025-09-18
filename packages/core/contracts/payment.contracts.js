@@ -9,10 +9,7 @@ export const PAYMENT_METHOD_IDS = Object.freeze({
   STRIPE: 'stripe'
 });
 
-/**
- * A method advertises what fields it needs at checkout.
- * Keep this UI-agnostic: just types, names, constraints.
- */
+
 export const PaymentFieldType = Object.freeze({
   STRING: 'string',
   NUMBER: 'number',
@@ -24,7 +21,21 @@ export const PaymentFieldType = Object.freeze({
 });
 
 export class PaymentField {
-  constructor({ name, type, label, required = true, mask = null, options = null, pattern = null, placeholder = null, minLength = null, maxLength = null }) {
+  constructor({ 
+    name, 
+    type, 
+    label, 
+    required = true, 
+    mask = null, 
+    options = null, 
+    pattern = null, 
+    placeholder = null, 
+    minLength = null, 
+    maxLength = null,
+    validationRules = null,
+    autoFormat = null,
+    formatFunction = null
+  }) {
     this.name = name;
     this.type = type;
     this.label = label;
@@ -35,18 +46,13 @@ export class PaymentField {
     this.placeholder = placeholder;
     this.minLength = minLength;
     this.maxLength = maxLength;
+    this.validationRules = validationRules; // Custom validation rules
+    this.autoFormat = autoFormat; // Auto-formatting configuration
+    this.formatFunction = formatFunction; // Custom formatting function
   }
 }
 
-/**
- * Contract a method exposes to UI/backends.
- * - id: stable identifier
- * - displayName: human readable
- * - fields: PaymentField[]
- * - description: optional description
- * - icon: optional icon identifier
- * - requiresOnlineAuth: whether this method requires online authorization
- */
+
 export class PaymentMethodContract {
   constructor({ id, displayName, fields = [], description = '', icon = null, requiresOnlineAuth = true, enabled = true }) {
     this.id = id;
@@ -59,9 +65,7 @@ export class PaymentMethodContract {
   }
 }
 
-/**
- * Payment method configuration for UI rendering
- */
+
 export class PaymentMethodConfig {
   constructor({ 
     id, 

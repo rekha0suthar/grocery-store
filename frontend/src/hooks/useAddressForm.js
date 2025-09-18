@@ -5,6 +5,7 @@ import { fetchUserOrders } from '../store/slices/orderSlice.js';
 export const useAddressForm = () => {
   const dispatch = useAppDispatch();
   const { orders, loading: ordersLoading, error: ordersError } = useAppSelector((state) => state.orders);
+  const { user } = useAppSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -22,20 +23,19 @@ export const useAddressForm = () => {
   const [selectedAddressId, setSelectedAddressId] = useState('');
 
   useEffect(() => {
-    // console.log('Fetching user orders for addresses...');
-    dispatch(fetchUserOrders());
-  }, [dispatch]);
+    // Only fetch orders if user is logged in
+    if (user?.id) {
+      dispatch(fetchUserOrders());
+    }
+  }, [dispatch, user?.id]);
 
   const savedAddresses = React.useMemo(() => {
-    // console.log('Processing orders for addresses:', orders);
     if (!orders || orders.length === 0) {
-      // console.log('No orders found, returning empty addresses array');
       return [];
     }
     
     const addressMap = new Map();
     orders.forEach(order => {
-      // console.log('Processing order:', order);
       if (order.shippingAddress) {
         const addr = order.shippingAddress;
         const key = `${addr.firstName}_${addr.lastName}_${addr.address}_${addr.city}`;
@@ -44,17 +44,16 @@ export const useAddressForm = () => {
             id: key,
             ...addr,
             lastUsed: order.createdAt || order.orderDate,
-            source: 'order'
+            source: 'order',
+            orderId: order.id || order.orderId
           });
         }
       }
     });
     
-    const addresses = Array.from(addressMap.values()).sort((a, b) => 
+    return Array.from(addressMap.values()).sort((a, b) => 
       new Date(b.lastUsed) - new Date(a.lastUsed)
     );
-    // console.log('Extracted addresses:', addresses);
-    return addresses;
   }, [orders]);
 
   const handleInputChange = (e) => {

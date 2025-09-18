@@ -11,9 +11,11 @@ export const CREDIT_CARD_CONTRACT = new PaymentMethodContract({
       name: 'cardNumber', 
       type: PaymentFieldType.STRING, 
       label: 'Card Number', 
-      pattern: '^[0-9 ]{12,19}$',
+      pattern: '^[0-9 ]{19}$',
       placeholder: '1234 5678 9012 3456',
-      mask: '#### #### #### ####'
+      mask: '#### #### #### ####',
+      minLength: 19,
+      maxLength: 19
     }),
     new PaymentField({ 
       name: 'expiry', 
@@ -21,7 +23,9 @@ export const CREDIT_CARD_CONTRACT = new PaymentMethodContract({
       label: 'Expiry (MM/YY)', 
       pattern: '^(0[1-9]|1[0-2])\\/\\d{2}$',
       placeholder: 'MM/YY',
-      mask: '##/##'
+      mask: '##/##',
+      minLength: 5,
+      maxLength: 5
     }),
     new PaymentField({ 
       name: 'cvv', 
@@ -29,13 +33,17 @@ export const CREDIT_CARD_CONTRACT = new PaymentMethodContract({
       label: 'CVV', 
       pattern: '^\\d{3,4}$',
       placeholder: '123',
-      mask: '###'
+      mask: '###',
+      minLength: 3,
+      maxLength: 4
     }),
     new PaymentField({ 
       name: 'cardholder', 
       type: PaymentFieldType.STRING, 
       label: 'Cardholder Name',
-      placeholder: 'John Doe'
+      placeholder: 'John Doe',
+      minLength: 2,
+      maxLength: 50
     }),
   ],
 });
@@ -56,31 +64,25 @@ export const UPI_CONTRACT = new PaymentMethodContract({
   icon: 'smartphone',
   requiresOnlineAuth: true,
   fields: [
-    new PaymentField({ 
-      name: 'vpa', 
-      type: PaymentFieldType.STRING, 
-      label: 'UPI ID (VPA)', 
-      pattern: '^[\\w\\.-]+@[\\w\\.-]+$',
-      placeholder: 'yourname@upi'
-    }),
+    new PaymentField({
+      name: 'upiId',
+      type: PaymentFieldType.STRING,
+      label: 'UPI ID',
+      placeholder: 'username@bankname',
+      minLength: 5,
+      maxLength: 50
+    })
   ],
 });
 
+// Keep the contracts defined but don't include them in default contracts
 export const PAYPAL_CONTRACT = new PaymentMethodContract({
   id: PAYMENT_METHOD_IDS.PAYPAL,
   displayName: 'PayPal',
   description: 'Pay securely with PayPal',
   icon: 'paypal',
   requiresOnlineAuth: true,
-  fields: [
-    new PaymentField({ 
-      name: 'email', 
-      type: PaymentFieldType.EMAIL, 
-      label: 'PayPal Email', 
-      pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
-      placeholder: 'your@email.com'
-    }),
-  ],
+  fields: [], // PayPal handles authentication
 });
 
 export const APPLE_PAY_CONTRACT = new PaymentMethodContract({
@@ -101,12 +103,9 @@ export const GOOGLE_PAY_CONTRACT = new PaymentMethodContract({
   fields: [], // Google Pay handles authentication
 });
 
-// Default contracts array
+// Default contracts array - only include methods with working providers
 export const DEFAULT_PAYMENT_CONTRACTS = [
   CREDIT_CARD_CONTRACT,
   COD_CONTRACT,
-  UPI_CONTRACT,
-  PAYPAL_CONTRACT,
-  APPLE_PAY_CONTRACT,
-  GOOGLE_PAY_CONTRACT
+  UPI_CONTRACT
 ];
