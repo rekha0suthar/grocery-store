@@ -204,10 +204,19 @@ export class ManageCategoryUseCase {
       const categoriesData = await this.categoryRepository.findAll({}, limit, offset);
       const categories = categoriesData.map(data => Category.fromJSON(data));
 
+      // Add product counts to each category
+      const categoriesWithCounts = await Promise.all(
+        categories.map(async (category) => {
+          const productCount = await this.categoryRepository.getProductCount(category.id);
+          category.productCount = productCount;
+          return category;
+        })
+      );
+
       return {
         success: true,
         message: 'Categories retrieved successfully',
-        categories
+        categories: categoriesWithCounts
       };
     } catch (error) {
       console.error('Category retrieval error:', error);

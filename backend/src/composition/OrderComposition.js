@@ -2,12 +2,14 @@ import { CreateOrderUseCase, ProcessOrderUseCase, CancelOrderUseCase } from '@gr
 import { OrderRepository } from '../repositories/OrderRepository.js';
 import { CartRepository } from '../repositories/CartRepository.js';
 import { ProductRepository } from '../repositories/ProductRepository.js';
+import { SystemClock } from '../adapters/clock/SystemClock.js';
 import appConfig from '../config/appConfig.js';
 import { DatabaseFactory } from '../factories/DatabaseFactory.js';
 
 export class OrderComposition {
   constructor() {
     const databaseAdapter = DatabaseFactory.createAdapter(appConfig.getDatabaseType());
+    const clock = new SystemClock();
     
     this.orderRepository = new OrderRepository(databaseAdapter);
     this.cartRepository = new CartRepository(databaseAdapter);
@@ -25,7 +27,8 @@ export class OrderComposition {
 
     this.cancelOrderUseCase = new CancelOrderUseCase({
       orderRepo: this.orderRepository,
-      productRepo: this.productRepository
+      productRepo: this.productRepository,
+      clock: clock
     });
   }
 

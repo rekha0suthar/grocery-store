@@ -13,7 +13,8 @@ describe('ManageCategoryUseCase - Application Policy', () => {
       findBySlug: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-      findAll: jest.fn()
+      findAll: jest.fn(),
+      getProductCount: jest.fn()
     };
     
     useCase = new ManageCategoryUseCase({ categoryRepo: mockCategoryRepository });
@@ -330,6 +331,7 @@ describe('ManageCategoryUseCase - Application Policy', () => {
       ];
 
       mockCategoryRepository.findAll.mockResolvedValue(categoriesData);
+      mockCategoryRepository.getProductCount.mockResolvedValue(5); // Mock product count for each category
 
       const result = await useCase.getAllCategories();
 
@@ -338,7 +340,10 @@ describe('ManageCategoryUseCase - Application Policy', () => {
       expect(result.categories).toHaveLength(2);
       expect(result.categories[0]).toBeInstanceOf(Category);
       expect(result.categories[1]).toBeInstanceOf(Category);
+      expect(result.categories[0].productCount).toBe(5);
+      expect(result.categories[1].productCount).toBe(5);
       expect(mockCategoryRepository.findAll).toHaveBeenCalled();
+      expect(mockCategoryRepository.getProductCount).toHaveBeenCalledTimes(2);
     });
 
     test('retrieves category by ID successfully', async () => {

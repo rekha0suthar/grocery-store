@@ -57,6 +57,11 @@ export class CategoryRepository extends BaseRepository {
     return count > 0;
   }
 
+  async getProductCount(categoryId) {
+    const count = await this.db.count('products', { categoryId });
+    return count;
+  }
+
   async hasSubcategories(categoryId) {
     const subcategories = await this.findAll({ parentId: categoryId }, 1, 0);
     return subcategories.length > 0;
