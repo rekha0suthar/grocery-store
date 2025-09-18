@@ -143,7 +143,25 @@ export class Category extends BaseEntity {
   }
 
   toPersistence() {
-    return this.toJSON();
+    const baseData = {
+      name: this.name,
+      description: this.description,
+      slug: this.slug,
+      imageUrl: this.imageUrl,
+      parentId: this.parentId,
+      sortOrder: this.sortOrder,
+      isVisible: this.isVisible
+    };
+
+    // Only include ID and other base fields if ID exists (for updates)
+    if (this.id) {
+      baseData.id = this.id;
+      baseData.createdAt = this.createdAt;
+      baseData.updatedAt = this.updatedAt;
+      baseData.isActive = this.isActive;
+    }
+
+    return baseData;
   }
 
   static fromJSON(data, clock = null) {

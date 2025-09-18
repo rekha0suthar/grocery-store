@@ -155,13 +155,26 @@ export class ManageProductUseCase {
       const { page = 1, limit = 10, ...actualFilters } = filters;
       const offset = (page - 1) * limit;
       
-      const productsData = await this.productRepository.findAll(actualFilters, limit, offset);
+      // Get products and total count in parallel
+      const [productsData, totalCount] = await Promise.all([
+        this.productRepository.findAll(actualFilters, limit, offset),
+        this.productRepository.count(actualFilters)
+      ]);
+      
       const products = productsData.map(data => Product.fromJSON(data));
+      const totalPages = Math.ceil(totalCount / limit);
 
       return {
         success: true,
         message: 'Products retrieved successfully',
-        products: products
+        products: products,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: totalCount,
+          pages: totalPages,
+          hasMore: parseInt(page) < totalPages
+        }
       };
 
     } catch (error) {
@@ -170,6 +183,13 @@ export class ManageProductUseCase {
         success: false,
         message: 'Failed to retrieve products',
         products: [],
+        pagination: {
+          page: 1,
+          limit: 5,
+          total: 0,
+          pages: 0,
+          hasMore: false
+        },
         error: error.message
       };
     }
@@ -305,17 +325,37 @@ export class ManageProductUseCase {
         return {
           success: false,
           message: 'Search query is required',
-          products: []
+          products: [],
+          pagination: {
+            page: 1,
+            limit: 5,
+            total: 0,
+            pages: 0,
+            hasMore: false
+          }
         };
       }
       
-      const productsData = await this.productRepository.searchProducts(query, limit, offset);
+      // Get products and total count in parallel
+      const [productsData, totalCount] = await Promise.all([
+        this.productRepository.searchProducts(query, limit, offset),
+        this.productRepository.count({ name: { $regex: query, $options: 'i' } })
+      ]);
+      
       const products = productsData.map(data => Product.fromJSON(data));
+      const totalPages = Math.ceil(totalCount / limit);
 
       return {
         success: true,
         message: 'Products retrieved successfully',
-        products: products
+        products: products,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: totalCount,
+          pages: totalPages,
+          hasMore: parseInt(page) < totalPages
+        }
       };
 
     } catch (error) {
@@ -324,6 +364,13 @@ export class ManageProductUseCase {
         success: false,
         message: 'Failed to search products',
         products: [],
+        pagination: {
+          page: 1,
+          limit: 5,
+          total: 0,
+          pages: 0,
+          hasMore: false
+        },
         error: error.message
       };
     }
@@ -338,17 +385,37 @@ export class ManageProductUseCase {
         return {
           success: false,
           message: 'Category ID is required',
-          products: []
+          products: [],
+          pagination: {
+            page: 1,
+            limit: 5,
+            total: 0,
+            pages: 0,
+            hasMore: false
+          }
         };
       }
       
-      const productsData = await this.productRepository.findByCategory(categoryId, limit, offset);
+      // Get products and total count in parallel
+      const [productsData, totalCount] = await Promise.all([
+        this.productRepository.findByCategory(categoryId, limit, offset),
+        this.productRepository.count({ categoryId, isVisible: true })
+      ]);
+      
       const products = productsData.map(data => Product.fromJSON(data));
+      const totalPages = Math.ceil(totalCount / limit);
 
       return {
         success: true,
         message: 'Products retrieved successfully',
-        products: products
+        products: products,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: totalCount,
+          pages: totalPages,
+          hasMore: parseInt(page) < totalPages
+        }
       };
 
     } catch (error) {
@@ -357,6 +424,13 @@ export class ManageProductUseCase {
         success: false,
         message: 'Failed to retrieve products by category',
         products: [],
+        pagination: {
+          page: 1,
+          limit: 5,
+          total: 0,
+          pages: 0,
+          hasMore: false
+        },
         error: error.message
       };
     }
@@ -364,15 +438,29 @@ export class ManageProductUseCase {
 
   async getFeaturedProducts(filters = {}) {
     try {
-      const { limit = 20 } = filters;
+      const { page = 1, limit = 20 } = filters;
+      const offset = (page - 1) * limit;
       
-      const productsData = await this.productRepository.findFeatured(limit);
+      // Get products and total count in parallel
+      const [productsData, totalCount] = await Promise.all([
+        this.productRepository.findFeatured(limit),
+        this.productRepository.count({ isFeatured: true, isVisible: true })
+      ]);
+      
       const products = productsData.map(data => Product.fromJSON(data));
+      const totalPages = Math.ceil(totalCount / limit);
 
       return {
         success: true,
         message: 'Featured products retrieved successfully',
-        products: products
+        products: products,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: totalCount,
+          pages: totalPages,
+          hasMore: parseInt(page) < totalPages
+        }
       };
 
     } catch (error) {
@@ -381,6 +469,13 @@ export class ManageProductUseCase {
         success: false,
         message: 'Failed to retrieve featured products',
         products: [],
+        pagination: {
+          page: 1,
+          limit: 5,
+          total: 0,
+          pages: 0,
+          hasMore: false
+        },
         error: error.message
       };
     }

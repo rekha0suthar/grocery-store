@@ -103,9 +103,10 @@ const ModernLoginPage = () => {
       
       
     } catch (error) {
-      
-      setValidationErrors({ general: 'Invalid credentials' });
-      toast.error(error || 'Invalid credentials');
+      // Use the specific error message from the backend
+      const errorMessage = error || 'Login failed. Please try again.';
+      setValidationErrors({ general: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setIsCheckingStatus(false);
     }

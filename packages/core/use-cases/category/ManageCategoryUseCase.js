@@ -201,22 +201,40 @@ export class ManageCategoryUseCase {
 
   async getAllCategories(limit = 20, offset = 0) {
     try {
-      const categoriesData = await this.categoryRepository.findAll({}, limit, offset);
+      const page = Math.floor(offset / limit) + 1;
+      
+      // Get categories and total count in parallel
+      const [categoriesData, totalCount] = await Promise.all([
+        this.categoryRepository.findAll({}, limit, offset),
+        this.categoryRepository.count({})
+      ]);
+      
       const categories = categoriesData.map(data => Category.fromJSON(data));
 
       // Add product counts to each category
       const categoriesWithCounts = await Promise.all(
         categories.map(async (category) => {
           const productCount = await this.categoryRepository.getProductCount(category.id);
-          category.productCount = productCount;
-          return category;
+          // Add productCount to the category object
+          const categoryWithCount = category.toJSON();
+          categoryWithCount.productCount = productCount;
+          return categoryWithCount;
         })
       );
+
+      const totalPages = Math.ceil(totalCount / limit);
 
       return {
         success: true,
         message: 'Categories retrieved successfully',
-        categories: categoriesWithCounts
+        categories: categoriesWithCounts,
+        pagination: {
+          page: page,
+          limit: limit,
+          total: totalCount,
+          pages: totalPages,
+          hasMore: page < totalPages
+        }
       };
     } catch (error) {
       console.error('Category retrieval error:', error);
@@ -224,6 +242,13 @@ export class ManageCategoryUseCase {
         success: false,
         message: 'Failed to retrieve categories',
         categories: [],
+        pagination: {
+          page: 1,
+          limit: 5,
+          total: 0,
+          pages: 0,
+          hasMore: false
+        },
         error: error.message
       };
     }
@@ -285,14 +310,25 @@ export class ManageCategoryUseCase {
       const categoriesData = await this.categoryRepository.findAll({}, 1000, 0);
       const categories = categoriesData.map(data => Category.fromJSON(data));
       
+      // Add product counts to each category
+      const categoriesWithCounts = await Promise.all(
+        categories.map(async (category) => {
+          const productCount = await this.categoryRepository.getProductCount(category.id);
+          // Add productCount to the category object
+          const categoryWithCount = category.toJSON();
+          categoryWithCount.productCount = productCount;
+          return categoryWithCount;
+        })
+      );
+      
       const categoryMap = new Map();
       const rootCategories = [];
       
-      categories.forEach(category => {
+      categoriesWithCounts.forEach(category => {
         categoryMap.set(category.id, { ...category, children: [] });
       });
       
-      categories.forEach(category => {
+      categoriesWithCounts.forEach(category => {
         if (category.parentId && categoryMap.has(category.parentId)) {
           categoryMap.get(category.parentId).children.push(categoryMap.get(category.id));
         } else {
@@ -303,7 +339,7 @@ export class ManageCategoryUseCase {
       return {
         success: true,
         message: 'Category tree retrieved successfully',
-        categories: rootCategories.map(cat => Category.fromJSON(cat))
+        categories: rootCategories
       };
     } catch (error) {
       console.error('Category tree retrieval error:', error);

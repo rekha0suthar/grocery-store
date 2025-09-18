@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -14,7 +14,7 @@ import {
   Store,
   MapPin
 } from 'lucide-react';
-import { registerUser } from '../../store/slices/authSlice.js';
+import { registerUser, clearError } from '../../store/slices/authSlice.js';
 import { validateUserRegistration } from '../../utils/validation.js';
 import Button from '../../components/UI/Button.jsx';
 
@@ -47,6 +47,11 @@ export const ModernRegisterPage = () => {
   });
 
   const selectedRole = watch('role');
+
+  // Clear any existing errors when component mounts
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
 
   const hasError = (fieldName) => {
     return errors[fieldName];

@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux.js';
-import { fetchProducts, searchProducts, clearSearch } from '../../store/slices/productSlice.js';
+import { fetchProducts, loadMoreProducts, searchProducts, clearSearch, resetPagination } from '../../store/slices/productSlice.js';
 import { fetchCategories } from '../../store/slices/categorySlice.js';
 import { addToCart } from '../../store/slices/cartSlice.js';
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll.js';
 import Card from '../../components/UI/Card.jsx';
 import GridProductCard from '../../components/UI/GridProductCard.jsx';
 import ListProductCard from '../../components/UI/ListProductCard.jsx';
 import LoadingSpinner from '../../components/UI/LoadingSpinner.jsx';
+import InfiniteScrollLoader from '../../components/UI/InfiniteScrollLoader.jsx';
 import { 
   Package, 
   Grid, 
@@ -19,7 +21,16 @@ import { toast } from 'react-hot-toast';
 const ModernProductsPage = () => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
-  const { products, loading, searchResults, searchLoading, isSearchActive } = useAppSelector((state) => state.products);
+  const { 
+    products, 
+    loading, 
+    loadingMore, 
+    searchResults, 
+    searchLoading, 
+    isSearchActive, 
+    pagination,
+    error 
+  } = useAppSelector((state) => state.products);
   const { categories } = useAppSelector((state) => state.categories);
   const { items: cartItems } = useAppSelector((state) => state.cart);
   const [sortBy, setSortBy] = useState('name');
@@ -32,27 +43,41 @@ const ModernProductsPage = () => {
   const featured = searchParams.get('featured');
   const sale = searchParams.get('sale');
 
+  // Build query parameters for API calls
+  const buildQueryParams = useCallback(() => {
+    const params = { limit: 5};
+    
+    if (category) params.category = category;
+    if (featured === 'true') params.featured = true;
+    if (sale === 'true') params.sale = true;
+    
+    return params;
+  }, [category, featured, sale]);
+
+  // Load more products function
+  const loadMore = useCallback(() => {
+    if (!loadingMore && pagination.hasMore && !isSearchActive) {
+      dispatch(loadMoreProducts(buildQueryParams()));
+    }
+  }, [dispatch, loadingMore, pagination.hasMore, isSearchActive, buildQueryParams]);
+
+  // Set up infinite scroll
+  const lastElementRef = useInfiniteScroll(loadMore, pagination.hasMore, loadingMore);
+
+  // Initial data loading
   useEffect(() => {
     if (categories.length === 0) {
-      dispatch(fetchCategories());
+      dispatch(fetchCategories({ limit: 5 }));
     }
     
     if (search) {
       dispatch(searchProducts({ q: search }));
     } else {
       dispatch(clearSearch());
-      
-      if (category) {
-        dispatch(fetchProducts({ category, limit: 20 }));
-      } else if (featured) {
-        dispatch(fetchProducts({ featured: true, limit: 20 }));
-      } else if (sale) {
-        dispatch(fetchProducts({ sale: true, limit: 20 }));
-      } else {
-        dispatch(fetchProducts({ limit: 20 }));
-      }
+      dispatch(resetPagination());
+      dispatch(fetchProducts(buildQueryParams()));
     }
-  }, [dispatch, searchParams, categories.length, category, featured, sale, search]);
+  }, [dispatch, searchParams, categories.length, category, featured, sale, search, buildQueryParams]);
 
   const handleAddToCart = (product) => {
     if (product.stock !== undefined && product.stock <= 0) {
@@ -70,6 +95,10 @@ const ModernProductsPage = () => {
     
     dispatch(addToCart({ product, quantity: 1 }));
     toast.success(`${product.name} added to cart!`);
+  };
+
+  const handleRetry = () => {
+    dispatch(loadMoreProducts(buildQueryParams()));
   };
 
   let displayProducts = search ? searchResults : products;
@@ -114,7 +143,7 @@ const ModernProductsPage = () => {
     return aValue > bValue ? 1 : -1;
   });
 
-  if (loading || searchLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -132,7 +161,7 @@ const ModernProductsPage = () => {
                 {getPageTitle()}
               </h1>
               <p className="mt-2 text-gray-600">
-                {sortedProducts.length} products found
+                {pagination.total > 0 ? `${pagination.total} products found` : `${sortedProducts.length} products found`}
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -214,29 +243,46 @@ const ModernProductsPage = () => {
                 </p>
               </Card>
             ) : (
-              <div className={`grid gap-6 ${
-                viewMode === 'grid' 
-                  ? 'grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3' 
-                  : 'grid-cols-1'
-              }`}>
-                {sortedProducts.map((product) => (
-                  viewMode === 'grid' ? (
-                    <GridProductCard 
-                      key={product.id} 
-                      product={product} 
-                      showAddToCart={true}
-                      onAddToCart={handleAddToCart}
-                    />
-                  ) : (
-                    <ListProductCard 
-                      key={product.id} 
-                      product={product} 
-                      showAddToCart={true}
-                      onAddToCart={handleAddToCart}
-                    />
-                  )
-                ))}
-              </div>
+              <>
+                <div className={`grid gap-6 ${
+                  viewMode === 'grid' 
+                    ? 'grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3' 
+                    : 'grid-cols-1'
+                }`}>
+                  {sortedProducts.map((product, index) => {
+                    const isLastElement = index === sortedProducts.length - 1;
+                    const ref = isLastElement && !isSearchActive ? lastElementRef : null;
+                    
+                    return viewMode === 'grid' ? (
+                      <div key={product.id} ref={ref}>
+                        <GridProductCard 
+                          product={product} 
+                          showAddToCart={true}
+                          onAddToCart={handleAddToCart}
+                        />
+                      </div>
+                    ) : (
+                      <div key={product.id} ref={ref}>
+                        <ListProductCard 
+                          product={product} 
+                          showAddToCart={true}
+                          onAddToCart={handleAddToCart}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Infinite scroll loader */}
+                {!isSearchActive && (
+                  <InfiniteScrollLoader
+                    loading={loadingMore}
+                    hasMore={pagination.hasMore}
+                    error={error}
+                    onRetry={handleRetry}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>

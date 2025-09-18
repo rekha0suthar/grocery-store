@@ -41,7 +41,7 @@ describe('productService', () => {
       const mockProducts = [{ id: '1', name: 'Product 1', price: 10.99 }];
       api.get.mockResolvedValue({ data: mockProducts });
 
-      const params = { page: 2, limit: 10, category: 'electronics' };
+      const params = { page: 2, limit: 5, category: 'electronics' };
       const result = await productService.getProducts(params);
 
       expect(api.get).toHaveBeenCalledWith('/products', { params });
@@ -181,7 +181,7 @@ describe('productService', () => {
       api.get.mockResolvedValue({ data: mockProducts });
 
       const categoryId = 'electronics';
-      const params = { page: 1, limit: 10 };
+      const params = { page: 1, limit: 5 };
       const result = await productService.getProductsByCategory(categoryId, params);
 
       expect(api.get).toHaveBeenCalledWith(`/products/category/${categoryId}`, { params });

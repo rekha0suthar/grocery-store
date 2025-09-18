@@ -286,7 +286,43 @@ export class Product extends BaseEntity {
   }
 
   toPersistence() {
-    return this.toJSON();
+    const baseData = {
+      name: this.name,
+      description: this.description,
+      price: this.price,
+      categoryId: this.categoryId,
+      sku: this.sku,
+      barcode: this.barcode,
+      unit: this.unit,
+      weight: this.weight,
+      dimensions: this.dimensions,
+      stock: this.stock,
+      minStock: this.minStock,
+      maxStock: this.maxStock,
+      images: this.images,
+      tags: this.tags,
+      isVisible: this.isVisible,
+      isFeatured: this.isFeatured,
+      discountPrice: this.discountPrice,
+      discountStartDate: this.discountStartDate,
+      discountEndDate: this.discountEndDate,
+      nutritionInfo: this.nutritionInfo,
+      allergens: this.allergens,
+      expiryDate: this.expiryDate,
+      manufacturer: this.manufacturer,
+      countryOfOrigin: this.countryOfOrigin,
+      addedBy: this.addedBy
+    };
+
+    // Only include ID and other base fields if ID exists (for updates)
+    if (this.id) {
+      baseData.id = this.id;
+      baseData.createdAt = this.createdAt;
+      baseData.updatedAt = this.updatedAt;
+      baseData.isActive = this.isActive;
+    }
+
+    return baseData;
   }
 
   static fromJSON(data) {

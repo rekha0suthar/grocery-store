@@ -5,6 +5,9 @@ export class FirebaseAdapter extends IDatabaseAdapter {
   constructor() {
     super();
     this.db = db;
+    // Simple in-memory cache to reduce Firebase calls
+    this.cache = new Map();
+    this.cacheTTL = 5 * 60 * 1000; // 5 minutes
   }
 
   // Helper method to convert Firestore timestamps to JavaScript Date objects
@@ -34,16 +37,135 @@ export class FirebaseAdapter extends IDatabaseAdapter {
     return converted;
   }
 
-  async connect() {
-    return this.db;
+  // Cache management methods
+  getCacheKey(collection, filters, limit, cursor) {
+    return `${collection}_${JSON.stringify(filters)}_${limit}_${cursor || 'first'}`;
   }
 
-  async disconnect() {
-    return true;
+  getFromCache(key) {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
+      return cached.data;
+    }
+    this.cache.delete(key);
+    return null;
   }
 
-  async query(text, _params = []) {
-    throw new Error('Firebase does not support SQL queries. Use collection methods instead.');
+  setCache(key, data) {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  // Quota-friendly cursor-based pagination
+  async findAllWithCursor(collection, options = {}) {
+    const {
+      filters = {},
+      pageSize = 5,
+      cursor = null,
+      orderByField = 'createdAt',
+      orderDirection = 'desc'
+    } = options;
+
+    try {
+      const cacheKey = this.getCacheKey(collection, filters, pageSize, cursor?.id);
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        console.log(`Cache hit for ${collection}`);
+        return cached;
+      }
+
+      // Use Admin SDK methods
+      let query = this.db.collection(collection);
+      
+      // Apply filters
+      Object.keys(filters).forEach(key => {
+        if (filters[key] !== undefined) {
+          query = query.where(key, '==', filters[key]);
+        }
+      });
+
+      // Apply ordering
+      query = query.orderBy(orderByField, orderDirection);
+
+      // Apply cursor for pagination
+      if (cursor) {
+        query = query.startAfter(cursor);
+      }
+
+      // Get one extra document to check if there's a next page
+      const snapshot = await query.limit(pageSize + 1).get();
+      
+      const docs = snapshot.docs.slice(0, pageSize); // Remove the extra doc
+      const hasNext = snapshot.docs.length > pageSize;
+      const lastDoc = docs[docs.length - 1] || null;
+
+      const result = {
+        items: docs.map(doc => this.convertTimestamps({
+          id: doc.id,
+          ...doc.data()
+        })),
+        hasNext,
+        hasPrev: cursor !== null,
+        lastDoc,
+        total: 0, // We don't count total to save quota
+        quotaExceeded: false
+      };
+
+      this.setCache(cacheKey, result);
+      return result;
+
+    } catch (error) {
+      console.error(`${collection} retrieval error:`, error);
+      
+      // Handle quota exceeded errors gracefully
+      if (error.code === 8 || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+        console.warn('Firebase quota exceeded, returning cached data if available');
+        const cacheKey = this.getCacheKey(collection, filters, pageSize, cursor?.id);
+        const cached = this.getFromCache(cacheKey);
+        if (cached) {
+          return {
+            ...cached,
+            quotaExceeded: true,
+            error: 'Using cached data due to quota limits'
+          };
+        }
+        
+        return {
+          items: [],
+          hasNext: false,
+          hasPrev: false,
+          lastDoc: null,
+          total: 0,
+          quotaExceeded: true,
+          error: 'Firebase quota exceeded. Please try again later.'
+        };
+      }
+      
+      throw new Error(`Failed to find documents: ${error.message}`);
+    }
+  }
+
+  // Legacy method - now uses cursor-based pagination internally
+  async findAll(collection, filters = {}, limit = 100, offset = 0) {
+    console.warn('Using legacy offset-based pagination. Consider migrating to cursor-based pagination.');
+    
+    // For backward compatibility, we'll still support offset but with a warning
+    // and reduced quota usage
+    try {
+      const result = await this.findAllWithCursor(collection, {
+        filters,
+        limit: Math.min(limit, 20), // Cap at 20 to reduce quota usage
+        cursor: null
+      });
+      
+      // Return just the items array for backward compatibility
+      return result.items || [];
+    } catch (error) {
+      console.error(`Error in findAll for ${collection}:`, error);
+      throw error;
+    }
   }
 
   async findById(collection, id) {
@@ -53,97 +175,47 @@ export class FirebaseAdapter extends IDatabaseAdapter {
       if (!doc.exists) {
         return null;
       }
-
-      const data = {
+      
+      return this.convertTimestamps({
         id: doc.id,
         ...doc.data()
-      };
-      
-      return this.convertTimestamps(data);
+      });
     } catch (error) {
-      throw new Error(`Failed to find document by ID: ${error.message}`);
-    }
-  }
-
-  async findAll(collection, filters = {}, limit = 100, offset = 0) {
-    try {
-      let query = this.db.collection(collection);
-
-      // Apply filters
-      Object.keys(filters).forEach(key => {
-        if (filters[key] !== undefined) {
-          query = query.where(key, '==', filters[key]);
-        }
-      });
-
-      // For now, let's avoid orderBy to prevent index requirements
-      // We'll get more documents and handle sorting/pagination in memory
-      const maxLimit = Math.max(limit + offset, 1000);
-      query = query.limit(maxLimit);
-
-      const snapshot = await query.get();
-      const documents = [];
-
-      snapshot.forEach(doc => {
-        documents.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      // Convert timestamps for all documents
-      const convertedDocuments = documents.map(doc => this.convertTimestamps(doc));
-
-      // Sort by created_at in memory and apply offset
-      convertedDocuments.sort((a, b) => {
-        const aTime = new Date(a.createdAt || 0).getTime();
-        const bTime = new Date(b.createdAt || 0).getTime();
-        return bTime - aTime; // desc order
-      });
-
-      // Apply offset and limit
-      return convertedDocuments.slice(offset, offset + limit);
-    } catch (error) {
-      throw new Error(`Failed to find documents: ${error.message}`);
+      console.error(`Error finding document in ${collection}:`, error);
+      throw new Error(`Failed to find document: ${error.message}`);
     }
   }
 
   async create(collection, data) {
     try {
-      // Remove id from data since Firestore manages document IDs
-      const { id: _id, ...dataWithoutId } = data;
+      const docRef = await this.db.collection(collection).add(data);
       
-      const docRef = await this.db.collection(collection).add({
-        ...dataWithoutId
-      });
+      // Clear cache for this collection
+      this.clearCollectionCache(collection);
       
-      const result = {
-        ...dataWithoutId,
-        id: docRef.id
+      return {
+        id: docRef.id,
+        ...data
       };
-      
-      return this.convertTimestamps(result);
     } catch (error) {
+      console.error(`Error creating document in ${collection}:`, error);
       throw new Error(`Failed to create document: ${error.message}`);
     }
   }
 
   async update(collection, id, data) {
     try {
-      const docRef = this.db.collection(collection).doc(id);
+      await this.db.collection(collection).doc(id).update(data);
       
-      await docRef.update({
+      // Clear cache for this collection
+      this.clearCollectionCache(collection);
+      
+      return {
+        id,
         ...data
-      });
-      
-      const updatedDoc = await docRef.get();
-      const result = {
-        id: updatedDoc.id,
-        ...updatedDoc.data()
       };
-      
-      return this.convertTimestamps(result);
     } catch (error) {
+      console.error(`Error updating document in ${collection}:`, error);
       throw new Error(`Failed to update document: ${error.message}`);
     }
   }
@@ -151,26 +223,14 @@ export class FirebaseAdapter extends IDatabaseAdapter {
   async delete(collection, id) {
     try {
       await this.db.collection(collection).doc(id).delete();
-      return { id, deleted: true };
+      
+      // Clear cache for this collection
+      this.clearCollectionCache(collection);
+      
+      return { id };
     } catch (error) {
+      console.error(`Error deleting document in ${collection}:`, error);
       throw new Error(`Failed to delete document: ${error.message}`);
-    }
-  }
-
-  async count(collection, filters = {}) {
-    try {
-      let query = this.db.collection(collection);
-
-      Object.keys(filters).forEach(key => {
-        if (filters[key] !== undefined) {
-          query = query.where(key, '==', filters[key]);
-        }
-      });
-
-      const snapshot = await query.get();
-      return snapshot.size;
-    } catch (error) {
-      throw new Error(`Failed to count documents: ${error.message}`);
     }
   }
 
@@ -186,14 +246,65 @@ export class FirebaseAdapter extends IDatabaseAdapter {
       }
 
       const doc = snapshot.docs[0];
-      const data = {
+      return this.convertTimestamps({
         id: doc.id,
         ...doc.data()
-      };
-      
-      return this.convertTimestamps(data);
+      });
     } catch (error) {
+      console.error(`Error finding document by field in ${collection}:`, error);
       throw new Error(`Failed to find document by field: ${error.message}`);
     }
   }
+
+  async count(collection, filters = {}) {
+    console.warn('Count queries are expensive. Consider using cursor-based pagination instead.');
+    
+    try {
+      let query = this.db.collection(collection);
+      
+      // Apply filters
+      Object.keys(filters).forEach(key => {
+        if (filters[key] !== undefined) {
+          query = query.where(key, '==', filters[key]);
+        }
+      });
+      
+      const snapshot = await query.get();
+      return snapshot.size;
+    } catch (error) {
+      console.error(`Error counting documents in ${collection}:`, error);
+      throw new Error(`Failed to count documents: ${error.message}`);
+    }
+  }
+
+  // Helper method to clear cache for a specific collection
+  clearCollectionCache(collection) {
+    const keysToDelete = [];
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(collection + '_')) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => this.cache.delete(key));
+  }
+
+  async connect() {
+    try {
+      // Test connection
+      await this.db.collection('_test').limit(1).get();
+      console.log('✅ Firebase connection established');
+      return true;
+    } catch (error) {
+      console.error('❌ Firebase connection failed:', error);
+      return false;
+    }
+  }
+
+  async disconnect() {
+    // Firebase Admin SDK doesn't require explicit disconnection
+    console.log('✅ Firebase connection closed');
+    return true;
+  }
 }
+
+

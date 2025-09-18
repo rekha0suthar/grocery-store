@@ -9,52 +9,74 @@ export class ProductController extends BaseController {
   }
 
   getAllProducts = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 20, category, featured, inStock, search } = req.query;
-    const offset = (page - 1) * limit;
+    const { 
+      limit = 5, // Reduced default limit to save quota
+      cursor, // Document ID to start after
+      category, 
+      featured, 
+      inStock, 
+      search 
+    } = req.query;
 
-    let products;
+    try {
+      let products;
 
-    if (search) {
-      products = await this.productComposition.getManageProductUseCase().execute('searchProducts', {
-        query: search,
-        limit: parseInt(limit),
-        offset
-      });
-    } else if (featured === 'true') {
-      products = await this.productComposition.getManageProductUseCase().execute('getFeaturedProducts', {
-        page: parseInt(page),
-        limit: parseInt(limit)
-      });
-    } else if (category) {
-      products = await this.productComposition.getManageProductUseCase().execute('findByCategory', {
-        categoryId: category,
-        limit: parseInt(limit),
-        offset
-      });
-    } else {
-      const filters = {};
-      if (inStock !== undefined) filters.inStock = inStock;
-      
-      products = await this.productComposition.getManageProductUseCase().execute('getAllProducts', {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        ...filters
-      });
+      if (search) {
+        // For search, we'll use the legacy method but with reduced limit
+        products = await this.productComposition.getManageProductUseCase().execute('searchProducts', {
+          query: search,
+          limit: Math.min(parseInt(limit), 10), // Cap search results
+          offset: 0
+        });
+      } else if (featured === 'true') {
+        products = await this.productComposition.getManageProductUseCase().execute('getFeaturedProducts', {
+          limit: Math.min(parseInt(limit), 5),
+          cursor
+        });
+      } else if (category) {
+        products = await this.productComposition.getManageProductUseCase().execute('findByCategory', {
+          categoryId: category,
+          limit: Math.min(parseInt(limit), 10),
+          cursor
+        });
+      } else {
+        const filters = {};
+        if (inStock !== undefined) filters.inStock = inStock;
+        
+        products = await this.productComposition.getManageProductUseCase().execute('getAllProducts', {
+          limit: Math.min(parseInt(limit), 10), // Cap at 10 to save quota
+          cursor,
+          ...filters
+        });
+      }
+
+      this.sendSuccess(res, products, 'Products retrieved successfully');
+    } catch (error) {
+      // Handle quota exceeded error gracefully
+      if (error.message.includes('quota exceeded') || error.message.includes('RESOURCE_EXHAUSTED')) {
+        return this.sendError(res, 'Service temporarily unavailable due to high demand. Please try again later.', 503);
+      }
+      throw error;
     }
-
-    this.sendSuccess(res, products, 'Products retrieved successfully');
   });
 
   getProductById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     
-    const product = await this.productComposition.getManageProductUseCase().execute('getProductById', { id });
-    
-    if (!product) {
-      return this.sendNotFound(res, 'Product not found');
+    try {
+      const product = await this.productComposition.getManageProductUseCase().execute('getProductById', { id });
+      
+      if (!product) {
+        return this.sendError(res, 'Product not found', 404);
+      }
+
+      this.sendSuccess(res, product, 'Product retrieved successfully');
+    } catch (error) {
+      if (error.message.includes('quota exceeded') || error.message.includes('RESOURCE_EXHAUSTED')) {
+        return this.sendError(res, 'Service temporarily unavailable. Please try again later.', 503);
+      }
+      throw error;
     }
-    
-    this.sendSuccess(res, product, 'Product retrieved successfully');
   });
 
   createProduct = asyncHandler(async (req, res) => {

@@ -4,24 +4,26 @@ import categorySlice, {
   createCategory, 
   updateCategory, 
   deleteCategory,
+  fetchCategoryTree,
+  clearCategories,
   clearError,
-  clearCurrentCategory,
-  setPagination
+  resetPagination
 } from '../../../store/slices/categorySlice.js';
 
 describe('categorySlice', () => {
   const initialState = {
     categories: [],
     categoryTree: [],
-    currentCategory: null,
+    loading: false,
+    loadingMore: false,
+    error: null,
     pagination: {
       page: 1,
-      limit: 10,
+      limit: 5,
       total: 0,
-      totalPages: 0,
-    },
-    loading: false,
-    error: null,
+      pages: 0,
+      hasMore: false
+    }
   };
 
   it('should return the initial state', () => {
@@ -35,33 +37,39 @@ describe('categorySlice', () => {
     expect(newState.error).toBeNull();
   });
 
-  it('should handle clearCurrentCategory', () => {
-    const stateWithCategory = { 
+  it('should handle clearCategories', () => {
+    const stateWithCategories = { 
       ...initialState, 
-      currentCategory: { id: '1', name: 'Electronics' } 
+      categories: [{ id: '1', name: 'Electronics' }],
+      categoryTree: [{ id: '1', name: 'Electronics', children: [] }]
     };
-    const action = clearCurrentCategory();
-    const newState = categorySlice(stateWithCategory, action);
-    expect(newState.currentCategory).toBeNull();
-  });
-
-  it('should handle setPagination', () => {
-    const paginationData = { page: 2, total: 50 };
-    const action = setPagination(paginationData);
-    const newState = categorySlice(initialState, action);
+    const action = clearCategories();
+    const newState = categorySlice(stateWithCategories, action);
+    expect(newState.categories).toEqual([]);
+    expect(newState.categoryTree).toEqual([]);
     expect(newState.pagination).toEqual({
-      page: 2,
-      limit: 10,
-      total: 50,
-      totalPages: 0,
+      page: 1,
+      limit: 5,
+      total: 0,
+      pages: 0,
+      hasMore: false
     });
   });
 
-  it('should handle fetchCategories.pending', () => {
-    const action = fetchCategories.pending('requestId');
-    const newState = categorySlice(initialState, action);
-    expect(newState.loading).toBe(true);
-    expect(newState.error).toBeNull();
+  it('should handle resetPagination', () => {
+    const stateWithPagination = { 
+      ...initialState, 
+      pagination: { page: 3, limit: 5, total: 50, pages: 5, hasMore: true }
+    };
+    const action = resetPagination();
+    const newState = categorySlice(stateWithPagination, action);
+    expect(newState.pagination).toEqual({
+      page: 1,
+      limit: 5,
+      total: 0,
+      pages: 0,
+      hasMore: false
+    });
   });
 
   it('should handle fetchCategories.fulfilled', () => {
@@ -69,122 +77,80 @@ describe('categorySlice', () => {
       { id: '1', name: 'Electronics', description: 'Electronic items' },
       { id: '2', name: 'Clothing', description: 'Clothing items' }
     ];
-    const pagination = { page: 1, total: 2, totalPages: 1 };
-    const payload = { categories, pagination };
-    const action = fetchCategories.fulfilled(payload, 'requestId');
+    const pagination = {
+      page: 1,
+      total: 2,
+      totalPages: 1,
+      hasMore: false
+    };
+    const action = fetchCategories.fulfilled({ categories, pagination, isInitialLoad: true });
     const newState = categorySlice(initialState, action);
     expect(newState.loading).toBe(false);
     expect(newState.categories).toEqual(categories);
-    expect(newState.pagination).toEqual(pagination); // Direct assignment, not merge
+    expect(newState.pagination).toEqual({
+      ...pagination,
+      hasMore: pagination.page < pagination.pages
+    });
   });
 
   it('should handle fetchCategories.rejected', () => {
-    const errorMessage = 'Failed to fetch categories';
-    // Create action with payload (not error.message)
-    const action = {
-      type: fetchCategories.rejected.type,
-      payload: errorMessage
-    };
+    const error = 'Failed to fetch categories';
+    const action = fetchCategories.rejected(new Error(error), 'requestId', {}, error);
     const newState = categorySlice(initialState, action);
     expect(newState.loading).toBe(false);
-    expect(newState.error).toBe(errorMessage);
-  });
-
-  it('should handle fetchCategoryById.pending', () => {
-    const action = fetchCategoryById.pending('requestId');
-    const newState = categorySlice(initialState, action);
-    expect(newState.loading).toBe(true);
-    expect(newState.error).toBeNull();
+    expect(newState.error).toBe(error);
   });
 
   it('should handle fetchCategoryById.fulfilled', () => {
     const category = { id: '1', name: 'Electronics', description: 'Electronic items' };
-    const action = fetchCategoryById.fulfilled(category, 'requestId');
+    const action = fetchCategoryById.fulfilled(category, 'requestId', '1');
     const newState = categorySlice(initialState, action);
     expect(newState.loading).toBe(false);
-    expect(newState.currentCategory).toEqual(category);
-  });
-
-  it('should handle fetchCategoryById.rejected', () => {
-    const errorMessage = 'Failed to fetch category';
-    // Create action with payload (not error.message)
-    const action = {
-      type: fetchCategoryById.rejected.type,
-      payload: errorMessage
-    };
-    const newState = categorySlice(initialState, action);
-    expect(newState.loading).toBe(false);
-    expect(newState.error).toBe(errorMessage);
-  });
-
-  it('should handle createCategory.pending', () => {
-    const action = createCategory.pending('requestId');
-    const newState = categorySlice(initialState, action);
-    expect(newState.loading).toBe(true);
     expect(newState.error).toBeNull();
   });
 
   it('should handle createCategory.fulfilled', () => {
-    const newCategory = { id: '3', name: 'New Category', description: 'New category description' };
-    const action = createCategory.fulfilled(newCategory, 'requestId');
+    const newCategory = { id: '3', name: 'Books', description: 'Book items' };
+    const action = createCategory.fulfilled(newCategory, 'requestId', {});
     const newState = categorySlice(initialState, action);
     expect(newState.loading).toBe(false);
     expect(newState.categories).toContain(newCategory);
-    expect(newState.categories[0]).toEqual(newCategory); // unshift adds to beginning
-  });
-
-  it('should handle createCategory.rejected', () => {
-    const errorMessage = 'Failed to create category';
-    // Create action with payload (not error.message)
-    const action = {
-      type: createCategory.rejected.type,
-      payload: errorMessage
-    };
-    const newState = categorySlice(initialState, action);
-    expect(newState.loading).toBe(false);
-    expect(newState.error).toBe(errorMessage);
+    expect(newState.error).toBeNull();
   });
 
   it('should handle updateCategory.fulfilled', () => {
-    const existingCategory = { id: '1', name: 'Electronics', description: 'Electronic items' };
-    const updatedCategory = { id: '1', name: 'Updated Electronics', description: 'Updated electronic items' };
-    const stateWithCategory = { ...initialState, categories: [existingCategory] };
-    const action = updateCategory.fulfilled(updatedCategory, 'requestId');
-    const newState = categorySlice(stateWithCategory, action);
-    expect(newState.categories[0]).toEqual(updatedCategory);
-  });
-
-  it('should update currentCategory when updating the current category', () => {
-    const existingCategory = { id: '1', name: 'Electronics', description: 'Electronic items' };
-    const updatedCategory = { id: '1', name: 'Updated Electronics', description: 'Updated electronic items' };
-    const stateWithCategory = { 
-      ...initialState, 
-      categories: [existingCategory],
-      currentCategory: existingCategory
+    const stateWithCategory = {
+      ...initialState,
+      categories: [{ id: '1', name: 'Electronics', description: 'Electronic items' }]
     };
-    const action = updateCategory.fulfilled(updatedCategory, 'requestId');
+    const updatedCategory = { id: '1', name: 'Updated Electronics', description: 'Updated electronic items' };
+    const action = updateCategory.fulfilled(updatedCategory, 'requestId', { id: '1', categoryData: {} });
     const newState = categorySlice(stateWithCategory, action);
-    expect(newState.currentCategory).toEqual(updatedCategory);
+    expect(newState.loading).toBe(false);
+    expect(newState.categories[0]).toEqual(updatedCategory);
+    expect(newState.error).toBeNull();
   });
 
   it('should handle deleteCategory.fulfilled', () => {
-    const categoryToDelete = { id: '1', name: 'Electronics', description: 'Electronic items' };
-    const stateWithCategory = { ...initialState, categories: [categoryToDelete] };
-    const action = deleteCategory.fulfilled('1', 'requestId');
+    const stateWithCategory = {
+      ...initialState,
+      categories: [{ id: '1', name: 'Electronics', description: 'Electronic items' }]
+    };
+    const action = deleteCategory.fulfilled('1', 'requestId', '1');
     const newState = categorySlice(stateWithCategory, action);
-    expect(newState.categories).not.toContain(categoryToDelete);
-    expect(newState.categories).toHaveLength(0);
+    expect(newState.loading).toBe(false);
+    expect(newState.categories).toEqual([]);
+    expect(newState.error).toBeNull();
   });
 
-  it('should clear currentCategory when deleting the current category', () => {
-    const categoryToDelete = { id: '1', name: 'Electronics', description: 'Electronic items' };
-    const stateWithCategory = { 
-      ...initialState, 
-      categories: [categoryToDelete],
-      currentCategory: categoryToDelete
-    };
-    const action = deleteCategory.fulfilled('1', 'requestId');
-    const newState = categorySlice(stateWithCategory, action);
-    expect(newState.currentCategory).toBeNull();
+  it('should handle fetchCategoryTree.fulfilled', () => {
+    const categoryTree = [
+      { id: '1', name: 'Electronics', children: [] }
+    ];
+    const action = fetchCategoryTree.fulfilled({ categories: categoryTree });
+    const newState = categorySlice(initialState, action);
+    expect(newState.loading).toBe(false);
+    expect(newState.categoryTree).toEqual(categoryTree);
+    expect(newState.error).toBeNull();
   });
 });

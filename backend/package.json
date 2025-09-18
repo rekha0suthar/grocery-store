@@ -10,8 +10,7 @@
     "build": "echo 'Backend build completed - no compilation needed for Node.js'",
     "test": "npx jest",
     "lint": "eslint src tests --ext .js",
-    "init:firebase": "node scripts/init-firestore.js",
-    "populate:products": "node scripts/populate-product.js"
+    "init:firebase": "node scripts/init-firestore.js"
   },
   "dependencies": {
     "@grocery-store/core": "file:../packages/core",

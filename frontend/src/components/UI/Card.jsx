@@ -1,9 +1,10 @@
 import React from 'react';
 import { clsx } from 'clsx';
 
-const Card = ({ children, className = '', ...props }) => {
+const Card = React.forwardRef(({ children, className = '', ...props }, ref) => {
   return (
     <div
+      ref={ref}
       className={clsx(
         'bg-white rounded-lg shadow-sm border border-gray-200',
         className
@@ -13,7 +14,9 @@ const Card = ({ children, className = '', ...props }) => {
       {children}
     </div>
   );
-};
+});
+
+Card.displayName = 'Card';
 
 const CardHeader = ({ children, className = '', ...props }) => {
   return (

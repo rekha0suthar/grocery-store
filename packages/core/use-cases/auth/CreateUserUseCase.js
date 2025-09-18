@@ -51,6 +51,9 @@ export class CreateUserUseCase {
 
       // Save user
       const createdUser = await this.userRepository.create(userEntity.toPersistence());
+      
+      console.log('Created user from database:', createdUser);
+      console.log('Created user ID:', createdUser.id);
 
       return {
         success: true,

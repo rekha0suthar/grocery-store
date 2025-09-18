@@ -142,8 +142,7 @@ export class User extends BaseEntity {
   }
 
   toPersistence() {
-    return {
-      ...super.toJSON(),
+    const baseData = {
       email: this.email,
       name: this.name,
       password: this.password,
@@ -156,6 +155,16 @@ export class User extends BaseEntity {
       loginAttempts: this.loginAttempts,
       lockedUntil: this.lockedUntil
     };
+
+    // Only include ID and other base fields if ID exists (for updates)
+    if (this.id) {
+      baseData.id = this.id;
+      baseData.createdAt = this.createdAt;
+      baseData.updatedAt = this.updatedAt;
+      baseData.isActive = this.isActive;
+    }
+
+    return baseData;
   }
 
   toPublicJSON() {

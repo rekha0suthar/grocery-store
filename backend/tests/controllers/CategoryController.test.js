@@ -69,7 +69,7 @@ describe('CategoryController - HTTP Interface Adapter', () => {
         { id: 'cat2', name: 'Category 2' }
       ];
       
-      mockReq.query = { page: 1, limit: 20 };
+      mockReq.query = { page: 1, limit: 5 };
       mockManageCategoryUseCase.execute.mockResolvedValue({
         success: true,
         message: 'Categories retrieved successfully',
@@ -79,7 +79,7 @@ describe('CategoryController - HTTP Interface Adapter', () => {
       await controller.getAllCategories(mockReq, mockRes, mockNext);
       
       expect(mockManageCategoryUseCase.execute).toHaveBeenCalledWith('getAllCategories', {
-        limit: 20,
+        limit: 5,
         offset: 0
       });
       expect(mockRes.status).toHaveBeenCalledWith(200);

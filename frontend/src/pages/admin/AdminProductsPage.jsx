@@ -74,7 +74,7 @@ const AdminProductsPage = () => {
 
   useEffect(() => {
     if (products.length === 0) dispatch(fetchProducts());
-    if (categories.length === 0) dispatch(fetchCategories());
+    if (categories.length === 0) dispatch(fetchCategories({ limit: 5 }));
   }, [dispatch, products.length, categories.length]);
 
   const onSubmit = async (data) => {

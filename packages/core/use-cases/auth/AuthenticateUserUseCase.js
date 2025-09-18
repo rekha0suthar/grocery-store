@@ -19,17 +19,29 @@ export class AuthenticateUserUseCase {
 
       const user = await this.userRepository.findByEmail(email);
       if (!user) {
-        return { success: false, message: 'Invalid credentials', user: null };
+        return { 
+          success: false, 
+          message: 'No account found with this email address. Please check your email or create a new account.', 
+          user: null 
+        };
       }
 
       if (typeof user.isAccountLocked === 'function' && user.isAccountLocked()) {
-        return { success: false, message: 'Account is locked', user: null };
+        return { 
+          success: false, 
+          message: 'Your account is temporarily locked due to multiple failed login attempts. Please try again later or contact support.', 
+          user: null 
+        };
       }
 
       const isPasswordValid = await this.passwordHasher.compare(password, user.password);
       if (!isPasswordValid) {
         await this.handleFailedLogin(user);
-        return { success: false, message: 'Invalid credentials', user: null };
+        return { 
+          success: false, 
+          message: 'Incorrect password. Please check your password and try again.', 
+          user: null 
+        };
       }
 
       await this.handleSuccessfulLogin(user);
@@ -39,7 +51,13 @@ export class AuthenticateUserUseCase {
         user: user.toPublicJSON ? user.toPublicJSON() : this.safePublicUser(user)
       };
     } catch (error) {
-      return { success: false, message: 'Authentication failed', user: null, error: error.message };
+      console.error('AuthenticateUserUseCase error:', error);
+      return { 
+        success: false, 
+        message: 'Authentication failed due to a server error. Please try again later.', 
+        user: null, 
+        error: error.message 
+      };
     }
   }
 

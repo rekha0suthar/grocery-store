@@ -117,7 +117,7 @@ describe('RequestController - HTTP Interface Adapter', () => {
           requests: mockRequests,
           pagination: {
             page: 1,
-            limit: 20,
+            limit: 5,
             total: 2,
             pages: 1
           }

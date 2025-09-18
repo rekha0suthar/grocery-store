@@ -74,7 +74,7 @@ const initialState = {
   currentRequest: null,
   pagination: {
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0,
   },

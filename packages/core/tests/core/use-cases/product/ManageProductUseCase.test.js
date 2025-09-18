@@ -53,7 +53,7 @@ describe('ManageProductUseCase - Application Policy', () => {
 
       mockProductRepository.findAll.mockResolvedValue(productsData);
 
-      const result = await useCase.execute('getAllProducts', { page: 1, limit: 10 });
+      const result = await useCase.execute('getAllProducts', { page: 1, limit: 5 });
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Products retrieved successfully');
@@ -66,7 +66,7 @@ describe('ManageProductUseCase - Application Policy', () => {
     test('handles empty product list', async () => {
       mockProductRepository.findAll.mockResolvedValue([]);
 
-      const result = await useCase.execute('getAllProducts', { page: 1, limit: 10 });
+      const result = await useCase.execute('getAllProducts', { page: 1, limit: 5 });
 
       expect(result.success).toBe(true);
       expect(result.products).toHaveLength(0);
@@ -250,7 +250,7 @@ describe('ManageProductUseCase - Application Policy', () => {
       const result = await useCase.execute('searchProducts', {
         query: 'apple',
         page: 1,
-        limit: 10
+        limit: 5
       });
 
       expect(result.success).toBe(true);
@@ -266,7 +266,7 @@ describe('ManageProductUseCase - Application Policy', () => {
       const result = await useCase.execute('searchProducts', {
         query: 'nonexistent',
         page: 1,
-        limit: 10
+        limit: 5
       });
 
       expect(result.success).toBe(true);
@@ -278,7 +278,7 @@ describe('ManageProductUseCase - Application Policy', () => {
     test('handles repository errors gracefully', async () => {
       mockProductRepository.findAll.mockRejectedValue(new Error('Database connection failed'));
 
-      const result = await useCase.execute('getAllProducts', { page: 1, limit: 10 });
+      const result = await useCase.execute('getAllProducts', { page: 1, limit: 5 });
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('Failed to retrieve products');
@@ -313,7 +313,7 @@ describe('ManageProductUseCase - Application Policy', () => {
 
       mockProductRepository.findAll.mockResolvedValue(productsData);
 
-      const result = await useCase.execute('getAllProducts', { page: 1, limit: 10 });
+      const result = await useCase.execute('getAllProducts', { page: 1, limit: 5 });
 
       expect(result.success).toBe(true);
       expect(result.products[0]).toBeInstanceOf(Product);

@@ -79,7 +79,7 @@ describe('ProductController - HTTP Interface Adapter', () => {
         { id: 'prod2', name: 'Product 2', price: 20 }
       ];
       
-      mockReq.query = { page: 1, limit: 20 };
+      mockReq.query = { page: 1, limit: 5 };
       mockManageProductUseCase.execute.mockResolvedValue({
         success: true,
         message: 'Products retrieved successfully',
@@ -90,7 +90,7 @@ describe('ProductController - HTTP Interface Adapter', () => {
       
       expect(mockManageProductUseCase.execute).toHaveBeenCalledWith('getAllProducts', {
         page: 1,
-        limit: 20
+        limit: 5
       });
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith({

@@ -1,6 +1,6 @@
-import { asyncHandler } from '../middleware/errorHandler.js';
 import { BaseController } from './BaseController.js';
 import { CategoryComposition } from '../composition/CategoryComposition.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 export class CategoryController extends BaseController {
   constructor() {
@@ -9,23 +9,44 @@ export class CategoryController extends BaseController {
   }
 
   getAllCategories = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
+    const { limit = 5, cursor } = req.query; // Reduced default limit
 
-    const result = await this.categoryComposition.getManageCategoryUseCase().execute('getAllCategories', {
-      limit: parseInt(limit),
-      offset
-    });
+    try {
+      const result = await this.categoryComposition.getManageCategoryUseCase().execute('getAllCategories', {
+        limit: Math.min(parseInt(limit), 10), // Cap at 10 to save quota
+        cursor
+      });
 
-    return res.status(result.success ? 200 : 400).json(result);
+      if (result.quotaExceeded) {
+        return this.sendError(res, 'Service temporarily unavailable due to high demand. Please try again later.', 503);
+      }
+
+      return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      if (error.message.includes('quota exceeded') || error.message.includes('RESOURCE_EXHAUSTED')) {
+        return this.sendError(res, 'Service temporarily unavailable. Please try again later.', 503);
+      }
+      throw error;
+    }
   });
 
   getCategoryById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     
-    const result = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryById', { id });
-    
-    return res.status(result.success ? 200 : 400).json(result);
+    try {
+      const result = await this.categoryComposition.getManageCategoryUseCase().execute('getCategoryById', { id });
+      
+      if (result.quotaExceeded) {
+        return this.sendError(res, 'Service temporarily unavailable. Please try again later.', 503);
+      }
+      
+      return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      if (error.message.includes('quota exceeded') || error.message.includes('RESOURCE_EXHAUSTED')) {
+        return this.sendError(res, 'Service temporarily unavailable. Please try again later.', 503);
+      }
+      throw error;
+    }
   });
 
   createCategory = asyncHandler(async (req, res) => {

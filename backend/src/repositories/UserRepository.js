@@ -14,8 +14,13 @@ export class UserRepository extends BaseRepository {
   }
 
   async findByEmail(email) {
-    const userData = await this.findByField('email', email);
-    return userData ? User.fromJSON(userData) : null;
+    const userData = await this.findByField('email', email);    
+    if (userData) {
+      const user = User.fromJSON(userData);
+      return user;
+    }
+    
+    return null;
   }
 
   async findByRole(role) {
@@ -56,8 +61,14 @@ export class UserRepository extends BaseRepository {
 
   async create(userData) {
     const user = new User(userData);
-    const result = await super.create(user.toPersistence());
-    return User.fromJSON(result);
+   
+    const persistenceData = user.toPersistence();
+    
+    const result = await super.create(persistenceData);
+    
+    const finalUser = User.fromJSON(result);
+    
+    return finalUser;
   }
 
   async update(id, userData) {

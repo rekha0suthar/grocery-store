@@ -15,7 +15,7 @@ describe('requestSlice', () => {
     currentRequest: null,
     pagination: {
       page: 1,
-      limit: 10,
+      limit: 5,
       total: 0,
       totalPages: 0,
     },
@@ -50,7 +50,7 @@ describe('requestSlice', () => {
     const newState = requestSlice(initialState, action);
     expect(newState.pagination).toEqual({
       page: 2,
-      limit: 10,
+      limit: 5,
       total: 50,
       totalPages: 0,
     });

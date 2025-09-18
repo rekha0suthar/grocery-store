@@ -35,7 +35,7 @@ const ModernHeader = () => {
 
   useEffect(() => {
     if (categories.length === 0) {
-      dispatch(fetchCategories({ limit: 10 }));
+      dispatch(fetchCategories({ limit: 5 }));
     }
   }, [dispatch, categories.length]);
 
