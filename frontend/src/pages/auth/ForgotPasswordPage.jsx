@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card } from '../../components/UI/Card.jsx';
+import Card from '../../components/UI/Card.jsx';
 import Button from '../../components/UI/Button.jsx';
 import Input from '../../components/UI/Input.jsx';
 import { authService } from '../../services/authService.js';

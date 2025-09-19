@@ -360,168 +360,167 @@ const AdminRequestsPage = () => {
             </div>
           </div>
         );
-    }
       case 'category_delete_request':
-return (
-  <div className="space-y-4">
-    <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-      <Trash2 className="w-5 h-5 mr-2 text-red-600" />
-      Category Deletion Details
-    </h4>
-    <div className="bg-red-50 p-6 rounded-lg space-y-4">
-      <div className="flex items-center space-x-2 p-3 bg-red-100 rounded-lg">
-        <AlertCircle className="w-5 h-5 text-red-600" />
-        <span className="text-sm font-medium text-red-800">
-          ⚠️ Warning: This action cannot be undone. All products in this category will be affected.
-        </span>
-      </div>
+        return (
+          <div className="space-y-4">
+            <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Trash2 className="w-5 h-5 mr-2 text-red-600" />
+              Category Deletion Details
+            </h4>
+            <div className="bg-red-50 p-6 rounded-lg space-y-4">
+              <div className="flex items-center space-x-2 p-3 bg-red-100 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="text-sm font-medium text-red-800">
+                  ⚠️ Warning: This action cannot be undone. All products in this category will be affected.
+                </span>
+              </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-          <p className="text-lg font-semibold text-gray-900">{requestData.originalCategory?.name}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
-          <p className="text-lg text-gray-900">
-            {requestData.originalCategory?.parentId ? getCategoryName(requestData.originalCategory.parentId) : 'Root Category'}
-          </p>
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <p className="text-gray-900">{requestData.originalCategory?.description || 'No description'}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
-          <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${requestData.originalCategory?.isVisible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-            }`}>
-            {requestData.originalCategory?.isVisible ? 'Visible' : 'Hidden'}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                  <p className="text-lg font-semibold text-gray-900">{requestData.originalCategory?.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
+                  <p className="text-lg text-gray-900">
+                    {requestData.originalCategory?.parentId ? getCategoryName(requestData.originalCategory.parentId) : 'Root Category'}
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <p className="text-gray-900">{requestData.originalCategory?.description || 'No description'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
+                  <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${requestData.originalCategory?.isVisible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                    {requestData.originalCategory?.isVisible ? 'Visible' : 'Hidden'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
 
       default:
-return null;
+        return null;
     }
   };
 
-if (loading) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-center h-64">
-      <LoadingSpinner size="lg" />
-    </div>
-  );
-}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Manage Requests</h1>
+        <p className="text-gray-600">Review and manage store manager requests</p>
+      </div>
 
-return (
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900">Manage Requests</h1>
-      <p className="text-gray-600">Review and manage store manager requests</p>
-    </div>
-
-    {requests.length > 0 ? (
-      <div className="space-y-6">
-        {requests.map((request) => (
-          <Card key={request.id}>
-            <Card.Content>
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                    {getRequestTypeIcon(request.type)}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">
+      {requests.length > 0 ? (
+        <div className="space-y-6">
+          {requests.map((request) => (
+            <Card key={request.id}>
+              <Card.Content>
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      {getRequestTypeIcon(request.type)}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {request.type === 'account_register_request'
+                          ? `${request.requestData?.name || 'Store Manager'}`
+                          : getRequestTypeLabel(request.type)
+                        }
+                      </h3>
+                      {request.type === 'account_register_request' && request.requestData?.email && (
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-sm text-gray-500">{request.requestData.email}</span>
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-500">
+                        Submitted on {new Date(request.createdAt).toLocaleDateString()}
+                      </p>
+                      {/* Show summary for all request types */}
                       {request.type === 'account_register_request'
-                        ? `${request.requestData?.name || 'Store Manager'}`
-                        : getRequestTypeLabel(request.type)
+                        ? renderStoreManagerRequestSummary(request)
+                        : renderCategoryRequestSummary(request)
                       }
-                    </h3>
-                    {request.type === 'account_register_request' && request.requestData?.email && (
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-sm text-gray-500">{request.requestData.email}</span>
-                      </div>
-                    )}
-                    <p className="text-sm text-gray-500">
-                      Submitted on {new Date(request.createdAt).toLocaleDateString()}
-                    </p>
-                    {/* Show summary for all request types */}
-                    {request.type === 'account_register_request'
-                      ? renderStoreManagerRequestSummary(request)
-                      : renderCategoryRequestSummary(request)
-                    }
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRequestTypeColor(request.type)}`}>
+                      {request.type.replace(/_/g, ' ').toUpperCase()}
+                    </span>
+                    {getStatusIcon(request.status)}
+                    <span className={`px-5 py-2 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                      {request.status.toUpperCase()}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRequestTypeColor(request.type)}`}>
-                    {request.type.replace(/_/g, ' ').toUpperCase()}
-                  </span>
-                  {getStatusIcon(request.status)}
-                  <span className={`px-5 py-2 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
-                    {request.status.toUpperCase()}
-                  </span>
+                {/* Expandable Details */}
+                <div className="border-t pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpandedRequest(expandedRequest === request.id ? null : request.id)}
+                    className="flex items-center"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {expandedRequest === request.id ? 'Hide' : 'Show'} Details
+                  </Button>
+
+                  {expandedRequest === request.id && (
+                    <div className="mt-4">
+                      {request.type === 'account_register_request'
+                        ? renderDetailedStoreManagerRequest(request)
+                        : renderDetailedCategoryRequest(request)
+                      }
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Expandable Details */}
-              <div className="border-t pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setExpandedRequest(expandedRequest === request.id ? null : request.id)}
-                  className="flex items-center"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  {expandedRequest === request.id ? 'Hide' : 'Show'} Details
-                </Button>
-
-                {expandedRequest === request.id && (
-                  <div className="mt-4">
-                    {request.type === 'account_register_request'
-                      ? renderDetailedStoreManagerRequest(request)
-                      : renderDetailedCategoryRequest(request)
-                    }
+                {request.status === 'pending' && (
+                  <div className="flex space-x-4 mt-6">
+                    <Button
+                      onClick={() => handleApprove(request.id)}
+                      variant="success"
+                      size="sm"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Approve
+                    </Button>
+                    <Button
+                      onClick={() => handleReject(request.id)}
+                      variant="danger"
+                      size="sm"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Reject
+                    </Button>
                   </div>
                 )}
-              </div>
-
-              {request.status === 'pending' && (
-                <div className="flex space-x-4 mt-6">
-                  <Button
-                    onClick={() => handleApprove(request.id)}
-                    variant="success"
-                    size="sm"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={() => handleReject(request.id)}
-                    variant="danger"
-                    size="sm"
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Reject
-                  </Button>
-                </div>
-              )}
-            </Card.Content>
-          </Card>
-        ))}
-      </div>
-    ) : (
-      <Card className="p-12 text-center">
-        <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
-        <p className="text-gray-500">No store manager requests to review</p>
-      </Card>
-    )}
-  </div>
-);
+              </Card.Content>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="p-12 text-center">
+          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
+          <p className="text-gray-500">No store manager requests to review</p>
+        </Card>
+      )}
+    </div>
+  );
 };
 
 export default AdminRequestsPage;
