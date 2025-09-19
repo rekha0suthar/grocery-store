@@ -173,9 +173,49 @@ export class FirebaseAuthService extends IAuthProvider {
   
   async sendPasswordResetEmail(email) {
     try {
-      console.log(`Password reset email would be sent to ${email}`);
+      // Get the Firebase API key from the environment
+      const apiKey = process.env.FIREBASE_API_KEY;
+      
+      if (!apiKey) {
+        // Fallback: Generate link and log it (current behavior)
+        const actionCodeSettings = {
+          url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password`,
+          handleCodeInApp: false,
+        };
+        
+        const link = await auth.generatePasswordResetLink(email, actionCodeSettings);
+        console.log(`🔗 Password reset link for ${email}:`);
+        console.log(link);
+        console.log(`\n📧 To enable actual email sending, add FIREBASE_API_KEY to your .env file`);
+        return true;
+      }
+
+      // Use Firebase Auth REST API to send password reset email
+      // This will work regardless of whether the user exists (for security)
+      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestType: 'PASSWORD_RESET',
+          email: email,
+          continueUrl: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password`,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Firebase Auth API error:', errorData);
+        throw new Error(`Firebase Auth API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ Password reset email sent to ${email}`);
+      console.log('Firebase API response:', result);
       return true;
     } catch (error) {
+      console.error('❌ Password reset error:', error);
       throw new Error(`Failed to send password reset email: ${error.message}`);
     }
   }

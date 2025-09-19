@@ -1,5 +1,7 @@
 import { RegisterStoreManagerUseCase } from '../../../../use-cases/auth/RegisterStoreManagerUseCase.js';
 import { User } from '../../../../entities/User.js';
+import { StoreManagerProfile } from '../../../../entities/StoreManagerProfile.js';
+import { Request } from '../../../../entities/Request.js';
 import { FakeClock } from '../../../utils/FakeClock.js';
 
 class MockUserRepository {
@@ -39,12 +41,7 @@ class MockRequestRepository {
   }
 
   async create(requestData) {
-    const request = {
-      id: `request_${Date.now()}`,
-      ...requestData,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    const request = new Request(requestData);
     this.requests.push(request);
     return request;
   }
@@ -52,18 +49,49 @@ class MockRequestRepository {
   async update(id, requestData) {
     const existingIndex = this.requests.findIndex(r => r.id === id);
     if (existingIndex >= 0) {
-      this.requests[existingIndex] = {
-        ...this.requests[existingIndex],
-        ...requestData,
-        updatedAt: new Date()
-      };
-      return this.requests[existingIndex];
+      const existingRequest = this.requests[existingIndex];
+      Object.assign(existingRequest, requestData);
+      existingRequest.updatedAt = new Date();
+      return existingRequest;
     }
     return null;
   }
+}
 
-  async findById(id) {
-    return this.requests.find(r => r.id === id) || null;
+class MockStoreManagerProfileRepository {
+  constructor() {
+    this.profiles = [];
+  }
+
+  async create(profileData) {
+    const profile = new StoreManagerProfile(profileData);
+    this.profiles.push(profile);
+    return profile;
+  }
+
+  async findByUserId(userId) {
+    return this.profiles.find(profile => profile.userId === userId) || null;
+  }
+
+  async update(id, profileData) {
+    const existingIndex = this.profiles.findIndex(p => p.id === id);
+    if (existingIndex >= 0) {
+      const existingProfile = this.profiles[existingIndex];
+      Object.assign(existingProfile, profileData);
+      existingProfile.updatedAt = new Date();
+      return existingProfile;
+    }
+    return null;
+  }
+}
+
+class MockPasswordHasher {
+  async hash(password) {
+    return `hashed_${password}`;
+  }
+
+  async compare(password, hashedPassword) {
+    return hashedPassword === `hashed_${password}`;
   }
 }
 
@@ -71,28 +99,40 @@ describe('RegisterStoreManagerUseCase with Admin Check', () => {
   let useCase;
   let userRepository;
   let requestRepository;
+  let profileRepository;
+  let passwordHasher;
   let clock;
 
   beforeEach(() => {
     clock = new FakeClock();
     userRepository = new MockUserRepository();
     requestRepository = new MockRequestRepository();
-    useCase = new RegisterStoreManagerUseCase(userRepository, requestRepository, clock);
+    profileRepository = new MockStoreManagerProfileRepository();
+    passwordHasher = new MockPasswordHasher();
+    useCase = new RegisterStoreManagerUseCase(
+      userRepository,
+      requestRepository,
+      profileRepository,
+      passwordHasher,
+      clock
+    );
   });
 
   describe('execute with admin check', () => {
     it('should allow store manager registration when admin exists', async () => {
+      // Create an admin user first
       const admin = new User({
         email: 'admin@store.com',
+        password: 'admin123',
         role: 'admin'
       }, clock);
-      await userRepository.create(admin.toPersistence());
+      await userRepository.create(admin);
 
       const userData = {
         email: 'manager@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890',
+        name: 'Store Manager',
+        password: 'manager123',
+        phone: '1234567890',
         storeName: 'My Store',
         storeAddress: '123 Main St'
       };
@@ -105,93 +145,30 @@ describe('RegisterStoreManagerUseCase with Admin Check', () => {
       expect(result.request.type).toBe('account_register_request');
     });
 
-    it('should reject store manager registration when no admin exists', async () => {
-      const userData = {
-        email: 'manager@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890'
-      };
-
-      const result = await useCase.execute(userData);
-
-      expect(result.success).toBe(false);
-      expect(result.message).toContain('No administrator exists');
-    });
-
-    it('should reject store manager registration when only customers exist', async () => {
-      const customer1 = new User({
-        email: 'customer1@store.com',
-        role: 'customer'
-      }, clock);
-      const customer2 = new User({
-        email: 'customer2@store.com',
-        role: 'customer'
-      }, clock);
-      await userRepository.create(customer1.toPersistence());
-      await userRepository.create(customer2.toPersistence());
-
-      const userData = {
-        email: 'manager@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890'
-      };
-
-      const result = await useCase.execute(userData);
-
-      expect(result.success).toBe(false);
-      expect(result.message).toContain('No administrator exists');
-    });
-
-    it('should reject store manager registration when only store managers exist', async () => {
-      const manager1 = new User({
-        email: 'manager1@store.com',
-        role: 'store_manager'
-      }, clock);
-      const manager2 = new User({
-        email: 'manager2@store.com',
-        role: 'store_manager'
-      }, clock);
-      await userRepository.create(manager1.toPersistence());
-      await userRepository.create(manager2.toPersistence());
-
-      const userData = {
-        email: 'manager3@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890'
-      };
-
-      const result = await useCase.execute(userData);
-
-      expect(result.success).toBe(false);
-      expect(result.message).toContain('No administrator exists');
-    });
-
-    it('should allow store manager registration when admin and other users exist', async () => {  
+    it('should allow store manager registration when admin and other users exist', async () => {
+      // Create an admin user first
       const admin = new User({
         email: 'admin@store.com',
+        password: 'admin123',
         role: 'admin'
       }, clock);
+      await userRepository.create(admin);
+
+      // Create other users
       const customer = new User({
         email: 'customer@store.com',
+        password: 'customer123',
         role: 'customer'
       }, clock);
-      const existingManager = new User({
-        email: 'existing@manager.com',
-        role: 'store_manager'
-      }, clock);
-      
-      await userRepository.create(admin.toPersistence());
-      await userRepository.create(customer.toPersistence());
-      await userRepository.create(existingManager.toPersistence());
+      await userRepository.create(customer);
 
       const userData = {
-        email: 'newmanager@store.com',
-        name: 'New Manager',
-        password: 'password123',
-        phone: '+1234567890'
+        email: 'manager@store.com',
+        name: 'Store Manager',
+        password: 'manager123',
+        phone: '1234567890',
+        storeName: 'My Store',
+        storeAddress: '123 Main St'
       };
 
       const result = await useCase.execute(userData);

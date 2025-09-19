@@ -18,9 +18,11 @@ export class RequestRepository extends BaseRepository {
     if (status) {
       filters.status = status;
     }
-    const result = await this.findByField('requestedBy', userId);
-    if (result && result.type === type && (!status || result.status === status)) {
-      return Request.fromJSON(result);
+    
+    const results = await this.findAll(filters);
+    if (results && results.length > 0) {
+      // Return the most recent request (first in the list since they're sorted by createdAt desc)
+      return Request.fromJSON(results[0]);
     }
     return null;
   }

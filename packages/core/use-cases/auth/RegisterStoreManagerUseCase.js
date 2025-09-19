@@ -3,9 +3,11 @@ import { StoreManagerApprovalPolicy } from '../../services/StoreManagerApprovalP
 
 
 export class RegisterStoreManagerUseCase {
-  constructor(userRepository, requestRepository, clock = null) {
+  constructor(userRepository, requestRepository, storeManagerProfileRepository, passwordHasher, clock = null) {
     this.userRepository = userRepository;
     this.requestRepository = requestRepository;
+    this.storeManagerProfileRepository = storeManagerProfileRepository;
+    this.passwordHasher = passwordHasher;
     this.policy = new StoreManagerApprovalPolicy(clock);
   }
 
@@ -29,10 +31,12 @@ export class RegisterStoreManagerUseCase {
         };
       }
 
+      const hashedPassword = await this.passwordHasher.hash(userData.password);
+
       const user = new User({
         email: userData.email,
         name: userData.name,
-        password: userData.password,
+        password: hashedPassword,
         role: 'store_manager',
         phone: userData.phone,
         address: userData.address || ''
@@ -52,6 +56,8 @@ export class RegisterStoreManagerUseCase {
         storeAddress: userData.storeAddress
       });
 
+      const savedProfile = await this.storeManagerProfileRepository.create(profile);
+
       const request = this.policy.createStoreManagerApprovalRequest(userData, savedUser.id);
 
       const savedRequest = await this.requestRepository.create(request.toPersistence());
@@ -59,7 +65,7 @@ export class RegisterStoreManagerUseCase {
       return {
         success: true,
         user: savedUser,
-        profile: profile,
+        profile: savedProfile,
         request: savedRequest,
         message: 'Store manager registration successful. Your account is pending approval from an administrator.'
       };

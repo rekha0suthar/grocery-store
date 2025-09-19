@@ -6,6 +6,7 @@ import {
   loginValidation, 
   changePasswordValidation, 
   updateProfileValidation,
+  forgotPasswordValidation,
   handleValidationErrors 
 } from '../middleware/validation.js';
 
@@ -19,6 +20,7 @@ router.post('/register', registerValidation, handleValidationErrors, authControl
 router.post('/login', loginValidation, handleValidationErrors, authController.login);
 router.post('/logout', authController.logout);
 router.post('/refresh', authController.refreshToken);
+router.post('/forgot-password', forgotPasswordValidation, handleValidationErrors, authController.forgotPassword);
 
 router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, updateProfileValidation, handleValidationErrors, authController.updateProfile);

@@ -51,7 +51,7 @@ const ProductImageGallery = ({
           alt={`${alt} ${currentImageIndex + 1}`}
           className="w-full h-full object-center transition-transform duration-300 group-hover:scale-105"
           onError={(e) => {
-            e.target.src = '/placeholder-product.jpg';
+            e.target.src = '/';
           }}
         />
         

@@ -1,13 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { requestService } from '../../services/requestService.js';
 
-// Async thunks
 export const fetchRequests = createAsyncThunk(
   'requests/fetchRequests',
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await requestService.getRequests(params);
-      // Handle nested response structure: response.data.data.requests
       const requests = response.data?.data?.requests || response.data?.requests || [];
       const pagination = response.data?.pagination || {};
       return { requests, pagination };
@@ -22,7 +20,6 @@ export const fetchRequestById = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await requestService.getRequestById(id);
-      // Handle nested response structure
       return response.data?.data || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch request');
@@ -35,10 +32,21 @@ export const createStoreManagerRequest = createAsyncThunk(
   async (requestData, { rejectWithValue }) => {
     try {
       const response = await requestService.createStoreManagerRequest(requestData);
-      // Handle nested response structure
       return response.data?.data || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create request');
+    }
+  }
+);
+
+export const createCategoryRequest = createAsyncThunk(
+  'requests/createCategoryRequest',
+  async (requestData, { rejectWithValue }) => {
+    try {
+      const response = await requestService.createCategoryRequest(requestData);
+      return response.data?.data || response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to create category request');
     }
   }
 );
@@ -48,7 +56,6 @@ export const approveRequest = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await requestService.approveRequest(id);
-      // Handle nested response structure
       return response.data?.data || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to approve request');
@@ -61,7 +68,6 @@ export const rejectRequest = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await requestService.rejectRequest(id);
-      // Handle nested response structure
       return response.data?.data || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to reject request');
@@ -69,17 +75,33 @@ export const rejectRequest = createAsyncThunk(
   }
 );
 
+export const fetchMyRequests = createAsyncThunk(
+  'requests/fetchMyRequests',
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const response = await requestService.getMyRequests(params);
+      const requests = response.data?.data?.requests || response.data?.requests || [];
+      const pagination = response.data?.pagination || {};
+      return { requests, pagination };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch my requests');
+    }
+  }
+);
+
 const initialState = {
   requests: [],
+  myRequests: [],
   currentRequest: null,
+  loading: false,
+  createLoading: false,
+  error: null,
   pagination: {
     page: 1,
-    limit: 10,
+    limit: 20,
     total: 0,
-    totalPages: 0,
-  },
-  loading: false,
-  error: null,
+    pages: 0
+  }
 };
 
 const requestSlice = createSlice({
@@ -91,29 +113,25 @@ const requestSlice = createSlice({
     },
     clearCurrentRequest: (state) => {
       state.currentRequest = null;
-    },
-    setPagination: (state, action) => {
-      state.pagination = { ...state.pagination, ...action.payload };
-    },
+    }
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Requests
       .addCase(fetchRequests.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchRequests.fulfilled, (state, action) => {
         state.loading = false;
-        state.requests = action.payload.requests || [];
-        state.pagination = action.payload.pagination || state.pagination;
-        state.error = null;
+        state.requests = action.payload.requests;
+        state.pagination = action.payload.pagination;
       })
       .addCase(fetchRequests.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      // Fetch Request by ID
+      });
+
+    builder
       .addCase(fetchRequestById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -121,48 +139,90 @@ const requestSlice = createSlice({
       .addCase(fetchRequestById.fulfilled, (state, action) => {
         state.loading = false;
         state.currentRequest = action.payload;
-        state.error = null;
       })
       .addCase(fetchRequestById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      // Create Store Manager Request
+      });
+
+    builder
       .addCase(createStoreManagerRequest.pending, (state) => {
-        state.loading = true;
+        state.createLoading = true;
         state.error = null;
       })
       .addCase(createStoreManagerRequest.fulfilled, (state, action) => {
-        state.loading = false;
+        state.createLoading = false;
         state.requests.unshift(action.payload);
-        state.error = null;
       })
       .addCase(createStoreManagerRequest.rejected, (state, action) => {
+        state.createLoading = false;
+        state.error = action.payload;
+      });
+
+    builder
+      .addCase(createCategoryRequest.pending, (state) => {
+        state.createLoading = true;
+        state.error = null;
+      })
+      .addCase(createCategoryRequest.fulfilled, (state, action) => {
+        state.createLoading = false;
+        state.requests.unshift(action.payload);
+      })
+      .addCase(createCategoryRequest.rejected, (state, action) => {
+        state.createLoading = false;
+        state.error = action.payload;
+      });
+
+    builder
+      .addCase(approveRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(approveRequest.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.requests.findIndex(req => req.id === action.payload.id);
+        if (index !== -1) {
+          state.requests[index] = action.payload;
+        }
+      })
+      .addCase(approveRequest.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      // Approve Request
-      .addCase(approveRequest.fulfilled, (state, action) => {
-        const index = state.requests.findIndex(r => r.id === action.payload.id);
-        if (index !== -1) {
-          state.requests[index] = action.payload;
-        }
-        if (state.currentRequest?.id === action.payload.id) {
-          state.currentRequest = action.payload;
-        }
-      })
-      // Reject Request
-      .addCase(rejectRequest.fulfilled, (state, action) => {
-        const index = state.requests.findIndex(r => r.id === action.payload.id);
-        if (index !== -1) {
-          state.requests[index] = action.payload;
-        }
-        if (state.currentRequest?.id === action.payload.id) {
-          state.currentRequest = action.payload;
-        }
       });
-  },
+
+    builder
+      .addCase(rejectRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(rejectRequest.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.requests.findIndex(req => req.id === action.payload.id);
+        if (index !== -1) {
+          state.requests[index] = action.payload;
+        }
+      })
+      .addCase(rejectRequest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+
+    builder
+      .addCase(fetchMyRequests.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMyRequests.fulfilled, (state, action) => {
+        state.loading = false;
+        state.myRequests = action.payload.requests;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchMyRequests.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+  }
 });
 
-export const { clearError, clearCurrentRequest, setPagination } = requestSlice.actions;
+export const { clearError, clearCurrentRequest } = requestSlice.actions;
 export default requestSlice.reducer;

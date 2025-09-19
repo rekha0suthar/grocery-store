@@ -289,7 +289,7 @@ export const ModernRegisterPage = () => {
                         </h3>
                         <div className="mt-2 text-sm text-blue-700">
                           <p>
-                            Your registration will be sent to an administrator for approval. 
+                            Your registration request is sent to an administrator for approval. 
                             You will be able to login once your request is approved.
                           </p>
                         </div>

@@ -2,9 +2,10 @@ import { StoreManagerApprovalPolicy } from '../../services/StoreManagerApprovalP
 
 
 export class AuthenticateUserWithApprovalUseCase {
-  constructor(userRepository, storeManagerProfileRepository, passwordHasher, clock = null) {
+  constructor(userRepository, storeManagerProfileRepository, requestRepository, passwordHasher, clock = null) {
     this.userRepository = userRepository;
     this.storeManagerProfileRepository = storeManagerProfileRepository;
+    this.requestRepository = requestRepository;
     this.passwordHasher = passwordHasher;
     this.policy = new StoreManagerApprovalPolicy(clock);
   }
@@ -50,6 +51,20 @@ export class AuthenticateUserWithApprovalUseCase {
           return {
             success: false,
             message: 'Store manager profile not found. Please contact support.'
+          };
+        }
+
+        const rejectedRequest = await this.requestRepository.findByUserAndType(
+          user.id, 
+          'account_register_request', 
+          'rejected'
+        );
+
+        if (rejectedRequest) {
+          const rejectionReason = rejectedRequest.rejectionReason || 'No reason provided';
+          return {
+            success: false,
+            message: `Your store manager registration request has been rejected. Reason: ${rejectionReason}. You can submit a new application if you wish.`
           };
         }
       }

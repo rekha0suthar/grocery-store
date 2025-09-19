@@ -15,6 +15,7 @@ router.get('/', requireRole('admin'), requestController.getAllRequests);
 router.get('/pending', requireRole('admin'), requestController.getPendingRequests);
 router.get('/stats', requireRole('admin'), requestController.getRequestStats);
 router.get('/:id', requireRole('admin'), requestController.getRequestById);
-router.post('/:id/approve', requireRole('admin'), requestController.approveRequest);
+router.patch('/:id/approve', requireRole('admin'), requestController.approveRequest);
+router.patch('/:id/reject', requireRole('admin'), requestController.approveRequest);
 
 export default router;

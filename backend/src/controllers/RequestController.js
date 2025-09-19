@@ -105,13 +105,13 @@ export class RequestController extends BaseController {
     const { id } = req.params;
     const approverId = req.user.id;
     const userRole = req.user.role;
-    const { action } = req.body;
+    const { action, reason } = req.body;
     
     if (!['approve', 'reject'].includes(action)) {
       return this.sendError(res, 'Invalid action. Must be "approve" or "reject"', 400);
     }
 
-    const result = await this.requestComposition.getApproveRequestUseCase().execute(id, approverId, userRole, action);
+    const result = await this.requestComposition.getApproveRequestUseCase().execute(id, approverId, userRole, action, reason);
     
     if (!result.success) {
       return this.sendError(res, result.message, 400);

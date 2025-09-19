@@ -30,7 +30,6 @@ const CheckoutPage = () => {
   const { items: cartItems, totalPrice } = useSelector(state => state.cart);
   const { user } = useSelector(state => state.auth);
 
-  // Payment state
   const {
     selectedMethod,
     methodFields,
@@ -44,7 +43,6 @@ const CheckoutPage = () => {
     reset: resetPayment
   } = useFlexiblePayment();
 
-  // Address state
   const {
     formData,
     validationErrors,
@@ -58,17 +56,14 @@ const CheckoutPage = () => {
     addressesLoading
   } = useAddressForm();
 
-  // Local state
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Redirect if cart is empty
   useEffect(() => {
     if (cartItems.length === 0) {
       navigate('/dashboard');
     }
   }, [cartItems.length, navigate]);
 
-  // Reset payment when component unmounts
   useEffect(() => {
     return () => {
       resetPayment();
@@ -79,27 +74,22 @@ const CheckoutPage = () => {
     try {
       setIsProcessing(true);
       
-      // Validate address form using service
       const addressValidation = validateAddressForm(formData);
       if (!addressValidation.isValid) {
         toast.error('Please fill in all required address fields');
         return;
       }
 
-      // Validate payment fields
       const paymentValidation = validateFields();
       if (!paymentValidation.isValid) {
         toast.error('Please fix payment validation errors');
         return;
       }
 
-      // Generate order ID
       const orderId = generateOrderId();
       
-      // Calculate totals
       const totals = calculateOrderTotals(totalPrice, 0, 0);
       
-      // Process payment
       const paymentResult = await processPayment({
         methodId: selectedMethod?.id || 'cash_on_delivery',
         amount: totals.total,
@@ -110,18 +100,14 @@ const CheckoutPage = () => {
       let isPaymentSuccessful = false;
       
       if (paymentResult.success === true) {
-        // Direct success response
         isPaymentSuccessful = true;
       } else if (paymentResult.data && paymentResult.data.success === true) {
-        // Nested success response
         isPaymentSuccessful = true;
       } else if (paymentResult.data && paymentResult.data.result) {
-        // Result exists (assume success)
         isPaymentSuccessful = true;
       }
 
       if (isPaymentSuccessful) {
-        // Payment successful - proceed with order creation
         const orderData = prepareOrderData({
           orderId,
           customerId: user?.id,
@@ -134,14 +120,10 @@ const CheckoutPage = () => {
           totals
         });
 
-        // Create order
         await orderService.createOrder(orderData);
         
-        // Clear cart and redirect
         dispatch(clearCart());
         navigate('/orders');
-        
-        // Show success message
         alert('Order placed successfully!');
       } else {
         throw new Error('Payment failed. Please try again.');
@@ -240,7 +222,6 @@ const CheckoutPage = () => {
             </div>
           </div>
 
-          {/* Right Column - Order Summary */}
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-5 h-5 text-gray-600" />
@@ -252,7 +233,7 @@ const CheckoutPage = () => {
                 {cartItems.map((item) => (
                   <div key={item.productId} className="flex items-center space-x-4">
                     <img
-                      src={item.imageUrl || '/placeholder-product.jpg'}
+                      src={item.imageUrl || '/'}
                       alt={item.productName}
                       className="w-16 h-16 object-cover rounded-lg"
                     />

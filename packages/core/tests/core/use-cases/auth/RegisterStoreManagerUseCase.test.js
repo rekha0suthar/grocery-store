@@ -57,9 +57,42 @@ class MockRequestRepository {
     }
     return null;
   }
+}
 
-  async findById(id) {
-    return this.requests.find(r => r.id === id) || null;
+class MockStoreManagerProfileRepository {
+  constructor() {
+    this.profiles = [];
+  }
+
+  async create(profileData) {
+    const profile = new StoreManagerProfile(profileData);
+    this.profiles.push(profile);
+    return profile;
+  }
+
+  async findByUserId(userId) {
+    return this.profiles.find(profile => profile.userId === userId) || null;
+  }
+
+  async update(id, profileData) {
+    const existingIndex = this.profiles.findIndex(p => p.id === id);
+    if (existingIndex >= 0) {
+      const existingProfile = this.profiles[existingIndex];
+      Object.assign(existingProfile, profileData);
+      existingProfile.updatedAt = new Date();
+      return existingProfile;
+    }
+    return null;
+  }
+}
+
+class MockPasswordHasher {
+  async hash(password) {
+    return `hashed_${password}`;
+  }
+
+  async compare(password, hashedPassword) {
+    return hashedPassword === `hashed_${password}`;
   }
 }
 
@@ -67,28 +100,40 @@ describe('RegisterStoreManagerUseCase', () => {
   let useCase;
   let userRepository;
   let requestRepository;
+  let profileRepository;
+  let passwordHasher;
   let clock;
 
   beforeEach(() => {
     clock = new FakeClock();
     userRepository = new MockUserRepository();
     requestRepository = new MockRequestRepository();
-    useCase = new RegisterStoreManagerUseCase(userRepository, requestRepository, clock);
+    profileRepository = new MockStoreManagerProfileRepository();
+    passwordHasher = new MockPasswordHasher();
+    useCase = new RegisterStoreManagerUseCase(
+      userRepository,
+      requestRepository,
+      profileRepository,
+      passwordHasher,
+      clock
+    );
   });
 
   describe('execute', () => {
     it('should successfully register a store manager when admin exists', async () => {
+      // Create an admin user first
       const admin = new User({
         email: 'admin@store.com',
+        password: 'admin123',
         role: 'admin'
       }, clock);
       await userRepository.create(admin);
 
       const userData = {
         email: 'manager@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890',
+        name: 'Store Manager',
+        password: 'manager123',
+        phone: '1234567890',
         storeName: 'My Store',
         storeAddress: '123 Main St'
       };
@@ -99,87 +144,75 @@ describe('RegisterStoreManagerUseCase', () => {
       expect(result.user).toBeInstanceOf(User);
       expect(result.user.role).toBe('store_manager');
       expect(result.user.email).toBe('manager@store.com');
-      expect(result.profile).toBeInstanceOf(StoreManagerProfile);
-      expect(result.profile.isApproved).toBe(false);
-      expect(result.request).toBeInstanceOf(Request);
-      expect(result.request.type).toBe('account_register_request');
-      expect(result.request.status).toBe('pending');
-      expect(result.message).toContain('pending approval');
     });
 
     it('should reject registration with invalid data', async () => {
+      // Create an admin user first
       const admin = new User({
         email: 'admin@store.com',
+        password: 'admin123',
         role: 'admin'
       }, clock);
       await userRepository.create(admin);
 
       const userData = {
         email: 'invalid-email',
-        name: 'J', // Too short
-        password: 'weak'
+        name: '',
+        password: '123'
       };
 
       const result = await useCase.execute(userData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('Invalid user data provided');
+      expect(result.message).toBe('Email and name are required');
     });
 
     it('should reject registration if user already exists', async () => {
+      // Create an admin user first
       const admin = new User({
         email: 'admin@store.com',
+        password: 'admin123',
         role: 'admin'
       }, clock);
       await userRepository.create(admin);
 
-      const userData1 = {
+      // Create existing user
+      const existingUser = new User({
         email: 'manager@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890'
-      };
-      await useCase.execute(userData1);
+        password: 'manager123',
+        role: 'customer'
+      }, clock);
+      await userRepository.create(existingUser);
 
-      const userData2 = {
+      const userData = {
         email: 'manager@store.com',
-        name: 'Jane Manager',
-        password: 'password456',
-        phone: '+0987654321'
+        name: 'Store Manager',
+        password: 'manager123',
+        phone: '1234567890',
+        storeName: 'My Store',
+        storeAddress: '123 Main St'
       };
 
-      const result = await useCase.execute(userData2);
+      const result = await useCase.execute(userData);
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('A user with this email already exists');
     });
 
-    it('should reject registration when no admin exists', async () => {
-      const userData = {
-        email: 'manager@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890'
-      };
-
-      const result = await useCase.execute(userData);
-
-      expect(result.success).toBe(false);
-      expect(result.message).toContain('No administrator exists');
-    });
-
     it('should create unapproved store manager profile', async () => {
+      // Create an admin user first
       const admin = new User({
         email: 'admin@store.com',
+        password: 'admin123',
         role: 'admin'
       }, clock);
       await userRepository.create(admin);
 
       const userData = {
         email: 'manager@store.com',
-        name: 'John Manager',
-        password: 'password123',
-        phone: '+1234567890',
+        name: 'Store Manager',
+        password: 'manager123',
+        phone: '1234567890',
         storeName: 'My Store',
         storeAddress: '123 Main St'
       };

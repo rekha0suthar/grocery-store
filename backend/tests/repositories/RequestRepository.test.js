@@ -93,18 +93,18 @@ describe('RequestRepository - Data Access Layer', () => {
 
   describe('Request-Specific Methods', () => {
     test('finds requests by user and type', async () => {
-      const mockRequestData = {
+      const mockRequestData = [{
         id: 'req1',
         type: 'account_register_request',
         status: 'pending',
         requestedBy: 'user1'
-      };
+      }];
 
-      mockDatabaseAdapter.findByField.mockResolvedValue(mockRequestData);
+      mockDatabaseAdapter.findAll.mockResolvedValue(mockRequestData);
 
       const result = await requestRepository.findByUserAndType('user1', 'account_register_request');
 
-      expect(mockDatabaseAdapter.findByField).toHaveBeenCalledWith('requests', 'requestedBy', 'user1');
+      expect(mockDatabaseAdapter.findAll).toHaveBeenCalledWith('requests', { requestedBy: 'user1', type: 'account_register_request' }, 100, 0);
       expect(result).toBeInstanceOf(Request);
       expect(result.type).toBe('account_register_request');
     });

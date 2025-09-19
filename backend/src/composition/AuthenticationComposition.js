@@ -14,6 +14,7 @@ import { BcryptPasswordHasher } from '../adapters/BcryptPasswordHasher.js';
 import { DefaultClock } from '@grocery-store/core/adapters/DefaultClock.js';
 import { AdminManagementPolicy } from '@grocery-store/core/services/AdminManagementPolicy.js';
 import { StoreManagerApprovalPolicy } from '@grocery-store/core/services/StoreManagerApprovalPolicy.js';
+import { FirebaseAuthService } from '../services/FirebaseAuthService.js';
 import appConfig from '../config/appConfig.js';
 
 export class AuthenticationComposition {
@@ -23,6 +24,7 @@ export class AuthenticationComposition {
     this.userRepository = new UserRepository(appConfig.getDatabaseType());
     this.requestRepository = new RequestRepository(appConfig.getDatabaseType());
     this.storeManagerProfileRepository = new StoreManagerProfileRepository(appConfig.getDatabaseType());
+    this.firebaseAuthService = new FirebaseAuthService();
     
     // Domain services
     this.adminManagementPolicy = new AdminManagementPolicy(this.userRepository);
@@ -53,6 +55,7 @@ export class AuthenticationComposition {
     this.authenticateUserWithApprovalUseCase = new AuthenticateUserWithApprovalUseCase(
       this.userRepository,
       this.storeManagerProfileRepository,
+      this.requestRepository,
       this.passwordHasher,
       this.clock
     );
@@ -60,6 +63,8 @@ export class AuthenticationComposition {
     this.registerStoreManagerUseCase = new RegisterStoreManagerUseCase(
       this.userRepository,
       this.requestRepository,
+      this.storeManagerProfileRepository,
+      this.passwordHasher,
       this.clock
     );
 
@@ -107,11 +112,29 @@ export class AuthenticationComposition {
     return this.manageStoreManagerRequestsUseCase;
   }
 
+  getPendingStoreManagerRequestsUseCase() {
+    return this.manageStoreManagerRequestsUseCase;
+  }
+
+  getApproveStoreManagerRequestUseCase() {
+    return this.manageStoreManagerRequestsUseCase;
+  }
+
+  getChangePasswordUseCase() {
+    // For now, return the update user use case
+    // In a real implementation, you might want a dedicated ChangePasswordUseCase
+    return this.updateUserUseCase;
+  }
+
   getAdminManagementPolicy() {
     return this.adminManagementPolicy;
   }
 
   getStoreManagerProfileRepository() {
     return this.storeManagerProfileRepository;
+  }
+
+  getFirebaseAuthService() {
+    return this.firebaseAuthService;
   }
 }

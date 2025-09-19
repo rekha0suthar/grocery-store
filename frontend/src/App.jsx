@@ -9,6 +9,7 @@ import { checkInitializationStatus } from './store/slices/authSlice.js';
 import HomePage from './pages/HomePage.jsx';
 import ModernLoginPage from './pages/auth/ModernLoginPage.jsx';
 import ModernRegisterPage from './pages/auth/ModernRegisterPage.jsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
 import SystemInitializationPage from './pages/SystemInitializationPage.jsx';
 import StyleTestPage from './pages/StyleTestPage.jsx';
 
@@ -20,6 +21,7 @@ import ProductDetailPage from './pages/products/ProductDetailPage.jsx';
 import CategoriesPage from './pages/categories/CategoriesPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import RequestsPage from './pages/requests/RequestsPage.jsx';
+import CategoryRequestPage from './pages/requests/CategoryRequestPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
 import OrderDetailPage from './pages/OrderDetailPage.jsx';
@@ -69,6 +71,10 @@ function AppRoutes() {
         path="/register"
         element={!user ? <ModernRegisterPage /> : <Navigate to="/dashboard" replace />}
       />
+      <Route
+        path="/forgot-password"
+        element={!user ? <ForgotPasswordPage /> : <Navigate to="/dashboard" replace />}
+      />
   
       <Route
         path="/initialize"
@@ -110,7 +116,7 @@ function AppRoutes() {
               <Route path="dashboard" element={<ModernDashboardPage />} />
               <Route path="manager/dashboard" element={<ModernDashboardPage />} />
               <Route path="manager/products" element={<AdminProductsPage />} />
-              <Route path="manager/categories" element={<AdminCategoriesPage />} />
+              <Route path="manager/categories" element={<CategoryRequestPage />} />
             </>
           )}
         </Route>

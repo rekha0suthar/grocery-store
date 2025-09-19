@@ -5,17 +5,15 @@ import { useAppDispatch, useAppSelector } from '../../hooks/redux.js';
 import { loginUser } from '../../store/slices/authSlice.js';
 import { toast } from 'react-hot-toast';
 import Button from '../../components/UI/Button.jsx';
-import StatusAlert from '../../components/UI/StatusAlert.jsx';
 import { Eye, EyeOff, ShoppingCart, Mail, Lock } from 'lucide-react';
+import { validateUserLogin, formatValidationErrors } from '../../utils/validation.js';
 
 const ModernLoginPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user, isAuthenticated, requestStatus, loading, error } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, loading } = useAppSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  const [showStatusAlert, setShowStatusAlert] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   const {
@@ -45,47 +43,24 @@ const ModernLoginPage = () => {
       return;
     }
 
-    if (user.role === 'store_manager') {
-      if (requestStatus?.status === 'approved') {
-        redirectBasedOnRole('store_manager');
-      }
-      return;
-    }
-
-   
     redirectBasedOnRole(user.role);
-  }, [isAuthenticated, user, requestStatus, redirectBasedOnRole]);
-
-
-
+  }, [isAuthenticated, user, redirectBasedOnRole]);
 
   const handleFormSubmit = async (data) => {
-    
     setValidationErrors({});
-    setShowStatusAlert(false);
-    setStatusMessage('');
     setIsCheckingStatus(false);
     
     try {
-      if (!data.email || !data.password) {
-        setValidationErrors({
-          email: !data.email ? 'Email is required' : '',
-          password: !data.password ? 'Password is required' : ''
-        });
-        toast.error('Please fill in all fields');
-        return;
-      }
-
-      const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-      if (!emailRegex.test(data.email)) {
-        setValidationErrors({ email: 'Invalid email address' });
-        toast.error('Please enter a valid email address');
-        return;
-      }
-
-      if (data.password.length < 6) {
-        setValidationErrors({ password: 'Password must be at least 6 characters' });
-        toast.error('Password must be at least 6 characters');
+      const validationResult = validateUserLogin(data);
+      
+      if (!validationResult.isValid) {
+        const formattedErrors = formatValidationErrors(validationResult);
+        setValidationErrors(formattedErrors.errors);
+        
+        const firstError = Object.values(formattedErrors.errors)[0];
+        if (firstError) {
+          toast.error(firstError);
+        }
         return;
       }
       
@@ -101,17 +76,17 @@ const ModernLoginPage = () => {
       
       toast.success(roleGreetings[userRole] || 'Login successful! Welcome back!');
       
-      
     } catch (error) {
+      const errorMessage = error || 'Login failed';
       
-      setValidationErrors({ general: 'Invalid credentials' });
-      toast.error(error || 'Invalid credentials');
+      setValidationErrors({ general: errorMessage });
+      
+      toast.error(errorMessage);
     } finally {
       setIsCheckingStatus(false);
     }
   };
 
-  
   const getErrorMessage = (fieldName) => {
     if (validationErrors[fieldName]) {
       return validationErrors[fieldName];
@@ -127,7 +102,6 @@ const ModernLoginPage = () => {
     return !!(validationErrors[fieldName] || errors[fieldName]);
   };
 
-  // Show loading state when Redux loading is true
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -166,24 +140,6 @@ const ModernLoginPage = () => {
             Sign in to your account to continue shopping
           </p>
         </div>
-
-        {showStatusAlert && (
-          <div className="mb-4">
-            <StatusAlert
-              status={requestStatus?.status || 'pending'}
-              message={statusMessage || requestStatus?.message || 'Your registration request is pending approval from an administrator.'}
-              request={requestStatus?.request || {
-                id: 'test-123',
-                status: 'pending',
-                createdAt: new Date().toISOString()
-              }}
-              profile={requestStatus?.profile || {
-                storeName: 'Test Store',
-                storeAddress: '123 Test Street'
-              }}
-            />
-          </div>
-        )}
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <form 
@@ -258,9 +214,9 @@ const ModernLoginPage = () => {
               )}
             </div>
 
-            {(validationErrors.general || error) && (
-              <div className="text-red-600 text-sm text-center">
-                {validationErrors.general || error}
+            {validationErrors.general && (
+              <div className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg border border-red-200">
+                {validationErrors.general}
               </div>
             )}
 
@@ -278,9 +234,9 @@ const ModernLoginPage = () => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-green-600 hover:text-green-500">
+                <Link to="/forgot-password" className="font-medium text-green-600 hover:text-green-500">
                   Forgot your password?
-                </a>
+                </Link>
               </div>
             </div>
 

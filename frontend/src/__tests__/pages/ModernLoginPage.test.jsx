@@ -93,7 +93,7 @@ describe('ModernLoginPage', () => {
     
     const forgotPasswordLink = screen.getByText('Forgot your password?');
     expect(forgotPasswordLink).toBeInTheDocument();
-    expect(forgotPasswordLink).toHaveAttribute('href', '#');
+    expect(forgotPasswordLink).toHaveAttribute('href', '/forgot-password');
   });
 
   it('handles forgot password click', () => {

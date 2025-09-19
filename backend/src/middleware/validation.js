@@ -104,6 +104,13 @@ export const changePasswordValidation = [
     .withMessage('New password must contain at least one lowercase letter, one uppercase letter, and one number')
 ];
 
+export const forgotPasswordValidation = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address')
+];
+
 export const updateProfileValidation = [
   body('name')
     .optional()

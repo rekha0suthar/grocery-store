@@ -3,25 +3,18 @@ import { Link } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../hooks/redux.js';
 import { fetchProducts } from '../store/slices/productSlice.js';
 import { fetchCategories } from '../store/slices/categorySlice.js';
-import { fetchRequests } from '../store/slices/requestSlice.js';
 import Card from '../components/UI/Card.jsx';
 import Button from '../components/UI/Button.jsx';
 import LoadingSpinner from '../components/UI/LoadingSpinner.jsx';
 import { 
   Package, 
   FolderOpen, 
- 
- 
   AlertCircle,
-
-  FileText,
   Eye,
   Plus,
   ArrowUpRight,
   Star,
-  Clock,
   CheckCircle,
-
 } from 'lucide-react';
 
 const ModernDashboardPage = () => {
@@ -29,18 +22,39 @@ const ModernDashboardPage = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { products, loading: productsLoading } = useAppSelector((state) => state.products);
   const { categories, loading: categoriesLoading } = useAppSelector((state) => state.categories);
-  const { requests, loading: requestsLoading } = useAppSelector((state) => state.requests);
 
   useEffect(() => {
     dispatch(fetchProducts({ limit: 10 }));
     dispatch(fetchCategories({ limit: 10 }));
-    dispatch(fetchRequests({ limit: 10 }));
   }, [dispatch]);
 
-  const pendingRequests = requests.filter(req => req.status === 'pending');
   const lowStockProducts = products.filter(product => product.stock < 10);
-
   const recentProducts = products.slice(0, 6);
+
+  const getRoutes = () => {
+    switch (user?.role) {
+      case 'admin':
+        return {
+          products: '/admin/products',
+          categories: '/admin/categories',
+          viewProducts: '/products'
+        };
+      case 'store_manager':
+        return {
+          products: '/manager/products',
+          categories: '/manager/categories',
+          viewProducts: '/products'
+        };
+      default:
+        return {
+          products: '/products',
+          categories: '/categories',
+          viewProducts: '/products'
+        };
+    }
+  };
+
+  const routes = getRoutes();
 
   const stats = [
     {
@@ -60,14 +74,6 @@ const ModernDashboardPage = () => {
       changeType: 'positive',
     },
     {
-      name: 'Pending Requests',
-      value: pendingRequests.length,
-      icon: FileText,
-      color: 'bg-yellow-500',
-      change: pendingRequests.length > 0 ? `${pendingRequests.length} new` : 'All clear',
-      changeType: pendingRequests.length > 0 ? 'warning' : 'positive',
-    },
-    {
       name: 'Low Stock Items',
       value: lowStockProducts.length,
       icon: AlertCircle,
@@ -77,7 +83,7 @@ const ModernDashboardPage = () => {
     },
   ];
 
-  if (productsLoading || categoriesLoading || requestsLoading) {
+  if (productsLoading || categoriesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -99,13 +105,13 @@ const ModernDashboardPage = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/products">
+              <Link to={routes.viewProducts}>
                 <Button variant="outline" className="flex items-center">
                   <Eye className="w-4 h-4 mr-2" />
                   View Products
                 </Button>
               </Link>
-              <Link to="/admin/products">
+              <Link to={routes.products}>
                 <Button className="flex items-center">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Product
@@ -117,7 +123,7 @@ const ModernDashboardPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
@@ -155,7 +161,7 @@ const ModernDashboardPage = () => {
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">Recent Products</h3>
-                <Link to="/products">
+                <Link to={routes.viewProducts}>
                   <Button variant="outline" size="sm" className="flex items-center">
                     View All
                     <ArrowUpRight className="w-4 h-4 ml-1" />
@@ -208,7 +214,7 @@ const ModernDashboardPage = () => {
                   <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
                   <p className="text-gray-500 mb-4">Start by adding your first product</p>
-                  <Link to="/admin/products">
+                  <Link to={routes.products}>
                     <Button className="flex items-center">
                       <Plus className="w-4 h-4 mr-2" />
                       Add Product
@@ -220,48 +226,6 @@ const ModernDashboardPage = () => {
           </div>
 
           <div className="space-y-6">
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Pending Requests</h3>
-                <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">
-                  {pendingRequests.length}
-                </span>
-              </div>
-              
-              {pendingRequests.length > 0 ? (
-                <div className="space-y-3">
-                  {pendingRequests.slice(0, 3).map((request) => (
-                    <div key={request.id} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-4 h-4 text-yellow-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">Store Manager Request</p>
-                        <p className="text-xs text-gray-500 truncate">
-                          From: {request.user?.name || request.user?.email}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(request.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {pendingRequests.length > 3 && (
-                    <Link to="/admin/requests">
-                      <Button variant="outline" size="sm" className="w-full">
-                        View All Requests
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">No pending requests</p>
-                </div>
-              )}
-            </Card>
-
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Low Stock Alert</h3>
@@ -286,7 +250,7 @@ const ModernDashboardPage = () => {
                     </div>
                   ))}
                   {lowStockProducts.length > 3 && (
-                    <Link to="/admin/products">
+                    <Link to={routes.products}>
                       <Button variant="outline" size="sm" className="w-full">
                         Manage Stock
                       </Button>
@@ -304,25 +268,19 @@ const ModernDashboardPage = () => {
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <Link to="/admin/products" className="block">
+                <Link to={routes.products} className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <Package className="w-4 h-4 mr-2" />
                     Manage Products
                   </Button>
                 </Link>
-                <Link to="/admin/categories" className="block">
+                <Link to={routes.categories} className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <FolderOpen className="w-4 h-4 mr-2" />
                     Manage Categories
                   </Button>
                 </Link>
-                <Link to="/admin/requests" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Review Requests
-                  </Button>
-                </Link>
-                <Link to="/products" className="block">
+                <Link to={routes.viewProducts} className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <Eye className="w-4 h-4 mr-2" />
                     View Store

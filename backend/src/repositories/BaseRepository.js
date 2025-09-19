@@ -8,7 +8,8 @@ export class BaseRepository {
     
     this.collectionName = collectionName;
     this.db = databaseAdapter;
-    this.databaseAdapter = databaseAdapter; // Add this line
+    this.database = databaseAdapter; // Add this line for compatibility
+    this.databaseAdapter = databaseAdapter;
   }
 
   async findById(id) {

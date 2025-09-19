@@ -16,18 +16,23 @@ export const requestService = {
     return response;
   },
 
+  async createCategoryRequest(requestData) {
+    const response = await api.post('/requests/category', requestData);
+    return response;
+  },
+
   async approveRequest(id) {
-    const response = await api.patch(`/requests/${id}/approve`);
+    const response = await api.patch(`/requests/${id}/approve`, { action: 'approve' });
     return response;
   },
 
   async rejectRequest(id) {
-    const response = await api.patch(`/requests/${id}/reject`);
+    const response = await api.patch(`/requests/${id}/reject`, { action: 'reject' });
     return response;
   },
 
   async getMyRequests(params = {}) {
-    const response = await api.get('/requests/my', { params });
+    const response = await api.get('/requests/my-requests', { params });
     return response;
   },
 };

@@ -1,6 +1,7 @@
 import { AuthenticateUserWithApprovalUseCase } from '../../../../use-cases/auth/AuthenticateUserWithApprovalUseCase.js';
 import { User } from '../../../../entities/User.js';
 import { StoreManagerProfile } from '../../../../entities/StoreManagerProfile.js';
+import { Request } from '../../../../entities/Request.js';
 import { FakeClock } from '../../../utils/FakeClock.js';
 
 class MockUserRepository {
@@ -57,6 +58,26 @@ class MockStoreManagerProfileRepository {
   }
 }
 
+class MockRequestRepository {
+  constructor() {
+    this.requests = [];
+  }
+
+  async findByUserAndType(userId, type, status = null) {
+    return this.requests.find(request => 
+      request.requestedBy === userId && 
+      request.type === type && 
+      (status === null || request.status === status)
+    ) || null;
+  }
+
+  async create(requestData) {
+    const request = new Request(requestData);
+    this.requests.push(request);
+    return request;
+  }
+}
+
 class MockPasswordHasher {
   async compare(password, hashedPassword) {
     return password === hashedPassword;
@@ -67,6 +88,7 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
   let useCase;
   let userRepository;
   let profileRepository;
+  let requestRepository;
   let passwordHasher;
   let clock;
 
@@ -74,10 +96,12 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
     clock = new FakeClock();
     userRepository = new MockUserRepository();
     profileRepository = new MockStoreManagerProfileRepository();
+    requestRepository = new MockRequestRepository();
     passwordHasher = new MockPasswordHasher();
     useCase = new AuthenticateUserWithApprovalUseCase(
       userRepository, 
       profileRepository, 
+      requestRepository,
       passwordHasher, 
       clock
     );
@@ -115,15 +139,15 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
     });
 
     it('should allow approved store manager login', async () => {
-      const storeManager = new User({
+      const manager = new User({
         email: 'manager@store.com',
         password: 'manager123',
         role: 'store_manager'
       }, clock);
-      await userRepository.create(storeManager);
+      await userRepository.create(manager);
 
       const profile = new StoreManagerProfile({
-        userId: storeManager.id,
+        userId: manager.id,
         isApproved: true
       }, clock);
       await profileRepository.create(profile);
@@ -136,15 +160,15 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
     });
 
     it('should reject unapproved store manager login', async () => {
-      const storeManager = new User({
+      const manager = new User({
         email: 'manager@store.com',
         password: 'manager123',
         role: 'store_manager'
       }, clock);
-      await userRepository.create(storeManager);
+      await userRepository.create(manager);
 
       const profile = new StoreManagerProfile({
-        userId: storeManager.id,
+        userId: manager.id,
         isApproved: false
       }, clock);
       await profileRepository.create(profile);
@@ -156,12 +180,12 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
     });
 
     it('should reject store manager login without profile', async () => {
-      const storeManager = new User({
+      const manager = new User({
         email: 'manager@store.com',
         password: 'manager123',
         role: 'store_manager'
       }, clock);
-      await userRepository.create(storeManager);
+      await userRepository.create(manager);
 
       const result = await useCase.execute('manager@store.com', 'manager123');
 
@@ -177,7 +201,7 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
       }, clock);
       await userRepository.create(user);
 
-      const result = await useCase.execute('user@store.com', 'wrongpassword');
+      const result = await useCase.execute('user@store.com', 'wrong123');
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('Invalid email or password');
@@ -198,9 +222,9 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
       }, clock);
       await userRepository.create(user);
 
+      // Make 5 failed attempts
       for (let i = 0; i < 5; i++) {
-        const result = await useCase.execute('user@store.com', 'wrongpassword');
-        expect(result.success).toBe(false);
+        await useCase.execute('user@store.com', 'wrong123');
       }
 
       const lockedUser = await userRepository.findByEmail('user@store.com');
@@ -208,9 +232,8 @@ describe('AuthenticateUserWithApprovalUseCase', () => {
       expect(lockedUser.lockedUntil).toBeTruthy();
 
       const result = await useCase.execute('user@store.com', 'correct123');
-
       expect(result.success).toBe(false);
-      expect(result.message).toContain('locked');
+      expect(result.message).toContain('temporarily locked');
     });
   });
 });

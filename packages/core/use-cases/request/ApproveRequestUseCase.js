@@ -1,15 +1,17 @@
 import { DefaultClock } from "../../adapters/DefaultClock.js";
 import { Request } from '../../entities/Request.js';
 
+
 export class ApproveRequestUseCase {
-  constructor({ requestRepo, userRepo, categoryRepo }, clock = null) {
+  constructor({ requestRepo, userRepo, categoryRepo, storeManagerProfileRepo }, clock = null) {
     this.requestRepository = requestRepo;
     this.userRepository = userRepo;
     this.categoryRepository = categoryRepo;
+    this.storeManagerProfileRepository = storeManagerProfileRepo;
     this.clock = clock || new DefaultClock();
   }
 
-  async execute(requestId, approverId, userRole, action) {
+  async execute(requestId, approverId, userRole, action, reason = null) {
     try {
       if (!this.canApproveRequest(userRole)) {
         return {
@@ -19,7 +21,7 @@ export class ApproveRequestUseCase {
         };
       }
 
-        const request = await this.requestRepository.findById(requestId);
+      const request = await this.requestRepository.findById(requestId);
       if (!request) {
         return {
           success: false,
@@ -39,7 +41,7 @@ export class ApproveRequestUseCase {
       if (action === 'approve') {
         return await this.approveRequest(request, approverId);
       } else if (action === 'reject') {
-        return await this.rejectRequest(request, approverId);
+        return await this.rejectRequest(request, approverId, reason);
       } else {
         return {
           success: false,
@@ -47,7 +49,6 @@ export class ApproveRequestUseCase {
           request: null
         };
       }
-
     } catch (error) {
       console.error('ApproveRequestUseCase error:', error);
       return {
@@ -67,57 +68,51 @@ export class ApproveRequestUseCase {
     const requestEntity = request instanceof Request ? request : Request.fromJSON(request);
     requestEntity.approve(approverId);
     
-    const updatedRequest = await this.requestRepository.update(request.id, requestEntity.toJSON());
+    const updatedRequest = await this.requestRepository.update(request.id, requestEntity.toPersistence());
 
-    await this.executeApprovedRequest(request);
+    if (requestEntity.type === 'account_register_request') {
+      await this.approveStoreManagerRegistration(requestEntity);
+    } else if (requestEntity.type === 'category_create_request') {
+      await this.createCategory(requestEntity);
+    } else if (requestEntity.type === 'category_update_request') {
+      await this.modifyCategory(requestEntity);
+    } else if (requestEntity.type === 'category_delete_request') {
+      await this.deleteCategory(requestEntity);
+    }
 
     return {
       success: true,
       message: 'Request approved successfully',
-      request: Request.fromJSON(updatedRequest)
+      request: updatedRequest
     };
   }
 
-  async rejectRequest(request, approverId) {
-    const updatedRequest = await this.requestRepository.update(request.id, {
-      ...request,
-      status: 'rejected',
-      rejectedAt: this.clock.now().toISOString(),
-      rejectedBy: approverId
-    });
+  async rejectRequest(request, approverId, reason) {
+    const requestEntity = request instanceof Request ? request : Request.fromJSON(request);
+    requestEntity.reject(approverId, reason);
+    
+    const updatedRequest = await this.requestRepository.update(request.id, requestEntity.toPersistence());
 
     return {
       success: true,
       message: 'Request rejected successfully',
-      request: Request.fromJSON(updatedRequest)
+      request: updatedRequest
     };
   }
 
-  async executeApprovedRequest(request) {
-    switch (request.type) {
-      case 'account_register_request':
-        await this.promoteToStoreManager(request);
-        break;
-      case 'category_add_request':
-        await this.createCategory(request);
-        break;
-      case 'category_update_request':
-      case 'category_delete_request':
-        await this.deleteCategory(request);
-        break;
-      default:
-        console.warn(`Unknown request type: ${request.type}`);
+  async approveStoreManagerRegistration(request) {
+    const user = await this.userRepository.findById(request.requestedBy);
+    if (!user) {
+      throw new Error('User not found for store manager registration');
     }
-  }
 
-  async promoteToStoreManager(request) {
-    const user = await this.userRepository.findById(request.requesterId);
-    if (user) {
-      await this.userRepository.update(user.id, {
-        ...user,
-        role: 'store_manager'
-      });
+    const profile = await this.storeManagerProfileRepository.findByUserId(user.id);
+    if (!profile) {
+      throw new Error('Store manager profile not found');
     }
+
+    profile.approve(request.approvedBy);
+    await this.storeManagerProfileRepository.update(profile.id, profile.toPersistence());
   }
 
   async createCategory(request) {
@@ -127,11 +122,21 @@ export class ApproveRequestUseCase {
 
   async modifyCategory(request) {
     const categoryData = request.requestData;
-    await this.categoryRepository.update(categoryData.id, categoryData);
+    const categoryId = categoryData.originalCategory?.id || categoryData.id;
+    if (!categoryId) {
+      throw new Error('Category ID not found in request data');
+    }
+    
+    const { originalCategory: _originalCategory, ...updateData } = categoryData;
+    await this.categoryRepository.update(categoryId, updateData);
   }
 
   async deleteCategory(request) {
     const categoryData = request.requestData;
-    await this.categoryRepository.delete(categoryData.id);
+    const categoryId = categoryData.originalCategory?.id || categoryData.id;
+    if (!categoryId) {
+      throw new Error('Category ID not found in request data');
+    }
+    await this.categoryRepository.delete(categoryId);
   }
 }

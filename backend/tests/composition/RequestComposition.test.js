@@ -2,6 +2,7 @@ import { RequestComposition } from '../../src/composition/RequestComposition.js'
 import { RequestRepository } from '../../src/repositories/RequestRepository.js';
 import { UserRepository } from '../../src/repositories/UserRepository.js';
 import { CategoryRepository } from '../../src/repositories/CategoryRepository.js';
+import { StoreManagerProfileRepository } from '../../src/repositories/StoreManagerProfileRepository.js';
 import { CreateStoreManagerRequestUseCase } from '@grocery-store/core/use-cases/request/CreateStoreManagerRequestUseCase.js';
 import { ApproveRequestUseCase } from '@grocery-store/core/use-cases/request/ApproveRequestUseCase.js';
 
@@ -9,10 +10,22 @@ import { ApproveRequestUseCase } from '@grocery-store/core/use-cases/request/App
 jest.mock('../../src/repositories/RequestRepository.js');
 jest.mock('../../src/repositories/UserRepository.js');
 jest.mock('../../src/repositories/CategoryRepository.js');
+jest.mock('../../src/repositories/StoreManagerProfileRepository.js');
 
 // Mock use cases
 jest.mock('@grocery-store/core/use-cases/request/CreateStoreManagerRequestUseCase.js');
 jest.mock('@grocery-store/core/use-cases/request/ApproveRequestUseCase.js');
+
+// Mock appConfig and DatabaseFactory
+jest.mock('../../src/config/appConfig.js', () => ({
+  getDatabaseType: jest.fn(() => 'firebase')
+}));
+
+jest.mock('../../src/factories/DatabaseFactory.js', () => ({
+  DatabaseFactory: {
+    createAdapter: jest.fn(() => ({ db: undefined }))
+  }
+}));
 
 describe('RequestComposition - Dependency Injection Container', () => {
   let composition;
@@ -22,34 +35,40 @@ describe('RequestComposition - Dependency Injection Container', () => {
     jest.clearAllMocks();
     
     // Create composition instance
-    composition = new RequestComposition('firebase');
+    composition = new RequestComposition();
   });
 
   describe('Dependency Injection', () => {
     test('creates RequestComposition instance', () => {
       expect(composition).toBeDefined();
       expect(composition).toBeInstanceOf(RequestComposition);
-      expect(composition.databaseType).toBe('firebase');
     });
 
     test('provides access to request repository', () => {
       const repository = composition.getRequestRepository();
       
-      expect(RequestRepository).toHaveBeenCalledWith('firebase');
+      expect(RequestRepository).toHaveBeenCalledWith(expect.any(Object));
       expect(repository).toBeDefined();
     });
 
     test('provides access to user repository', () => {
       const repository = composition.getUserRepository();
       
-      expect(UserRepository).toHaveBeenCalledWith('firebase');
+      expect(UserRepository).toHaveBeenCalledWith(expect.any(Object));
       expect(repository).toBeDefined();
     });
 
     test('provides access to category repository', () => {
       const repository = composition.getCategoryRepository();
       
-      expect(CategoryRepository).toHaveBeenCalledWith('firebase');
+      expect(CategoryRepository).toHaveBeenCalledWith(expect.any(Object));
+      expect(repository).toBeDefined();
+    });
+
+    test('provides access to store manager profile repository', () => {
+      const repository = composition.getStoreManagerProfileRepository();
+      
+      expect(StoreManagerProfileRepository).toHaveBeenCalledWith(expect.any(Object));
       expect(repository).toBeDefined();
     });
 
@@ -69,7 +88,8 @@ describe('RequestComposition - Dependency Injection Container', () => {
       expect(ApproveRequestUseCase).toHaveBeenCalledWith({
         requestRepo: expect.any(Object),
         userRepo: expect.any(Object),
-        categoryRepo: expect.any(Object)
+        categoryRepo: expect.any(Object),
+        storeManagerProfileRepo: expect.any(Object)
       });
       expect(useCase).toBeDefined();
     });
@@ -93,7 +113,8 @@ describe('RequestComposition - Dependency Injection Container', () => {
       expect(ApproveRequestUseCase).toHaveBeenCalledWith({
         requestRepo: expect.any(Object),
         userRepo: expect.any(Object),
-        categoryRepo: expect.any(Object)
+        categoryRepo: expect.any(Object),
+        storeManagerProfileRepo: expect.any(Object)
       });
     });
 
@@ -108,6 +129,7 @@ describe('RequestComposition - Dependency Injection Container', () => {
       expect(RequestRepository).toHaveBeenCalled();
       expect(UserRepository).toHaveBeenCalled();
       expect(CategoryRepository).toHaveBeenCalled();
+      expect(StoreManagerProfileRepository).toHaveBeenCalled();
     });
   });
 
@@ -142,32 +164,9 @@ describe('RequestComposition - Dependency Injection Container', () => {
       expect(typeof composition.getRequestRepository).toBe('function');
       expect(typeof composition.getUserRepository).toBe('function');
       expect(typeof composition.getCategoryRepository).toBe('function');
+      expect(typeof composition.getStoreManagerProfileRepository).toBe('function');
       expect(typeof composition.getCreateStoreManagerRequestUseCase).toBe('function');
       expect(typeof composition.getApproveRequestUseCase).toBe('function');
-    });
-  });
-
-  describe('Database Type Configuration', () => {
-    test('uses default database type when not specified', () => {
-      const defaultComposition = new RequestComposition();
-      
-      expect(defaultComposition.databaseType).toBe('firebase');
-    });
-
-    test('uses custom database type when specified', () => {
-      const customComposition = new RequestComposition('custom-db');
-      
-      expect(customComposition.databaseType).toBe('custom-db');
-    });
-
-    test('passes database type to repositories', () => {
-      composition.getRequestRepository();
-      composition.getUserRepository();
-      composition.getCategoryRepository();
-      
-      expect(RequestRepository).toHaveBeenCalledWith('firebase');
-      expect(UserRepository).toHaveBeenCalledWith('firebase');
-      expect(CategoryRepository).toHaveBeenCalledWith('firebase');
     });
   });
 
@@ -187,7 +186,8 @@ describe('RequestComposition - Dependency Injection Container', () => {
       expect(ApproveRequestUseCase).toHaveBeenCalledWith({
         requestRepo: expect.any(Object),
         userRepo: expect.any(Object),
-        categoryRepo: expect.any(Object)
+        categoryRepo: expect.any(Object),
+        storeManagerProfileRepo: expect.any(Object)
       });
     });
   });
@@ -198,16 +198,19 @@ describe('RequestComposition - Dependency Injection Container', () => {
       expect(RequestRepository).not.toHaveBeenCalled();
       expect(UserRepository).not.toHaveBeenCalled();
       expect(CategoryRepository).not.toHaveBeenCalled();
+      expect(StoreManagerProfileRepository).not.toHaveBeenCalled();
       
       // Access repositories
       composition.getRequestRepository();
       composition.getUserRepository();
       composition.getCategoryRepository();
+      composition.getStoreManagerProfileRepository();
       
       // Now they should be created
       expect(RequestRepository).toHaveBeenCalled();
       expect(UserRepository).toHaveBeenCalled();
       expect(CategoryRepository).toHaveBeenCalled();
+      expect(StoreManagerProfileRepository).toHaveBeenCalled();
     });
 
     test('use cases are created only when accessed', () => {

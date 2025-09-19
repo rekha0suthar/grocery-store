@@ -158,4 +158,25 @@ export class AuthController extends BaseController {
     
     this.sendSuccess(res, result.request, 'Request processed successfully');
   });
+
+  forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+      return this.sendError(res, 'Email is required', 400);
+    }
+
+    try {
+      const result = await this.authComposition.getFirebaseAuthService().sendPasswordResetEmail(email);
+      
+      if (result) {
+        this.sendSuccess(res, null, 'Password reset email sent successfully');
+      } else {
+        this.sendError(res, 'Failed to send password reset email', 500);
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      this.sendError(res, 'Failed to send password reset email', 500);
+    }
+  });
 }

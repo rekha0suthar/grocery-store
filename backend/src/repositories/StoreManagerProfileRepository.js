@@ -17,10 +17,10 @@ export class StoreManagerProfileRepository extends BaseRepository {
 
   async findByUserId(userId) {
     try {
-      const profiles = await this.database.query(this.collectionName, 'userId', '==', userId);
-      if (profiles.length === 0) return null;
+      const profile = await this.database.findByField(this.collectionName, 'userId', userId);
+      if (!profile) return null;
       
-      return new StoreManagerProfile(profiles[0], this.clock);
+      return new StoreManagerProfile(profile, this.clock);
     } catch (error) {
       console.error('Error finding store manager profile by user ID:', error);
       throw error;
@@ -29,7 +29,7 @@ export class StoreManagerProfileRepository extends BaseRepository {
 
   async findApproved() {
     try {
-      const profiles = await this.database.query(this.collectionName, 'isApproved', '==', true);
+      const profiles = await this.database.findAll(this.collectionName, { isApproved: true });
       return profiles.map(profile => new StoreManagerProfile(profile, this.clock));
     } catch (error) {
       console.error('Error finding approved store manager profiles:', error);
@@ -39,7 +39,7 @@ export class StoreManagerProfileRepository extends BaseRepository {
 
   async findPending() {
     try {
-      const profiles = await this.database.query(this.collectionName, 'isApproved', '==', false);
+      const profiles = await this.database.findAll(this.collectionName, { isApproved: false });
       return profiles.map(profile => new StoreManagerProfile(profile, this.clock));
     } catch (error) {
       console.error('Error finding pending store manager profiles:', error);
