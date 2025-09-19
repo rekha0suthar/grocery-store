@@ -45,7 +45,7 @@ const ModernProductsPage = () => {
 
   // Build query parameters for API calls
   const buildQueryParams = useCallback(() => {
-    const params = { limit: 5};
+    const params = { limit: 12};
     
     if (category) params.category = category;
     if (featured === 'true') params.featured = true;
@@ -67,7 +67,7 @@ const ModernProductsPage = () => {
   // Initial data loading
   useEffect(() => {
     if (categories.length === 0) {
-      dispatch(fetchCategories({ limit: 5 }));
+      dispatch(fetchCategories({ limit: 12 }));
     }
     
     if (search) {

@@ -21,7 +21,7 @@ const CategoriesPage = () => {
   // Load more categories function
   const loadMore = useCallback(() => {
     if (!loadingMore && pagination.hasMore) {
-      dispatch(loadMoreCategories({ limit: 5 }));
+      dispatch(loadMoreCategories({ limit: 12 }));
     }
   }, [dispatch, loadingMore, pagination.hasMore]);
 
@@ -30,11 +30,11 @@ const CategoriesPage = () => {
 
   useEffect(() => {
     dispatch(resetPagination());
-    dispatch(fetchCategories({ limit: 5 }));
+    dispatch(fetchCategories({ limit: 12 }));
   }, [dispatch]);
 
   const handleRetry = () => {
-    dispatch(loadMoreCategories({ limit: 5 }));
+    dispatch(loadMoreCategories({ limit: 12 }));
   };
 
   if (loading) {

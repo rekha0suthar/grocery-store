@@ -8,20 +8,50 @@ export class CategoryController extends BaseController {
     this.categoryComposition = new CategoryComposition();
   }
 
+  // Optimized getAllCategories method with cursor pagination
   getAllCategories = asyncHandler(async (req, res) => {
-    const { limit = 5, cursor } = req.query; // Reduced default limit
+    const { 
+      limit = 12, 
+      cursor, 
+      lastDocId,
+      parentId,
+      activeOnly = 'true' 
+    } = req.query;
 
     try {
-      const result = await this.categoryComposition.getManageCategoryUseCase().execute('getAllCategories', {
-        limit: Math.min(parseInt(limit), 10), // Cap at 10 to save quota
-        cursor
+      // Parse cursor from lastDocId if provided
+      const paginationCursor = cursor || lastDocId;
+      const pageSize = Math.min(parseInt(limit), 20); // Cap at 20 for performance
+
+      // Build filters
+      const filters = {};
+      if (activeOnly === 'true') filters.isActive = true;
+      if (parentId !== undefined) filters.parentId = parentId;
+
+      const result = await this.categoryComposition.getManageCategoryUseCase().execute('getAllCategoriesWithCursor', {
+        filters,
+        pageSize,
+        cursor: paginationCursor
       });
 
       if (result.quotaExceeded) {
         return this.sendError(res, 'Service temporarily unavailable due to high demand. Please try again later.', 503);
       }
 
-      return res.status(result.success ? 200 : 400).json(result);
+      // Transform result for consistent API response
+      const response = {
+        success: true,
+        message: 'Categories retrieved successfully',
+        categories: result.items || result.categories || [],
+        pagination: {
+          hasNext: result.hasNext || false,
+          hasPrev: result.hasPrev || false,
+          nextCursor: result.lastDoc?.id || null,
+          limit: pageSize
+        }
+      };
+
+      return res.status(200).json(response);
     } catch (error) {
       if (error.message.includes('quota exceeded') || error.message.includes('RESOURCE_EXHAUSTED')) {
         return this.sendError(res, 'Service temporarily unavailable. Please try again later.', 503);

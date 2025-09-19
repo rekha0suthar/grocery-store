@@ -15,9 +15,9 @@ const AdminDashboardPage = () => {
   const { requests, loading: requestsLoading } = useAppSelector((state) => state.requests);
 
   useEffect(() => {
-    dispatch(fetchProducts({ limit: 5 }));
-    dispatch(fetchCategories({ limit: 5 }));
-    dispatch(fetchRequests({ limit: 5 }));
+    dispatch(fetchProducts({ limit: 15, admin: true }));
+    if (categories.length === 0) dispatch(fetchCategories({ limit: 15 }));
+    dispatch(fetchRequests({ limit: 15 }));
   }, [dispatch]);
 
   const pendingRequests = requests.filter(req => req.status === 'pending');

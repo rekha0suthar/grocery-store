@@ -290,6 +290,8 @@ export class ManageCategoryUseCase {
       case 'deleteCategory':
         return await this.deleteCategory(params.id, params.userRole, params.userId);
       case 'getAllCategories':
+        case 'getAllCategoriesWithCursor':
+          return await this.getAllCategoriesWithCursor(params);
         return await this.getAllCategories(params.limit, params.offset);
       case 'getCategoryById':
         return await this.getCategoryById(params.id);
@@ -401,5 +403,62 @@ export class ManageCategoryUseCase {
 
   canManageCategories(userRole) {
     return ['admin', 'store_manager'].includes(userRole);
+  }
+  // Optimized cursor-based pagination methods
+  async getAllCategoriesWithCursor(options = {}) {
+    try {
+      const {
+        filters = {},
+        pageSize = 12,
+        cursor = null
+      } = options;
+
+      // Use the database adapter's optimized cursor method
+      const result = await this.categoryRepository.db.findCategoriesWithCursor({
+        filters,
+        pageSize,
+        cursor: cursor ? { id: cursor } : null,
+        orderByField: 'createdAt',
+        orderDirection: 'desc'
+      });
+
+      // Transform items to Category entities and add product counts efficiently
+      const categoriesWithCounts = await Promise.all(
+        result.items.map(async (data) => {
+          const category = Category.fromJSON(data);
+          // Only get product count for first page to avoid quota issues
+          const productCount = cursor ? 0 : await this.categoryRepository.getProductCount(category.id).catch(() => 0);
+          
+          const categoryJson = category.toJSON();
+          categoryJson.productCount = productCount;
+          return categoryJson;
+        })
+      );
+
+      return {
+        success: true,
+        message: 'Categories retrieved successfully',
+        categories: categoriesWithCounts,
+        items: categoriesWithCounts,
+        hasNext: result.hasNext,
+        hasPrev: result.hasPrev,
+        lastDoc: result.lastDoc,
+        quotaExceeded: result.quotaExceeded || false
+      };
+
+    } catch (error) {
+      console.error('Get categories with cursor error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve categories',
+        categories: [],
+        items: [],
+        hasNext: false,
+        hasPrev: false,
+        lastDoc: null,
+        quotaExceeded: error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED'),
+        error: error.message
+      };
+    }
   }
 }

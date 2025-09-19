@@ -287,6 +287,125 @@ export class FirebaseAdapter extends IDatabaseAdapter {
     }
     keysToDelete.forEach(key => this.cache.delete(key));
   }
+  // Enhanced pagination methods for specific collections
+  async findProductsWithCursor(options = {}) {
+    const {
+      filters = {},
+      pageSize = 12,
+      cursor = null,
+      orderByField = 'createdAt',
+      orderDirection = 'desc'
+    } = options;
+
+    // Map common product filters to proper field names
+    const mappedFilters = {};
+    if (filters.categoryId) mappedFilters.categoryId = filters.categoryId;
+    if (filters.isActive !== undefined) mappedFilters.isActive = filters.isActive;
+    if (filters.isFeatured !== undefined) mappedFilters.isFeatured = filters.isFeatured;
+
+    return this.findAllWithCursor('products', {
+      filters: mappedFilters,
+      pageSize,
+      cursor,
+      orderByField,
+      orderDirection
+    });
+  }
+
+  async findCategoriesWithCursor(options = {}) {
+    const {
+      filters = {},
+      pageSize = 12,
+      cursor = null,
+      orderByField = 'createdAt',
+      orderDirection = 'desc'
+    } = options;
+
+    // Map common category filters
+    const mappedFilters = {};
+    if (filters.isActive !== undefined) mappedFilters.isActive = filters.isActive;
+    if (filters.parentId !== undefined) mappedFilters.parentId = filters.parentId;
+
+    return this.findAllWithCursor('categories', {
+      filters: mappedFilters,
+      pageSize,
+      cursor,
+      orderByField,
+      orderDirection
+    });
+  }
+
+  // Optimized search with cursor pagination
+  async searchWithCursor(collection, searchField, searchTerm, options = {}) {
+    const {
+      pageSize = 12,
+      cursor = null,
+      orderByField = 'createdAt',
+      orderDirection = 'desc'
+    } = options;
+
+    try {
+      const cacheKey = this.getCacheKey(collection, { search: searchTerm }, pageSize, cursor?.id);
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        console.log(`Search cache hit for ${collection}`);
+        return cached;
+      }
+
+      let query = this.db.collection(collection);
+      
+      // Simple text search using range queries for names
+      if (searchField === 'name') {
+        query = query
+          .where('name', '>=', searchTerm)
+          .where('name', '<=', searchTerm + '\uf8ff');
+      }
+
+      query = query.orderBy(orderByField, orderDirection);
+
+      if (cursor) {
+        query = query.startAfter(cursor);
+      }
+
+      const snapshot = await query.limit(pageSize + 1).get();
+      const docs = snapshot.docs.slice(0, pageSize);
+      const hasNext = snapshot.docs.length > pageSize;
+      const lastDoc = docs[docs.length - 1] || null;
+
+      const result = {
+        items: docs.map(doc => this.convertTimestamps({
+          id: doc.id,
+          ...doc.data()
+        })),
+        hasNext,
+        hasPrev: cursor !== null,
+        lastDoc,
+        total: 0,
+        quotaExceeded: false
+      };
+
+      this.setCache(cacheKey, result);
+      return result;
+
+    } catch (error) {
+      console.error(`Search error in ${collection}:`, error);
+      
+      if (error.code === 8 || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+        return {
+          items: [],
+          hasNext: false,
+          hasPrev: false,
+          lastDoc: null,
+          total: 0,
+          quotaExceeded: true,
+          error: 'Search quota exceeded. Please try again later.'
+        };
+      }
+      
+      throw new Error(`Search failed: ${error.message}`);
+    }
+  }
+
 
   async connect() {
     try {

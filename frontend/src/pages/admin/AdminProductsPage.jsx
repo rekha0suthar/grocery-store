@@ -73,8 +73,8 @@ const AdminProductsPage = () => {
   });
 
   useEffect(() => {
-    if (products.length === 0) dispatch(fetchProducts());
-    if (categories.length === 0) dispatch(fetchCategories({ limit: 5 }));
+    if (products.length === 0) dispatch(fetchProducts({ limit: 15, admin: true }));
+    if (categories.length === 0) dispatch(fetchCategories({ limit: 12 }));
   }, [dispatch, products.length, categories.length]);
 
   const onSubmit = async (data) => {
@@ -128,7 +128,7 @@ const AdminProductsPage = () => {
         setShowCreateForm(false);
       }
       reset();
-      dispatch(fetchProducts());
+      dispatch(fetchProducts({ limit: 15, admin: true }));
     } catch (error) {
       toast.error(error || 'Failed to save product');
     } finally {
@@ -186,7 +186,7 @@ const AdminProductsPage = () => {
       try {
         await dispatch(deleteProduct(productId)).unwrap();
         toast.success('Product deleted successfully!');
-        dispatch(fetchProducts());
+        dispatch(fetchProducts({ limit: 15, admin: true }));
       } catch (error) {
         toast.error(error || 'Failed to delete product');
       }

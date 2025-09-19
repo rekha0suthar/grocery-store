@@ -32,9 +32,9 @@ const ModernDashboardPage = () => {
   const { requests, loading: requestsLoading } = useAppSelector((state) => state.requests);
 
   useEffect(() => {
-    dispatch(fetchProducts({ limit: 5 }));
-    dispatch(fetchCategories({ limit: 5 }));
-    dispatch(fetchRequests({ limit: 5 }));
+    dispatch(fetchProducts({ limit: 12 }));
+    dispatch(fetchCategories({ limit: 12 }));
+    dispatch(fetchRequests({ limit: 12 }));
   }, [dispatch]);
 
   const pendingRequests = requests.filter(req => req.status === 'pending');

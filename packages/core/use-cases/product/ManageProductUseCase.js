@@ -120,6 +120,14 @@ export class ManageProductUseCase {
     try {
       switch (operation) {
         case 'getAllProducts':
+        case 'getAllProductsWithCursor':
+          return await this.getAllProductsWithCursor(data);
+        case 'getFeaturedProductsWithCursor':
+          return await this.getFeaturedProductsWithCursor(data);
+        case 'findByCategoryWithCursor':
+          return await this.findByCategoryWithCursor(data);
+        case 'searchProductsWithCursor':
+          return await this.searchProductsWithCursor(data);
           return await this.getAllProducts(data);
         case 'getProductById':
           return await this.getProductById(data.id);
@@ -483,5 +491,201 @@ export class ManageProductUseCase {
 
   canManageProducts(userRole) {
     return ['admin', 'store_manager'].includes(userRole);
+  }
+
+
+  // Optimized cursor-based pagination methods
+  async getAllProductsWithCursor(options = {}) {
+    try {
+      const {
+        filters = {},
+        pageSize = 12,
+        cursor = null
+      } = options;
+
+      // Use the database adapter's optimized cursor method
+      const result = await this.productRepository.db.findProductsWithCursor({
+        filters,
+        pageSize,
+        cursor: cursor ? { id: cursor } : null,
+        orderByField: 'createdAt',
+        orderDirection: 'desc'
+      });
+
+      // Transform items to Product entities
+      const products = result.items.map(data => Product.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Products retrieved successfully',
+        products: products,
+        items: products, // For compatibility
+        hasNext: result.hasNext,
+        hasPrev: result.hasPrev,
+        lastDoc: result.lastDoc,
+        quotaExceeded: result.quotaExceeded || false
+      };
+
+    } catch (error) {
+      console.error('Get products with cursor error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve products',
+        products: [],
+        items: [],
+        hasNext: false,
+        hasPrev: false,
+        lastDoc: null,
+        quotaExceeded: error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED'),
+        error: error.message
+      };
+    }
+  }
+
+  async getFeaturedProductsWithCursor(options = {}) {
+    try {
+      const {
+        pageSize = 12,
+        cursor = null
+      } = options;
+
+      const result = await this.productRepository.db.findProductsWithCursor({
+        filters: { isFeatured: true, isActive: true },
+        pageSize,
+        cursor: cursor ? { id: cursor } : null,
+        orderByField: 'createdAt',
+        orderDirection: 'desc'
+      });
+
+      const products = result.items.map(data => Product.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Featured products retrieved successfully',
+        products: products,
+        items: products,
+        hasNext: result.hasNext,
+        hasPrev: result.hasPrev,
+        lastDoc: result.lastDoc,
+        quotaExceeded: result.quotaExceeded || false
+      };
+
+    } catch (error) {
+      console.error('Get featured products with cursor error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve featured products',
+        products: [],
+        items: [],
+        hasNext: false,
+        hasPrev: false,
+        lastDoc: null,
+        quotaExceeded: error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED'),
+        error: error.message
+      };
+    }
+  }
+
+  async findByCategoryWithCursor(options = {}) {
+    try {
+      const {
+        categoryId,
+        pageSize = 12,
+        cursor = null
+      } = options;
+
+      if (!categoryId) {
+        throw new Error('Category ID is required');
+      }
+
+      const result = await this.productRepository.db.findProductsWithCursor({
+        filters: { categoryId, isActive: true },
+        pageSize,
+        cursor: cursor ? { id: cursor } : null,
+        orderByField: 'createdAt',
+        orderDirection: 'desc'
+      });
+
+      const products = result.items.map(data => Product.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Products by category retrieved successfully',
+        products: products,
+        items: products,
+        hasNext: result.hasNext,
+        hasPrev: result.hasPrev,
+        lastDoc: result.lastDoc,
+        quotaExceeded: result.quotaExceeded || false
+      };
+
+    } catch (error) {
+      console.error('Find products by category with cursor error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve products by category',
+        products: [],
+        items: [],
+        hasNext: false,
+        hasPrev: false,
+        lastDoc: null,
+        quotaExceeded: error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED'),
+        error: error.message
+      };
+    }
+  }
+
+  async searchProductsWithCursor(options = {}) {
+    try {
+      const {
+        query,
+        pageSize = 12,
+        cursor = null
+      } = options;
+
+      if (!query || query.trim().length === 0) {
+        throw new Error('Search query is required');
+      }
+
+      // Use optimized search with cursor pagination
+      const result = await this.productRepository.db.searchWithCursor(
+        'products',
+        'name',
+        query.trim(),
+        {
+          pageSize,
+          cursor: cursor ? { id: cursor } : null,
+          orderByField: 'createdAt',
+          orderDirection: 'desc'
+        }
+      );
+
+      const products = result.items.map(data => Product.fromJSON(data));
+
+      return {
+        success: true,
+        message: 'Search results retrieved successfully',
+        products: products,
+        items: products,
+        hasNext: result.hasNext,
+        hasPrev: result.hasPrev,
+        lastDoc: result.lastDoc,
+        quotaExceeded: result.quotaExceeded || false
+      };
+
+    } catch (error) {
+      console.error('Search products with cursor error:', error);
+      return {
+        success: false,
+        message: 'Failed to search products',
+        products: [],
+        items: [],
+        hasNext: false,
+        hasPrev: false,
+        lastDoc: null,
+        quotaExceeded: error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED'),
+        error: error.message
+      };
+    }
   }
 }

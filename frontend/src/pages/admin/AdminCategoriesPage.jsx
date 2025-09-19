@@ -25,8 +25,11 @@ const AdminCategoriesPage = () => {
   } = useForm();
 
   useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+    // Only fetch categories if not already loaded (avoid conflict with ModernHeader)
+    if (categories.length === 0) {
+      dispatch(fetchCategories({ limit: 15 })); // Higher limit for admin interface
+    }
+  }, [dispatch, categories.length]);
 
   const onSubmit = async (data) => {
     setCreateLoading(true);
@@ -42,7 +45,7 @@ const AdminCategoriesPage = () => {
         setShowCreateForm(false);
       }
       reset();
-      dispatch(fetchCategories());
+      dispatch(fetchCategories({ limit: 15 }));
     } catch (error) {
       toast.error(error || 'Failed to save category');
     } finally {
@@ -81,7 +84,7 @@ const AdminCategoriesPage = () => {
       try {
         await dispatch(deleteCategory(categoryId)).unwrap();
         toast.success('Category deleted successfully!');
-        dispatch(fetchCategories());
+        dispatch(fetchCategories({ limit: 15 }));
       } catch (error) {
         toast.error(error || 'Failed to delete category');
       }
