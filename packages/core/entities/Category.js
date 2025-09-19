@@ -138,7 +138,8 @@ export class Category extends BaseEntity {
       imageUrl: this.imageUrl,
       parentId: this.parentId,
       sortOrder: this.sortOrder,
-      isVisible: this.isVisible
+      isVisible: this.isVisible,
+      productCount: this.productCount || 0
     };
   }
 

@@ -10,6 +10,7 @@ import {
   Package, 
   ShoppingCart,
   ArrowRight,
+  FolderOpen,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -73,6 +74,20 @@ const CustomerDashboardPage = () => {
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Start Shopping
                 </button>
+                <button
+                  onClick={() => {
+                    navigate('/categories');
+                  }}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer"
+                  style={{ 
+                    pointerEvents: 'auto', 
+                    zIndex: 999, 
+                    position: 'relative'
+                  }}
+                >
+                  <FolderOpen className="w-4 h-4 mr-2" />
+                  Browse Categories
+                </button>
               </div>
             </div>
           </div>
@@ -132,6 +147,19 @@ const CustomerDashboardPage = () => {
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Start Shopping
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/categories');
+                }}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer"
+                style={{ 
+                  pointerEvents: 'auto', 
+                  position: 'relative',
+                }}
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                Browse Categories
               </button>
             </div>
           </div>

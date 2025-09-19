@@ -53,7 +53,7 @@ export class AuthController extends BaseController {
         requiresApproval: true
       }, result.message, 201);
     } else {
-      result = await this.authComposition.getRegisterUserUseCase().execute(userData);
+      result = await this.authComposition.getCreateUserUseCase().execute(userData);
       
       if (!result.success) {
         return this.sendError(res, result.message, 400);
